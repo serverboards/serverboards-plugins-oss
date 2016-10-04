@@ -1,0 +1,6 @@
+This plugin is AGPL licensed as required by the HMLT5 spice client from eyeos.
+
+More information at: https://github.com/eyeos/spice-web-client
+
+It uses a modified version to provide the spice view, check out
+https://github.com/serverboards/

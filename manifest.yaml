@@ -1,0 +1,32 @@
+id: serverboards.spice
+name: Spice Remote Desktop
+author: David Moreno <dmoreno@serverboards.io>
+version: 0.1.0
+description: >
+  Definition an basic ussage of cloud services.
+
+  Includes copy of [Spice Web Client from eyeos](https://github.com/eyeos/spice-web-client).
+license: AGPLv3
+
+components:
+  - type: service
+    id: service
+    name: Spice connection
+    traits: spice
+    icon: desktop
+    fields:
+      - name: via
+        type: service
+        label: Connect via
+        trait: ssh
+        description: Connection are never made directly always via an SSH access
+      - name: port
+        type: text
+        label: Port
+        placeholder: 5900
+
+  - type: screen
+    name: Remote Desktop (Spice)
+    id: screen
+    traits: spice
+    icon: desktop
