@@ -1,0 +1,3 @@
+[submodule "static/spice-web-client"]
+	path = static/spice-web-client
+	url = git@github.com:serverboards/spice-web-client.git
