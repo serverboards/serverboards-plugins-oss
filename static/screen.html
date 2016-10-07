@@ -1,5 +1,23 @@
-<div id="spice" style="position: relative;">
-  <div class="ui loading visible">
-    <i class="ui icon loading spinner"/> Loading...
+<style>
+#screen{
+  position: relative;
+}
+#screen div#spice, #screen iframe{
+  height: calc( 100vh - 150px );
+}
+</style>
+
+<div id="screen">
+  <div id="header">
+    <h1 class="ui header">Spice connection</h1>
+    <div>
+      Connect with external program: <a id="spice-link">--</a>
+    </div>
   </div>
+  <div class="ui message" id="message">
+    <div class="ui loading visible">
+      <i class="ui icon loading spinner"/> Loading...
+    </div>
+  </div>
+  <div id="spice"></div>
 </div>
