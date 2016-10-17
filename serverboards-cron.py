@@ -1,0 +1,90 @@
+#!/usr/bin/python3
+
+#import serverboards
+from cron import preprocess_cronspec, enumerate_factory, Cron
+import datetime, serverboards, sys
+
+cron=Cron()
+
+@serverboards.rpc_method
+def add_cron(id, timespec):
+    cronid=cron.add( timespec, id )
+    update_cron_timer()
+    return cronid
+
+@serverboards.rpc_method
+def del_cron(cronid):
+    return cron.remove(cronid)
+
+@serverboards.rpc_method
+def info():
+    serverboards.debug(repr(cron.next()))
+    (next_t, next_id, next_spec) = cron.next()
+    return {
+        "specs": [
+            {"spec":s.orig, "id":id}
+            for (s, id) in
+            cron.specs.values()
+            ],
+        "next": {
+            "next": next_t and next_t.strftime("%Y-%m-%d %H:%M"),
+            "spec" : next_spec and next_spec.orig,
+            "id" : next_id
+        }
+    }
+
+def update_cron_timer():
+    serverboards.info("update cron trigger")
+    def trigger(id):
+        serverboards.info("trigger")
+        serverboards.rpc.event("trigger", id=str(id), state="tick")
+        (next_t, next_id) = cron.seconds_to_next()
+        serverboards.rpc.add_timer(next_t, lambda:trigger(next_id))
+
+    serverboards.info(repr(cron.seconds_to_next()))
+    (next_t, next_id) = cron.seconds_to_next()
+    serverboards.rpc.add_timer(next_t, lambda:trigger(next_id))
+
+def main():
+    serverboards.loop(True)
+
+def test():
+    assert preprocess_cronspec("3am daily")=="* * * * * 3 0"
+    assert preprocess_cronspec("3am everyday")=="* * * * * 3 0"
+    assert preprocess_cronspec("3pm workdays")=="* * * * 1-5 15 0"
+    assert preprocess_cronspec("20:30 weekends")=="* * * * 6,7 20 30"
+    assert preprocess_cronspec("1 2 3 4 5 6 7")=="1 2 3 4 5 6 7"
+
+
+    ff=list( enumerate_factory("1,5-6,8")(1,10) )
+    #print(ff)
+    assert ff==[1,5,6,8]
+    ff=list( enumerate_factory("*")(1,10) )
+    assert ff==[1,2,3,4,5,6,7,8,9,10]
+    #print()
+
+    cron=Cron()
+    cron.add("2017 1 1 * * * *", 1)
+    cron.add("2000 * * * * 12 30", 2)
+    cron.add("2000-2010 * * * * 11 30", 3)
+    cron.add("mon 19:30", 4)
+
+    #print(cron.add("3am", lambda:print("3am")))
+    #print(cron.add("3pm", lambda:print("3pm")))
+    #print(cron.add("16:30 monday", lambda:print("16:30 monday")))
+    #print(cron.next_from(datetime.datetime(2000,10,12, 12, 11)))
+    assert cron.next_from(datetime.datetime(2000,10,12, 12, 11))[0] == datetime.datetime(2000,10,12,12,30)
+    assert cron.next_from(datetime.datetime(2000,10,12, 12, 31))[0] == datetime.datetime(2000,10,13,11,30)
+    assert cron.next_from(datetime.datetime(2010,1,1, 0, 0))[0] == datetime.datetime(2010,1,1,11,30)
+    assert cron.next_from(datetime.datetime(2017,1,1, 1, 0))[0] == datetime.datetime(2017,1,1,1,0)
+
+    #print(cron.seconds_to_next())
+    assert cron.seconds_to_next()[0] > 0
+
+    print("Success")
+
+if __name__=='__main__':
+    if len(sys.argv)==2 and sys.argv[1]=='test':
+        test()
+    else:
+        main()
