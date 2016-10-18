@@ -1,4 +1,4 @@
-import datetime
+import datetime, calendar
 
 KEYWORDS={
     'everyday':"* * * * *",
@@ -40,14 +40,23 @@ def preprocess_cronspec(s):
             if i=='@12pm':
                 timespec="12 0"
             else:
-                timespec="%d 0"%(int(i[:-2])+12)
+                hour = int(i[:-2])+12
+                if (hour>24):
+                    raise Exception("Invalid timespec, hour(pm) > 24")
+                timespec="%d 0"%(hour)
         elif i.endswith('am'):
             if i=='@12am':
                 timespec="0 0"
             else:
-                timespec="%d 0"%(int(i[:-2]))
+                hour=int(i[:-2])
+                if (hour>12):
+                    raise Exception("Invalid timespec, hour(am) > 12")
+                timespec="%d 0"%(hour)
         elif ':' in i:
             time=i.split(':')+['0','0']
+            timespec="%s %s"%(time[0],time[1])
+        elif '.' in i:
+            time=i.split('.')+['0','0']
             timespec="%s %s"%(time[0],time[1])
         else:
             raise Exception("Invalid cronspec: %s"%i)
@@ -82,7 +91,7 @@ def match_year(spec):
     def match(now):
         #print(spec)
         # returns year
-        return efs(now.year, 2050)
+        return efs(now.year, 2030)
     return match
 def match_month(spec):
     efs=enumerate_factory(spec)
@@ -105,15 +114,7 @@ def match_day(spec):
         minday=1
         if year==now.year and month==now.month:
             minday=now.day
-        if month in [1,3,5,7,8,10,12]:
-            max_days=31
-        elif month in [4,6,9,11]:
-            max_days=30
-        elif month==2:
-            if (year % 4) == 0 and (year % 400) != 0:
-                max_days=28
-            else:
-                max_days=29
+        max_days=calendar.monthrange(year, month)[1]
         return (
             (year, month, day) for day in
             efs(minday,max_days)
@@ -169,7 +170,7 @@ class Cronspec:
         self.orig=spec
         spec=preprocess_cronspec(spec).split()
         today=datetime.datetime.now()
-        #print(spec)
+        #print(spec, self.orig)
         self.spec=[
             match_year(spec[0]),
             match_month(spec[1]),
@@ -217,7 +218,7 @@ class Cron:
         return self.next_from(datetime.datetime.now())
     def next_from(self, now):
         ret=(self.max_date, None, None)
-        print(repr(self.specs.values()))
+        #print(repr(self.specs.values()))
         for (spec, f) in self.specs.values():
             next_t=spec.next_from(now)
             #print("Next for ", now, spec," is ", next_t)

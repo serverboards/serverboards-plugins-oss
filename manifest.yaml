@@ -9,13 +9,14 @@ components:
     strategy: singleton
     timeout: 7d
   - id: trigger
+    name: Cron trigger
     type: trigger
     states: tick
     command: cron
     start:
       method: add_cron
       params:
-        - name: description
+        - name: timespec
           label: Time trigger description
           description: |
             Cron format:

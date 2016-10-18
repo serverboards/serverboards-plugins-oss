@@ -7,7 +7,7 @@ import datetime, serverboards, sys
 cron=Cron()
 
 @serverboards.rpc_method
-def add_cron(id, timespec):
+def add_cron(id, timespec, **kwargs):
     cronid=cron.add( timespec, id )
     update_cron_timer()
     return cronid
@@ -46,7 +46,7 @@ def update_cron_timer():
     serverboards.rpc.add_timer(next_t, lambda:trigger(next_id))
 
 def main():
-    serverboards.loop(True)
+    serverboards.loop()
 
 def test():
     assert preprocess_cronspec("3am daily")=="* * * * * 3 0"
@@ -54,7 +54,13 @@ def test():
     assert preprocess_cronspec("3pm workdays")=="* * * * 1-5 15 0"
     assert preprocess_cronspec("20:30 weekends")=="* * * * 6,7 20 30"
     assert preprocess_cronspec("1 2 3 4 5 6 7")=="1 2 3 4 5 6 7"
+    assert preprocess_cronspec("20:30")=="* * * * * 20 30"
 
+    try:
+        preprocess_cronspec("20pm")
+        assert False, "Should have failed"
+    except:
+        pass
 
     ff=list( enumerate_factory("1,5-6,8")(1,10) )
     #print(ff)
@@ -76,7 +82,9 @@ def test():
     assert cron.next_from(datetime.datetime(2000,10,12, 12, 11))[0] == datetime.datetime(2000,10,12,12,30)
     assert cron.next_from(datetime.datetime(2000,10,12, 12, 31))[0] == datetime.datetime(2000,10,13,11,30)
     assert cron.next_from(datetime.datetime(2010,1,1, 0, 0))[0] == datetime.datetime(2010,1,1,11,30)
-    assert cron.next_from(datetime.datetime(2017,1,1, 1, 0))[0] == datetime.datetime(2017,1,1,1,0)
+    #print(cron.next_from(datetime.datetime(2017,1,1, 1, 0))[0])
+    # not same, but +1min, as if same minute will loop forever. If im in a given minute the alarmalready passed
+    assert cron.next_from(datetime.datetime(2017,1,1, 1, 0))[0] == datetime.datetime(2017,1,1,1,1)
 
     #print(cron.seconds_to_next())
     assert cron.seconds_to_next()[0] > 0
