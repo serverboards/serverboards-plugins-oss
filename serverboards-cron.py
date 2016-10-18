@@ -18,19 +18,24 @@ def del_cron(cronid):
 
 @serverboards.rpc_method
 def info():
-    serverboards.debug(repr(cron.next()))
-    (next_t, next_id, next_spec) = cron.next()
+    now=datetime.datetime.now()
+    def decorate(s):
+        nn=s.next_from(now)
+        if nn:
+            nn=nn.strftime("%Y-%m-%d %H:%M")
+        return {
+            "spec":s.orig,
+            "id":s.id,
+            "next":nn
+        }
+
+    next_t=cron.seconds_to_next()
     return {
         "specs": [
-            {"spec":s.orig, "id":id}
-            for (s, id) in
-            cron.specs.values()
+            decorate(s)
+            for s in cron.specs.values()
             ],
-        "next": {
-            "next": next_t and next_t.strftime("%Y-%m-%d %H:%M"),
-            "spec" : next_spec and next_spec.orig,
-            "id" : next_id
-        }
+        "next": dict(seconds=next_t[0], **decorate( next_t[1] ))
     }
 
 def update_cron_timer():
@@ -39,11 +44,11 @@ def update_cron_timer():
         serverboards.info("trigger")
         serverboards.rpc.event("trigger", id=str(id), state="tick")
         (next_t, next_id) = cron.seconds_to_next()
-        serverboards.rpc.add_timer(next_t, lambda:trigger(next_id))
+        serverboards.rpc.add_timer(next_t, lambda:trigger(next_id.id))
 
     serverboards.info(repr(cron.seconds_to_next()))
     (next_t, next_id) = cron.seconds_to_next()
-    serverboards.rpc.add_timer(next_t, lambda:trigger(next_id))
+    serverboards.rpc.add_timer(next_t, lambda:trigger(next_id.id))
 
 def main():
     serverboards.loop()

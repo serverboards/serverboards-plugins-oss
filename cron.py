@@ -166,8 +166,9 @@ def match_minutes(spec):
 
 
 class Cronspec:
-    def __init__(self, spec):
+    def __init__(self, spec, id):
         self.orig=spec
+        self.id=id
         spec=preprocess_cronspec(spec).split()
         today=datetime.datetime.now()
         #print(spec, self.orig)
@@ -206,7 +207,7 @@ class Cron:
         self.max_date=datetime.datetime(3000,1,1)
     def add(self, timespec, f):
         spec_id=self.maxspec
-        self.specs[spec_id]=(Cronspec(timespec), f)
+        self.specs[spec_id]=Cronspec(timespec, f)
         self.maxspec+=1
         return spec_id
     def remove(self, spec_id):
@@ -219,11 +220,11 @@ class Cron:
     def next_from(self, now):
         ret=(self.max_date, None, None)
         #print(repr(self.specs.values()))
-        for (spec, f) in self.specs.values():
+        for spec in self.specs.values():
             next_t=spec.next_from(now)
             #print("Next for ", now, spec," is ", next_t)
             if next_t and ret[0]>next_t:
-                ret=(next_t, f, spec)
+                ret=(next_t, spec)
         return ret
     def seconds_to_next_from(self, now):
         n=self.next_from(now)
