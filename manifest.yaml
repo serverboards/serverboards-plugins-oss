@@ -28,3 +28,6 @@ components:
               `everyday`
           placeholder: "* * * * * * *"
     stop: del_cron
+  - id: screen
+    type: screen
+    name: Cron Manager
