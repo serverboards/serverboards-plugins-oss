@@ -84,7 +84,7 @@ const Manager=React.createClass({
   }
 })
 
-function main(el, config){
+const main=function(el, config){
   Serverboards.ReactDOM.render(React.createElement(Manager, {serverboard: config.serverboard}), el)
 
   return function(){
