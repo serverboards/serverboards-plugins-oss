@@ -1,3 +1,4 @@
+(function () {
 'use strict';
 
 var React$2=Serverboards.React;
@@ -139,4 +140,6 @@ var plugin_id='serverboards.cron';
 var rpc=Serverboards.rpc;
 var {is_empty:is_empty}=Serverboards.utils;
 var Manager=React.createClass({displayName:'Manager',getInitialState:function getInitialState(){return{cronlines:void 0,action_catalog:void 0}},componentDidMount:function componentDidMount(){var _this=this;rpc.call('rules.list',{serverboard:this.props.serverboard.shortname}).then(function(d){return d.filter(function(f){return f.trigger.trigger==plugin_id+'/trigger'}).map(function(f){return{id:f.uuid,spec:f.trigger.params.timespec,name:f.name,action:f.actions.tick,is_active:f.is_active}})}).then(function(d){return _this.setState({cronlines:d})}).catch(function(d){console.error(d),Serverboards.Flash.error(JSON.stringify(d))});var c=Serverboards.store.getState().action.catalog;is_empty(c)?rpc.call('action.filter',{}).then(function(d){_this.setState({action_catalog:d})}):this.setState({action_catalog:c})},render:function render(){var _state=this.state,c=_state.cronlines,d=_state.action_catalog;return c&&d?React.createElement('div',{className:'ui container'},React.createElement('h1',{className:'ui header'},'Cron manager'),React.createElement('ul',null,c.sort(function(f,g){return f.spec.localeCompare(g.spec)}).map(function(f){return React.createElement(CronLine,_extends({key:f.id,action_catalog:d},f))}))):React.createElement(Serverboards.Components.Loading,null,'Cron info')}});function main(c,d){return Serverboards.ReactDOM.render(React.createElement(Manager,{serverboard:d.serverboard}),c),function(){Serverboards.ReactDOM.unmountComponentAtNode(c)}}Serverboards.add_screen(plugin_id+'/screen',main);
+
+}());
 //# sourceMappingURL=screen.js.map
