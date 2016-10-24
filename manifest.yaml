@@ -1,0 +1,11 @@
+id: serverboards.logmap
+name: Log Heatmap
+author: David Moreno <dmoreno@serverboards.io>
+url: https://serverboards.io
+description: Shows a heatmap of log entries
+
+components:
+  - id: widget
+    type: widget
+    name: Log Heatmap
+    
