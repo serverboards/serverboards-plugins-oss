@@ -56,7 +56,7 @@ const LogMap=React.createClass({
   componentDidMount(){
     let self=this
     store.on("serverboard.daterange", function({start, end}){
-      if (!start.isSame(this.state.start) || !start.isSame(this.state.end)){
+      if (!start.isSame(self.state.start) || !start.isSame(self.state.end)){
         self.setState({start, end})
         self.reload_heatmap()
       }

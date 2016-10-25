@@ -36,7 +36,7 @@ const Heatmap=React.createClass({
               <tr key={y}>
                 <td className="row header">{yshow(y, i)}</td>
                 {props.xaxis.map( (x) => [x,y] ).map( (k) =>
-                  <td key={k} className={`cell color${color(data[k])}`} title={`${k[0]} ${k[1]}:\n ${data[k] || 0}`}/>
+                  <td key={k}><span className={`cell color${color(data[k])}`} title={`${k[0]} ${k[1]}:\n ${data[k] || 0}`}/></td>
                 )}
               </tr>
             ))}
