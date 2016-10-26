@@ -20,13 +20,16 @@ components:
           label: Time trigger description
           description: |
             Cron format:
-              `YEAR MONTH DAY WEEK DAY_OF_WEEK HOUR MINUTE SECOND`
+              `YEAR MONTH DAY WEEK DAY_OF_WEEK HOUR MINUTE`
+
             Or some shortcuts:
               `3am workdays`, `16:00 weekends`, `everyday 3pm`
+
             It understands:
               `[time]am`, `[time]pm`, `[24h:60s]`, `workdays`, `weekends`,
               `everyday`
           placeholder: "* * * * * * *"
+          card: true
     stop: del_cron
   - id: screen
     type: screen
