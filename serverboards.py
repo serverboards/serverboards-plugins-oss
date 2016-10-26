@@ -137,7 +137,7 @@ class RPC:
             else: # maybe timeout already expired
                 read_ready=[]
 
-            #self.debug("Ready fds: %s // maybe_timer %s"%([x for x in read_ready], timeout_id))
+            self.debug("Ready fds: %s // maybe_timer %s"%([x for x in read_ready], timeout_id))
             if read_ready:
                 for ready in read_ready:
                     self.events[ready]()
@@ -169,6 +169,7 @@ class RPC:
         self.timer_id+=1
         next_stop=time.time()+interval
         self.timers[tid]=(next_stop, tid, interval, cont)
+        #self.info("I have %d timers"%len(self.timers))
         return tid
 
     def remove_timer(self, tid):

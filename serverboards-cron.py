@@ -10,7 +10,7 @@ cron=Cron()
 def add_cron(id, timespec, **kwargs):
     cronid=cron.add( timespec, id )
     update_cron_timer()
-    return cronid
+    return cronid.id
 
 @serverboards.rpc_method
 def del_cron(cronid):
@@ -35,20 +35,33 @@ def info():
             decorate(s)
             for s in cron.specs.values()
             ],
-        "next": dict(seconds=next_t[0], **decorate( next_t[1] ))
+        "next": {
+            "seconds" : next_t[0],
+            "specs": [
+                decorate( x ) for x in next_t[1]
+                ]
+            }
     }
 
+timer_id=None
 def update_cron_timer():
     serverboards.info("update cron trigger")
-    def trigger(id):
-        serverboards.info("trigger")
-        serverboards.rpc.event("trigger", id=str(id), state="tick")
-        (next_t, next_id) = cron.seconds_to_next()
-        serverboards.rpc.add_timer(next_t, lambda:trigger(next_id.id))
+    def update_timer():
+        (next_t, next_ids) = cron.seconds_to_next()
+        serverboards.info("trigger next in: %.2fs"%next_t)
+        global timer_id
+        if timer_id:
+            serverboards.rpc.remove_timer(timer_id)
+        timer_id = serverboards.rpc.add_timer(next_t, lambda:trigger(next_ids))
 
-    serverboards.info(repr(cron.seconds_to_next()))
-    (next_t, next_id) = cron.seconds_to_next()
-    serverboards.rpc.add_timer(next_t, lambda:trigger(next_id.id))
+
+    def trigger(ids):
+        serverboards.info("trigger: %s"%repr([i.id for i in ids]))
+        for i in ids:
+            serverboards.rpc.event("trigger", id=str(i.id), state="tick")
+        update_timer()
+
+    update_timer()
 
 def main():
     serverboards.loop()
@@ -75,23 +88,24 @@ def test():
     #print()
 
     cron=Cron()
-    cron.add("2017 1 1 * * * *", 1)
-    cron.add("2000 * * * * 12 30", 2)
-    cron.add("2000-2010 * * * * 11 30", 3)
-    cron.add("mon 19:30", 4)
+    c1=cron.add("2017 1 1 * * * *", 1)
+    c2=cron.add("2000 * * * * 12 30", 2)
+    c3=cron.add("2000-2010 * * * * 11 30", 3)
+    c4=cron.add("mon 19:30", 4)
+    c5=cron.add("mon 19:30", 5)
 
     #print(cron.add("3am", lambda:print("3am")))
     #print(cron.add("3pm", lambda:print("3pm")))
     #print(cron.add("16:30 monday", lambda:print("16:30 monday")))
-    #print(cron.next_from(datetime.datetime(2000,10,12, 12, 11)))
-    assert cron.next_from(datetime.datetime(2000,10,12, 12, 11))[0] == datetime.datetime(2000,10,12,12,30)
+    assert cron.next_from(datetime.datetime(2000,10,12, 12, 11)) == (datetime.datetime(2000,10,12,12,30), [c2])
     assert cron.next_from(datetime.datetime(2000,10,12, 12, 31))[0] == datetime.datetime(2000,10,13,11,30)
     assert cron.next_from(datetime.datetime(2010,1,1, 0, 0))[0] == datetime.datetime(2010,1,1,11,30)
     #print(cron.next_from(datetime.datetime(2017,1,1, 1, 0))[0])
     # not same, but +1min, as if same minute will loop forever. If im in a given minute the alarmalready passed
     assert cron.next_from(datetime.datetime(2017,1,1, 1, 0))[0] == datetime.datetime(2017,1,1,1,1)
+    assert cron.next_from(datetime.datetime(2016,10,24, 19, 00)) == (datetime.datetime(2016,10,24, 19, 30), [c4, c5])
 
-    #print(cron.seconds_to_next())
+    assert cron.seconds_to_next_from(datetime.datetime(2000,10,12, 12, 30))[0] > 59
     assert cron.seconds_to_next()[0] > 0
 
     print("Success")

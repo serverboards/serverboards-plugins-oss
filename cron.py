@@ -207,9 +207,10 @@ class Cron:
         self.max_date=datetime.datetime(3000,1,1)
     def add(self, timespec, f):
         spec_id=self.maxspec
-        self.specs[spec_id]=Cronspec(timespec, f)
+        cs=Cronspec(timespec, f)
+        self.specs[spec_id]=cs
         self.maxspec+=1
-        return spec_id
+        return cs
     def remove(self, spec_id):
         if spec_id in self.specs:
             del self.specs[spec_id]
@@ -223,8 +224,11 @@ class Cron:
         for spec in self.specs.values():
             next_t=spec.next_from(now)
             #print("Next for ", now, spec," is ", next_t)
-            if next_t and ret[0]>next_t:
-                ret=(next_t, spec)
+            if next_t:
+                if ret[0]>next_t:
+                    ret=(next_t, [spec])
+                elif ret[0]==next_t:
+                    ret[1].append(spec)
         return ret
     def seconds_to_next_from(self, now):
         n=self.next_from(now)
