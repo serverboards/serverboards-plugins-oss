@@ -2,6 +2,7 @@ const React = Serverboards.React
 const plugin_id = "serverboards.cron"
 const rpc = Serverboards.rpc
 const {is_empty} = Serverboards.utils
+const {goto} = Serverboards.location
 
 import CronLine from './cronline'
 
@@ -38,6 +39,9 @@ const Manager = React.createClass({
       })
     }
   },
+  handleAddRule(){
+    goto(`/serverboard/${this.props.serverboard.shortname}/rules/add`, {trigger: `${plugin_id}/trigger`})
+  },
   render(){
     const {cronlines, action_catalog} = this.state
 
@@ -49,11 +53,14 @@ const Manager = React.createClass({
     return (
       <div className="ui container">
         <h1 className="ui header">Cron manager</h1>
-        <ul>
+        <div className="ui cards">
           {cronlines.sort( (a,b) => (a.spec.localeCompare(b.spec)) ).map( (cl) => (
-            <CronLine key={cl.id} action_catalog={action_catalog}{...cl}/>
+            <CronLine key={cl.id} serverboard={this.props.serverboard.shortname} action_catalog={action_catalog}{...cl}/>
           ))}
-        </ul>
+        </div>
+        <a className="ui massive button _add icon floating pink" onClick={this.handleAddRule}>
+          <i className="add icon"></i>
+        </a>
       </div>
     )
   }

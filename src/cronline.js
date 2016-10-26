@@ -16,7 +16,7 @@ const CronLine = React.createClass({
           {props.spec}
           </div>
           <ActionDescription action={props.action} action_catalog={props.action_catalog}/>
-          <a onClick={() => goto(`/serverboard/SBDS/rules/${props.id}`)}>Edit</a>
+          <a onClick={() => goto(`/serverboard/${props.serverboard}/rules/${props.id}`)}>Edit</a>
         </div>
       </div>
     )
