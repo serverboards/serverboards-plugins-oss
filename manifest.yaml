@@ -1,0 +1,45 @@
+id: serverboards.prometheus
+name: Prometheus Service Integration
+author: David Moreno Montero <dmoreno@serverboards.io>
+
+components:
+  - id: service
+    type: service
+    name: Prometheus
+    traits: prometheus
+    fields:
+      - name: via
+        label: Via service
+        description: Connect via this service to access prometheus.
+        type: service
+        trait: ssh
+      - name: url
+        label: URL
+        description: URL to access prometheus, relative to service
+        placeholder: "http://localhost:9090"
+        type: url
+        card: true
+
+  - id: widget
+    type: widget
+    name: Prometheus graph
+    params:
+      - label: Prometheus service
+        name: service
+        type: service
+        traits: prometheus
+        placeholder: If left empty means its at http://localhost:9090
+      - label: Prometheus expression
+        name: expr
+        type: textarea
+        description: |
+          Check the [Prometheus documentation](https://prometheus.io/docs/querying/basics/)
+          for more information.
+        placeholder: "scrape_duration_seconds"
+
+  - id: daemon
+    type: cmd
+    strategy: singleton
+    name: Prometheus proxy
+    command: serverboards-prometheus.py
+    timeout: 1d
