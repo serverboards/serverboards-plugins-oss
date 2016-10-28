@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-import serverboards, sys, requests, time, json
+import serverboards, sys, requests, time, json, urllib
+from serverboards import rpc
 
 def decorate_serie(serie):
     """
@@ -12,14 +13,32 @@ def decorate_serie(serie):
         "values": serie.get("values",[])
     }
 
+open_ports={}
+ssh_id=None
+def port_tunnel(ssh_url, hostname, port):
+    rpc.debug("Open at tunel %s"%ssh_url)
+    global ssh_id
+    ret = open_ports.get( (ssh_url, hostname, port) )
+    if ret:
+        serverboards.debug("Using local port from cache: %s"% port)
+        return ret
+    if ssh_id is None:
+        ssh_id=rpc.call("plugin.start","serverboards.core.ssh/daemon")
+    newport = rpc.call(ssh_id+".open_port", url=ssh_url, hostname=hostname, port=port)
+    open_ports[ (ssh_url, hostname, port) ] = newport
+    serverboards.debug("Opened new port: %s"% newport)
+    return newport
+
 @serverboards.rpc_method
-def get(expression, service=None, url=None, start=None, end=None, step=None):
+def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
     if not expression:
         raise Exception("An expression is required")
     if not url:
         url="http://localhost:9090"
-    if service:
-        raise Exception("Not service proxying yet")
+    if ssh_proxy:
+        url=urllib.parse.urlparse(url)
+        port=port_tunnel(ssh_proxy, url.hostname, url.port)
+        url="http://localhost:%d"%port
 
     now=int(time.time())
 
@@ -37,6 +56,7 @@ def get(expression, service=None, url=None, start=None, end=None, step=None):
         "step": step,
         "_": now
     }
+    serverboards.debug("Get data from %s, %s"%(url,repr(ssh_proxy)))
     res = requests.get(url+"/api/v1/query_range", params=params)
     if res.status_code!=200:
         raise Exception(res.text)
@@ -44,7 +64,6 @@ def get(expression, service=None, url=None, start=None, end=None, step=None):
     js = res.json()
     if js.get("status")=="success":
         return [decorate_serie(x) for x in js.get("data",{}).get("result",[])]
-    print(json.dumps(js, indent=2))
     raise Exception("Unknown response from prometheus")
 
 def test():

@@ -4,7 +4,9 @@
   let {LineGraph} = Serverboards.graphs
 
   function main(el, config){
+    console.log("Prom config is %o", config)
     let prometheus
+    let ssh_proxy
     let $el=$('<div>')
     $(el).append($el)
 
@@ -15,25 +17,47 @@
         expression: config.expr,
         start: start.format("X"),
         end: end.format("X"),
-        step: Math.max(end.diff(start,"seconds") / 256, 14)
+        step: Math.max(end.diff(start,"seconds") / 256, 14),
+
+        url: config.service.config.url,
+        ssh_proxy: ssh_proxy
       }
       graph.set_loading()
 
       return rpc.call(prometheus+".get", params).then( (data) => {
-        console.log(data)
+        //console.log(data)
         graph.set_data(data)
       }).catch( (e) => {
         graph.set_error(e)
       })
     }
 
-    store.on("serverboard.daterange", update)
-    rpc.call("plugin.start", ["serverboards.prometheus/daemon"]).then( (prom) => {
-      prometheus=prom
-      update()
-    })
+    store.on("serverboard.daterange.start", update)
+    store.on("serverboard.daterange.end", update)
+    let calls=[]
+    calls.push(
+      rpc.call("plugin.start", ["serverboards.prometheus/daemon"]).then( (prom) => {
+        prometheus=prom
+      })
+    )
+    if (config.service.config.via){
+      calls.push(
+        rpc.call("service.info",[config.service.config.via]).then( (service) => {
+          ssh_proxy=service.config.url
+          console.log("Setting ssh proxy: %s", ssh_proxy)
+        })
+      )
+    }
 
-    console.log("Ready!")
+    Promise.all(calls).then( () =>
+      update()
+    )
+
+    return function(){
+      if (ssh_proxy)
+        // FIXME
+        console.warn("Might be leaking SSH proxy ports.")
+    }
   }
 
   Serverboards.add_widget(widget_id, main)

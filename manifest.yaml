@@ -43,3 +43,4 @@ components:
     name: Prometheus proxy
     command: serverboards-prometheus.py
     timeout: 1d
+    perms: plugin
