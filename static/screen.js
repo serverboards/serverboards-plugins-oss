@@ -27,6 +27,19 @@ function main(element, config){
     })
   }
 
+  function requestFullscreen(element){
+    if(element.requestFullscreen) {
+      element.requestFullscreen();
+    } else if(element.mozRequestFullScreen) {
+      element.mozRequestFullScreen();
+    } else if(element.webkitRequestFullscreen) {
+      element.webkitRequestFullscreen();
+    } else if(element.msRequestFullscreen) {
+      element.msRequestFullscreen();
+    }
+    console.error("Cant set fullscreen! No method found.")
+  }
+
   var hostname = "localhost"
   var port = 8080
   var ws_uuid, ssh_id, spice_port
@@ -39,6 +52,10 @@ function main(element, config){
     port=matches[2]
     hostname=matches[1]
   }
+
+  $(element).find('#spice-fullscreen').on('click', function(){
+    requestFullscreen( $(element).find('#spice')[0] )
+  })
 
   if (via && via!=hostname){
     console.log("Connect via: %o %o",config.service.config.via.config.url, config)
@@ -64,7 +81,7 @@ function main(element, config){
       })
       iframe.attr("src", iframe_url)
       $(element).find('#message').hide()
-      console.log(iframe)
+      //console.log(iframe)
       $(element).find('#spice').html(iframe).css('height','100%')
     }).catch( (e) => {
       Flash.error("Error initializating the spice connection.")
