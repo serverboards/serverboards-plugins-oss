@@ -37,7 +37,17 @@ function main(element, config){
     } else if(element.msRequestFullscreen) {
       element.msRequestFullscreen();
     }
-    console.error("Cant set fullscreen! No method found.")
+    else
+      console.error("Cant set fullscreen! No method found.")
+  }
+  function exitFullscreen() {
+    if(document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if(document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if(document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
   }
 
   var hostname = "localhost"
@@ -54,7 +64,19 @@ function main(element, config){
   }
 
   $(element).find('#spice-fullscreen').on('click', function(){
-    requestFullscreen( $(element).find('#spice')[0] )
+    requestFullscreen( $(element).find('#fullscreenable')[0] )
+  })
+  $(element).find('#nofullscreen').on('click', function(){
+    exitFullscreen()
+  })
+  $(document).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", function(ev){
+    var isFullScreen = document.fullScreen ||
+                       document.mozFullScreen ||
+                       document.webkitIsFullScreen;
+    if (isFullScreen)
+      $(element).find('#fullscreenable').addClass("fullscreen")
+    else
+      $(element).find('#fullscreenable').removeClass("fullscreen")
   })
 
   if (via && via!=hostname){
@@ -93,6 +115,7 @@ function main(element, config){
       rpc.call(ssh_id+".close_port", [spice_port]).then(() => {
         console.log("Closing spice connection")
       })
+      $(document).off("webkitfullscreenchange mozfullscreenchange fullscreenchange")
     }
 }
 
