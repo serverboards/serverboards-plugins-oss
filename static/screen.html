@@ -1,23 +1,39 @@
 <style>
 #screen{
   position: relative;
+  flex-grow: 1;
+  display: flex;
+  flex-flow: column;
 }
-#screen div#spice, #screen iframe{
-  height: calc( 100vh - 150px );
+#screen div#spice{
+  height: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-flow: column;
+}
+#screen iframe{
+  flex-grow: 1;
+}
+#spice p{
+  display: block;
+  color: white;
+  font-size: 20px;
+  font-family: sans-serif;
+  padding: 4px;
 }
 </style>
 
-<div id="screen">
-  <div id="header">
-    <h1 class="ui header">Spice connection</h1>
-    <div>
-      Connect with external program: <a id="spice-link">--</a>
+<div id="screen" class="ui background dark grey">
+  <div id="header" class="ui secondary top menu">
+    <h3 class="ui header">Spice connection</h3>
+    <div class="right menu">
+      <a id="spice-link-tab" class="item" target="_blank">
+        <i class="ui add icon"/>
+      </a>
+      <a id="spice-link" class="item">
+        <i class="ui external icon"/>
+      </a>
     </div>
   </div>
-  <div class="ui message" id="message">
-    <div class="ui loading visible">
-      <i class="ui icon loading spinner"/> Loading...
-    </div>
-  </div>
-  <div id="spice"></div>
+  <div id="spice"><p>Loading...</p></div>
 </div>

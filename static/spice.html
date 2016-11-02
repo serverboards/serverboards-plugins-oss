@@ -26,7 +26,6 @@
 <!doctype html>
 <html>
     <head>
-
         <title>Spice Javascript client</title>
         <script src="spice-html5/spicearraybuffer.js"></script>
         <script src="spice-html5/enums.js"></script>
@@ -57,20 +56,12 @@
         <script src="spice-html5/resize.js"></script>
         <script src="spice-html5/filexfer.js"></script>
         <script src="spice.js"></script>
+        <link rel="stylesheet" type="text/css" href="spice.css">
     </head>
     <body>
-      <style>
-div#message-div{
-  background: #eee;
-  border-radius: 2px;
-  border: 1px solid #ddd;
-  max-height: 10em;
-  overflow: auto;
-}
-div#message-div p{
-  margin: 0;
-}
-      </style>
+        <div id="loading" class="show">
+          Connecting...
+        </div>
         <div id="spice-area">
             <div id="spice-screen" class="spice-screen"></div>
         </div>

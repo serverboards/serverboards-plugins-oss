@@ -60,7 +60,18 @@ function connect(){
     try
     {
         sc = new SpiceMainConn({uri: uri, screen_id: "spice-screen", dump_id: "debug-div",
-                    message_id: "message-div", password: password, onerror: spice_error, onagent: agent_connected });
+                    message_id: "message-div",
+                    password: password,
+                    onerror: spice_error,
+                    onagent: agent_connected,
+                    onsuccess: function(msg){
+                      console.log(msg);
+                      if (msg=="Connected")
+                        connected(sc)
+                      if (msg=="onagent")
+                        agent_connected(sc)
+                    }
+                   });
     }
     catch (e)
     {
@@ -71,6 +82,8 @@ function connect(){
 }
 
 function disconnect(){
+    document.getElementById('loading').className="show"
+    document.getElementById('loading').innerText="Disconnected."
     console.log(">> disconnect");
     if (sc) {
         sc.stop();
@@ -83,6 +96,11 @@ function disconnect(){
         document.getElementById('spice-area').removeEventListener('drop', handle_file_drop, false);
     }
     console.log("<< disconnect");
+}
+
+function connected(sc){
+  window.spice_connection = this;
+  document.getElementById('loading').className="hidden"
 }
 
 function agent_connected(sc){
