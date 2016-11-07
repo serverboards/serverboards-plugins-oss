@@ -1,4 +1,5 @@
 const {React, Flash} = Serverboards
+
 import crypto from './crypto'
 
 const EditSecret = React.createClass({

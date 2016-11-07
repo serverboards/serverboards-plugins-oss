@@ -14,11 +14,14 @@ const ViewSecret=React.createClass({
     }
   },
   handleSave(title, secret){
-    if (title!=this.props.title){
-      Flash.info("Changing secret name is not yet supported")
-    }
-    rpc.call("plugin.data_set", [plugin_id, `text.${this.props.title}`, secret])
-      .then( () => this.setState({edit: false, text: undefined, password: undefined }) )
+    rpc.call("plugin.data_set", [plugin_id, `text.${title}`, secret])
+      .then( () => {
+        this.setState({edit: false, text: undefined, password: undefined })
+        if (title!=this.props.title) // remove old one
+          return rpc.call("plugin.data_remove", [plugin_id, `text.${this.props.title}`]).then( () => {
+          })
+      })
+      .then( () => this.props.reload(`text.${title}`) )
       .catch( (e) => {
         console.error(e)
         Flash.error("Error saving secret")
@@ -31,6 +34,7 @@ const ViewSecret=React.createClass({
     try{
       const text = crypto.decrypt(password, this.props.secret)
       this.setState({text, password})
+      this.props.onSecretVisible(true)
       //this.props.onSecretSelect(`text.${this.props.title}`)
     }
     catch(e){
@@ -61,7 +65,7 @@ const ViewSecret=React.createClass({
       <div className="ui text container">
         <MarkdownPreview value={state.text}/>
         <div className="ui divider"/>
-        <button className="ui button yellow" onClick={this.handleOpenEdit}>Edit</button>
+        <button style={{float: "right"}} className="ui button yellow" onClick={this.handleOpenEdit}>Edit</button>
       </div>
     )
   }

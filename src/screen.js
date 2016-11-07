@@ -10,9 +10,11 @@ const View = React.createClass({
   getInitialState(){
     return {
       secrets: {},
-      title: "--",
+      title: undefined,
       secret: undefined,
-      add: false
+      secret_id: undefined,
+      add: false,
+      visible: false
     }
   },
   componentDidMount(){
@@ -22,26 +24,61 @@ const View = React.createClass({
         secrets[k]=k.slice(5)
       })
       this.setState({secrets})
+      if (this.state.secret_id){
+        this.handleSecretSelect(this.state.secret_id)
+      }
     })
   },
   handleSecretSelect(secret){
+    console.log("secret %o", secret )
     rpc.call("plugin.data_get", [plugin_id, secret]).then( (data) => {
-      this.setState({secret: data, title: this.state.secrets[secret]})
+      this.setState({secret: data, title: this.state.secrets[secret], secret_id: secret, add: false, visible: false})
     })
   },
   handleAddSecretDialog(){
-    this.setState({add: true})
+    this.setState({add: true, title: "Add a new secret", secret_id: undefined})
   },
   handleAddSecret(title, secret){
     let self=this
-    rpc.call('plugin.data_set', [plugin_id, `text.${title}`, secret]).then( (res) => {
+    const secret_id = `text.${title}`
+    rpc.call('plugin.data_set', [plugin_id, secret_id, secret]).then( (res) => {
       console.log("Saved encrypted data: %o: %o", title, res)
-      const secrets = utils.merge(this.state.secrets, { [`text.${title}`]: title})
-      self.setState({add: false, secret, title, secrets})
+      const secrets = utils.merge(this.state.secrets, { [secret_id]: title})
+      self.setState({add: false, secret, title, secrets, secret_id})
     }).catch(function(e){
       console.error(e)
       Flash.error("Could not save encrypted secret")
     })
+  },
+  handleDeleteSecret(){
+    const secret_id = this.state.secret_id
+    rpc.call("plugin.data_remove", [plugin_id, secret_id]).then( () => {
+      console.log("Deleted secret %o", secret_id)
+      let secrets = {}
+      Object.keys(this.state.secrets).map( (k) => {
+        if (k!=secret_id)
+          secrets[k]=this.state.secrets[k]
+      })
+      this.setState({secret_id: undefined, secrets, secret: undefined, title: undefined, visible: false})
+    })
+  },
+  handleTitleChange(oldtitleid, newtitleid, newtitle){
+    let secrets = {}
+    Object.keys(this.state.secrets).map( (k) => {
+      if (k==oldtitleid)
+        secrets[newtitleid]=newtitle
+      else
+        secrets[k]=this.state.secrets[k]
+    })
+    this.setState({secret_id: newtitleid, secrets, title: newtitle})
+  },
+  handleSecretVisible(visible=true){
+    this.setState({visible})
+  },
+  reload(secret_id = undefined){
+    this.setState(this.getInitialState())
+    this.setState({secret_id})
+    this.componentDidMount()
   },
   render(){
     const props=this.props
@@ -51,8 +88,10 @@ const View = React.createClass({
         <Header
           secrets={state.secrets}
           title={state.title}
+          secret={state.secret_id}
           onSecretSelect={this.handleSecretSelect}
           onSecretAdd={this.handleAddSecretDialog}
+          onDelete={state.visible && this.handleDeleteSecret}
           />
         {state.add ? (
           <EditSecret
@@ -63,6 +102,8 @@ const View = React.createClass({
             secret={state.secret}
             title={state.title}
             onSecretChange={state.handleSecretSelect}
+            onSecretVisible={this.handleSecretVisible}
+            reload={this.reload}
             />
         ) : (
           <div className="ui text container">No secret selected. Select a secret from the top menu or add one.</div>
