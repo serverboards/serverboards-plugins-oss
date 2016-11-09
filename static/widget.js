@@ -3,8 +3,8 @@
   let {rpc, moment, store} = Serverboards
   let {LineGraph} = Serverboards.graphs
 
-  function main(el, config){
-    console.log("Prom config is %o", config)
+  function main(el, config, context){
+    //console.log("Prom config is %o", config)
     let prometheus
     let ssh_proxy
     let $el=$('<div>')
@@ -25,8 +25,8 @@
       graph.set_loading()
 
       return rpc.call(prometheus+".get", params).then( (data) => {
-        //console.log(data)
         graph.set_data(data)
+        context.setTitle(config.expr)
       }).catch( (e) => {
         graph.set_error(e)
       })
