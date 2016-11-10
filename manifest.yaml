@@ -18,8 +18,8 @@ components:
       - name: via
         type: service
         label: Connect via
-        trait: ssh
-        description: Connection are never made directly always via an SSH access
+        traits: ssh
+        description: Connection are never made directly. Always via an SSH access.
       - name: port
         type: text
         label: Port
