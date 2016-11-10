@@ -26,6 +26,7 @@ components:
             or globs. Variables are: {today}, {today_}, {today_year},
             {today_month}, {today_day}, {yesterday}, {yesteday_}... All full
             dates in ISO format.
+          card: true
         - name: when
           type: text
           label: When
@@ -42,7 +43,7 @@ components:
   - name: Backup watcher manager
     description: Eases the management of the rules for backup watchers
     id: manager
-    type: screen
+    type: --screen
 
   - name: Daemon
     id: daemon
@@ -53,3 +54,16 @@ components:
       - service.info
       - plugin.data[serverboards.backup.monitor]
       - action.trigger[serverboards.core.ssh/exec]
+
+  - name: Mark service with backup tag
+    type: action template
+    id: action.tag_updown
+    actions:
+      exists:
+        action: serverboards.core.actions/set-tags
+        params:
+          tags: "-BACKUP_FAILED"
+      not-exists:
+        action: serverboards.core.actions/set-tags
+        params:
+          tags: "+BACKUP_FAILED"

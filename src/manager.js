@@ -75,7 +75,7 @@ const Manager=React.createClass({
         </table>
         <button className="ui yellow button">Update backup rules changes</button>
 
-        <a onClick={this.addRow} className="ui massive button _add icon floating green" onClick={this.handleAddRule}>
+        <a className="ui massive button _add icon floating green" onClick={this.handleAddRule}>
           <i className="add icon"></i>
         </a>
 

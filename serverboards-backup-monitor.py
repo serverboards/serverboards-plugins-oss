@@ -62,66 +62,72 @@ def filename_template(filename):
         yesterday_day=yesterday_dt.day,
     )
 
-file_exist_timers={}
+class RemoteCheck:
+    file_exist_timers={}
+
+    def __init__(self, id, service, file_expression, when):
+        self.prev_exists=None
+        self.id=id
+        self.service=service
+        self.file_expression=file_expression
+        self.when=when
+    def check(self):
+        if RemoteCheck.file_exist_timers.get(self.id):
+            rpc.remove_timer(RemoteCheck.file_exist_timers.get(self.id))
+
+        url = self.service["config"]["url"]
+
+        filename=filename_template(self.file_expression)
+
+        rpc.debug("Checking state")
+        res = rpc.call(
+            "action.trigger_wait",
+            "serverboards.core.ssh/exec",
+            dict(url=url, command="stat -c '%%s %%y' %s; stat -f -c '%%f %%s' %s"%(filename, filename)))
+        rpc.debug("SSH stat result: %s"%res)
+
+        exists = res['exit']==0
+        if exists != self.prev_exists:
+            if exists:
+                serverboards.rpc.event("trigger", id=self.id, state="exists")
+                res=res['stdout'].split()
+                data = {
+                    "filename" : filename,
+                    "size" : int(res[0])/(1024*1024), # In MB
+                    "datetime" : res[1]+'T'+res[2],
+                    "disk_free" : int(res[3])*int(res[4])/(1024*1024)
+                }
+                sha  = hashlib.sha256(
+                    (self.file_expression + "-" + self.service["uuid"]).encode('utf8')
+                    ).hexdigest()
+
+                rpc.call("plugin.data_set", plugin_id, 'test-'+sha, data)
+            else:
+                serverboards.rpc.event("trigger", {"id": self.id, "state" : "not-exists"})
+            self.prev_exists = exists
+
+        self.rearm()
+    def rearm(self):
+        next_when=get_next_when(self.when)
+        serverboards.debug("Wait %d:%d:%d"%(next_when/(60*60), (next_when/60)%60, next_when%60))
+        timer_id = rpc.add_timer(next_when, self.check)
+        RemoteCheck.file_exist_timers[self.id]=timer_id
+    def start(self):
+        timer_id = rpc.add_timer(random.randint(0,10), self.check)
+        RemoteCheck.file_exist_timers[self.id]=timer_id
+
 
 @serverboards.rpc_method
 def file_exists(id, service, file_expression, when):
-    class Check:
-        def __init__(self):
-            self.prev_exists=None
-        def check(self):
-            if file_exist_timers.get(id):
-                rpc.remove_timer(file_exist_timers.get(id))
-
-            url = rpc.call("service.info", service)["config"]["url"]
-
-            filename=filename_template(file_expression)
-
-            res = rpc.call(
-                "action.trigger_wait",
-                "serverboards.core.ssh/exec",
-                dict(url=url, command="stat -c '%%s %%y' %s; stat -f -c '%%f %%s' %s"%(filename, filename)))
-            rpc.debug("SSH stat result: %s"%res)
-
-            exists = res['exit']==0
-            if exists != self.prev_exists:
-                if exists:
-                    serverboards.rpc.event("trigger", id=id, state="exists")
-                    res=res['stdout'].split()
-                    data = {
-                        "filename" : filename,
-                        "size" : int(res[0])/(1024*1024), # In MB
-                        "datetime" : res[1]+'T'+res[2],
-                        "disk_free" : int(res[3])*int(res[4])/(1024*1024)
-                    }
-                    sha  = hashlib.sha256(
-                        (file_expression + "-" + service).encode('utf8')
-                        ).hexdigest()
-
-                    rpc.call("plugin.data_set", plugin_id, 'test-'+sha, data)
-                else:
-                    serverboards.rpc.event("trigger", {"id": id, "state" : "not-exists"})
-                self.prev_exists = exists
-
-            self.rearm()
-        def rearm(self):
-            next_when=get_next_when(when)
-            serverboards.debug("Wait %d:%d:%d"%(next_when/(60*60), (next_when/60)%60, next_when%60))
-            timer_id = rpc.add_timer(next_when, self.check)
-            file_exist_timers[id]=timer_id
-        def start(self):
-            timer_id = rpc.add_timer(random.randint(0,10), self.check)
-            file_exist_timers[id]=timer_id
-
-    Check().start()
+    RemoteCheck(id, service, file_expression, when).start()
+    serverboards.debug("Backup watcher ready for %s"%(file_expression))
     return id
 
 @serverboards.rpc_method
 def stop_file_exists(id):
-    if file_exist_timers.get(id):
-        rpc.remove_timer(file_exist_timers.get(id))
-        del file_exist_timers[id]
-
+    if RemoteCheck.file_exist_timers.get(id):
+        rpc.remove_timer(RemoteCheck.file_exist_timers.get(id))
+        del RemoteCheck.file_exist_timers[id]
 
 def test():
     assert convert_timespec_to_seconds("0am") == 0
