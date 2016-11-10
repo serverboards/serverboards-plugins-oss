@@ -14,7 +14,9 @@ def add_cron(id, timespec, **kwargs):
 
 @serverboards.rpc_method
 def del_cron(cronid):
-    return cron.remove(cronid)
+    ret=cron.remove(cronid)
+    update_cron_timer()
+    return ret
 
 @serverboards.rpc_method
 def info():

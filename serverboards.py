@@ -137,13 +137,16 @@ class RPC:
             else: # maybe timeout already expired
                 read_ready=[]
 
-            self.debug("Ready fds: %s // maybe_timer %s"%([x for x in read_ready], timeout_id))
+            #self.debug("Ready fds: %s // maybe_timer %s"%([x for x in read_ready], timeout_id))
             if read_ready:
                 for ready in read_ready:
                     self.events[ready]()
             else: # timeout
                 self.timers[timeout_id]=(time.time()+timeout, timeout_id, timeout, timeout_cont)
-                timeout_cont()
+                try:
+                    timeout_cont()
+                except:
+                    import traceback; traceback.print_exc(file=self.write_to_log)
 
         self.loop_status=prev_status
 
@@ -169,7 +172,6 @@ class RPC:
         self.timer_id+=1
         next_stop=time.time()+interval
         self.timers[tid]=(next_stop, tid, interval, cont)
-        #self.info("I have %d timers"%len(self.timers))
         return tid
 
     def remove_timer(self, tid):
@@ -201,7 +203,7 @@ class RPC:
           self.stdout.flush()
         except IOError:
           if self.loop_status=='EXIT':
-            os.exit(1)
+            sys.exit(1)
           self.loop_stop(debug=False)
 
 

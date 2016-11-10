@@ -32,5 +32,5 @@ components:
           card: true
     stop: del_cron
   - id: screen
-    type: screen
+    type: --screen
     name: Cron Manager

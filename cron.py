@@ -134,7 +134,7 @@ def match_weekday(spec):
     def match(now, ymd):
         #print(spec, ymd)
         weekday=datetime.datetime(*ymd).isoweekday()%7
-        if weekday in list(efs(0,7)):
+        if weekday in list(efs(0,6)):
             return [ymd]
         return []
     return match
@@ -160,7 +160,7 @@ def match_minutes(spec):
         #print("Match minutes", spec, now, ymdhh, minminute)
         return (
             datetime.datetime(*(ymd+(hh, mm))) for mm in
-            efs(minminute,60)
+            efs(minminute,59)
             )
     return match
 
