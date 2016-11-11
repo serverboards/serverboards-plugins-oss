@@ -23,7 +23,7 @@ const EditSecret = React.createClass({
       Flash.error("Passwords do not match!")
       return;
     }
-    const files = this.props.files.filter( (f) => {
+    const files = (this.props.files || []).filter( (f) => {
       return $(this.refs.el).find(`input[type=checkbox][name="${f.name}"]`).is(':checked')
     })
     let data = {
@@ -72,20 +72,24 @@ const EditSecret = React.createClass({
             <label>Upload new file</label>
             <input type="file" ref="upload" multiple={true}/>
 
-            <label>Files to keep</label>
-            <div className="ui meta">Unmark files to remove them from the secret</div>
-            <div className="ui three column grid">
-              {props.files.map( (f) => (
-                <div className="field column">
-                  <div className="ui checkbox">
-                    <input type="checkbox" className="ui checkbox" name={f.name} checked={true} className="hidden"/>
-                    <label>
-                      <FileThumb {...f}/>
-                    </label>
-                  </div>
+            {(props.files || []).length > 0 ? (
+              <div>
+                <label>Files to keep</label>
+                <div className="ui meta">Unmark files to remove them from the secret</div>
+                <div className="ui three column grid">
+                  {(props.files || []).map( (f) => (
+                    <div className="field column">
+                      <div className="ui checkbox">
+                        <input type="checkbox" className="ui checkbox" name={f.name} checked={true} className="hidden"/>
+                        <label>
+                          <FileThumb {...f}/>
+                        </label>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : null}
           </div>
           <div className="inline field">
             <label>Password: </label>
