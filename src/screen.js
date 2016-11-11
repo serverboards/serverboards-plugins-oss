@@ -80,7 +80,6 @@ const View = React.createClass({
     rpc.call("plugin.data_set", [plugin_id, `${this.props.serverboard}.${title}`, secret])
       .then( () => {
         if (title!=this.state.title) // remove old one
-          console.log("Rename secret, remove old", title, this.state.title)
           return rpc.call("plugin.data_remove", [plugin_id, `${this.props.serverboard}.${this.state.title}`])
       })
       .then( () => this.reload(`${this.props.serverboard}.${title}`) )
