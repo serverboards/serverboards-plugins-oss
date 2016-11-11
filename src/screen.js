@@ -18,10 +18,11 @@ const View = React.createClass({
     }
   },
   componentDidMount(){
-    rpc.call('plugin.data_keys', [plugin_id, `text.`]).then( (keys) => {
+    rpc.call('plugin.data_keys', [plugin_id, `${this.props.serverboard}.text.`]).then( (keys) => {
       let secrets={}
+      const slicepoint = this.props.serverboard.length + 6
       keys.map( (k) => {
-        secrets[k]=k.slice(5)
+        secrets[k]=k.slice(slicepoint)
       })
       this.setState({secrets})
       if (this.state.secret_id){
@@ -40,7 +41,7 @@ const View = React.createClass({
   },
   handleAddSecret(title, secret){
     let self=this
-    const secret_id = `text.${title}`
+    const secret_id = `${this.props.serverboard}.text.${title}`
     rpc.call('plugin.data_set', [plugin_id, secret_id, secret]).then( (res) => {
       console.log("Saved encrypted data: %o: %o", title, res)
       const secrets = utils.merge(this.state.secrets, { [secret_id]: title})
@@ -75,6 +76,19 @@ const View = React.createClass({
   handleSecretVisible(visible=true){
     this.setState({visible})
   },
+  handleSave(title, secret){
+    rpc.call("plugin.data_set", [plugin_id, `${this.props.serverboard}.text.${title}`, secret])
+      .then( () => {
+        if (title!=this.props.title) // remove old one
+          return rpc.call("plugin.data_remove", [plugin_id, `text.${this.props.title}`]).then( () => {
+          })
+      })
+      .then( () => this.reload(`${this.props.serverboard}.text.${title}`) )
+      .catch( (e) => {
+        console.error(e)
+        Flash.error("Error saving secret")
+      })
+  },
   reload(secret_id = undefined){
     this.setState(this.getInitialState())
     this.setState({secret_id})
@@ -101,6 +115,7 @@ const View = React.createClass({
           <ViewSecret
             secret={state.secret}
             title={state.title}
+            onSave={this.handleSave}
             onSecretChange={state.handleSecretSelect}
             onSecretVisible={this.handleSecretVisible}
             reload={this.reload}
@@ -114,7 +129,8 @@ const View = React.createClass({
 })
 
 function main(el, config){
-  Serverboards.ReactDOM.render(<View/>, el)
+  console.log("secrets config:",config)
+  Serverboards.ReactDOM.render(<View serverboard={config.serverboard.shortname}/>, el)
 
   return function(){
     Serverboards.ReactDOM.unmountComponentAtNode(el)

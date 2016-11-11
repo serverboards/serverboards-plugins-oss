@@ -12,12 +12,12 @@ const Header = React.createClass({
     $(this.refs.secret_select).dropdown({})
   },
   handleSecretSelect(ev){
-    console.log("Secret change %o", ev.target.value)
+    //console.log("Secret change %o", ev.target.value)
     if (ev.target.value)
       this.props.onSecretSelect(ev.target.value)
   },
   componentWillReceiveProps(newprops){
-    console.log("new props %o, %o: %o", newprops.secret, this.props.secret, newprops.secret != this.props.secret)
+    //console.log("new props %o, %o: %o", newprops.secret, this.props.secret, newprops.secret != this.props.secret)
     if (newprops.secret != this.props.secret){
       setTimeout( () => {
         if (newprops.secret)

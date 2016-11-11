@@ -13,20 +13,6 @@ const ViewSecret=React.createClass({
       edit: false
     }
   },
-  handleSave(title, secret){
-    rpc.call("plugin.data_set", [plugin_id, `text.${title}`, secret])
-      .then( () => {
-        this.setState({edit: false, text: undefined, password: undefined })
-        if (title!=this.props.title) // remove old one
-          return rpc.call("plugin.data_remove", [plugin_id, `text.${this.props.title}`]).then( () => {
-          })
-      })
-      .then( () => this.props.reload(`text.${title}`) )
-      .catch( (e) => {
-        console.error(e)
-        Flash.error("Error saving secret")
-      })
-  },
   handleOpenEdit(){
     this.setState({edit:true})
   },
@@ -54,7 +40,7 @@ const ViewSecret=React.createClass({
           password={state.password}
           content={state.text}
           title={this.props.title}
-          onSave={this.handleSave}
+          onSave={this.props.onSave}
           />
       )
     if (!state.password)
