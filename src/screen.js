@@ -18,9 +18,9 @@ const View = React.createClass({
     }
   },
   componentDidMount(){
-    rpc.call('plugin.data_keys', [plugin_id, `${this.props.serverboard}.text.`]).then( (keys) => {
+    rpc.call('plugin.data_keys', [plugin_id, `${this.props.serverboard}.`]).then( (keys) => {
       let secrets={}
-      const slicepoint = this.props.serverboard.length + 6
+      const slicepoint = this.props.serverboard.length + 1
       keys.map( (k) => {
         secrets[k]=k.slice(slicepoint)
       })
@@ -41,7 +41,7 @@ const View = React.createClass({
   },
   handleAddSecret(title, secret){
     let self=this
-    const secret_id = `${this.props.serverboard}.text.${title}`
+    const secret_id = `${this.props.serverboard}.${title}`
     rpc.call('plugin.data_set', [plugin_id, secret_id, secret]).then( (res) => {
       console.log("Saved encrypted data: %o: %o", title, res)
       const secrets = utils.merge(this.state.secrets, { [secret_id]: title})
@@ -77,13 +77,13 @@ const View = React.createClass({
     this.setState({visible})
   },
   handleSave(title, secret){
-    rpc.call("plugin.data_set", [plugin_id, `${this.props.serverboard}.text.${title}`, secret])
+    rpc.call("plugin.data_set", [plugin_id, `${this.props.serverboard}.${title}`, secret])
       .then( () => {
-        if (title!=this.props.title) // remove old one
-          return rpc.call("plugin.data_remove", [plugin_id, `text.${this.props.title}`]).then( () => {
-          })
+        if (title!=this.state.title) // remove old one
+          console.log("Rename secret, remove old", title, this.state.title)
+          return rpc.call("plugin.data_remove", [plugin_id, `${this.props.serverboard}.${this.state.title}`])
       })
-      .then( () => this.reload(`${this.props.serverboard}.text.${title}`) )
+      .then( () => this.reload(`${this.props.serverboard}.${title}`) )
       .catch( (e) => {
         console.error(e)
         Flash.error("Error saving secret")
