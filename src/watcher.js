@@ -62,23 +62,27 @@ const BackupFileRow = React.createClass({
     const state = this.state
     return (
       <tr style={{cursor:"pointer"}}>
-        <td data-tooltip={state.state} title={state.state} style={{paddingLeft:5}}>
-          <i className={`ui label circular small ${state.color}`}/>
-        </td>
-        <td style={{padding: "10px 0"}}>
+        <td style={{padding: "10px 10px"}}>
           <div
             className="ui oneline"
             data-tooltip={state.filename}
             title={state.filename}
-            style={{maxWidth: 150}}
             >
-            {basename(state.filename || '')}
+            {state.filename}
           </div>
           <div className="ui meta">{state.servername}</div>
         </td>
-        <td>
-          <div className="ui oneline" style={{fontSize:"0.8em"}}>{state.datetime}</div>
-          <b>{state.size ? `${state.size.toFixed(2)} MB` : ''}</b>
+        <td style={{width:100}}>
+          {state.state == "Ok" ? (
+            <div><b style={{fontSize:"1.1em"}}>OK</b></div>
+          ) : (
+            <div className={`ui text ${state.color}`}><b>{state.state}</b></div>
+          )}
+          <div><b>{state.size ? `${state.size.toFixed(2)} MB` : ''}</b></div>
+          <div className="ui oneline" style={{fontSize:"12px", color: "#666"}}>{state.datetime}</div>
+        </td>
+        <td title={state.state} style={{textAlign:"right"}} style={{width: 10}}>
+          <i className={`ui label rectangular ${state.color}`}/>
         </td>
       </tr>
     )
