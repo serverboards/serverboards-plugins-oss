@@ -1,6 +1,18 @@
 id: serverboards.prometheus
 name: Prometheus Service Integration
 author: David Moreno Montero <dmoreno@serverboards.io>
+url: https://serverboards.io
+description: |
+  This plugin allows Serveboards to connect to a Prometheus installation.
+
+  Prometheus is an state of the art monitoring system that allows to know the
+  state of you full infrastucture KPI over time, providing a powerful
+  quering system.
+
+  With this plugin is is possible to have graphs in the dashboards as well as
+  alerting when some conditions apply.
+
+  Prometheus configuration must be done externally to Serverboards.
 
 components:
   - id: service
