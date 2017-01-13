@@ -49,22 +49,29 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
     if not step:
         step=14
 
-    params = {
-        "query": expression,
-        "start": start,
-        "end": end,
-        "step": step,
-        "_": now
-    }
-    serverboards.debug("Get data from %s, %s"%(url,repr(ssh_proxy)))
-    res = requests.get(url+"/api/v1/query_range", params=params)
-    if res.status_code!=200:
-        raise Exception(res.text)
+    ret=[]
+    for expr in expression.split('\n'): # maybe several expresions, one per line
+        expr=expr.strip()
+        if not expr:
+            continue
+        params = {
+            "query": expr,
+            "start": start,
+            "end": end,
+            "step": step,
+            "_": now
+        }
+        serverboards.debug("Get data from %s, %s"%(url,repr(ssh_proxy)))
+        res = requests.get(url+"/api/v1/query_range", params=params)
+        if res.status_code!=200:
+            raise Exception(res.text)
 
-    js = res.json()
-    if js.get("status")=="success":
-        return [decorate_serie(x) for x in js.get("data",{}).get("result",[])]
-    raise Exception("Unknown response from prometheus")
+        js = res.json()
+        if js.get("status")!="success":
+            raise Exception("Unknown response from prometheus")
+        for x in js.get("data",{}).get("result",[]):
+            ret.append(decorate_serie(x))
+    return ret
 
 def test():
     assert True
