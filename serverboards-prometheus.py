@@ -3,13 +3,19 @@
 import serverboards, sys, requests, time, json, urllib
 from serverboards import rpc
 
+IGNORE_METRIC_NAMES=set(['node','instance','job'])
+
 def decorate_serie(serie):
     """
     Returns the series decorated as Serverboards likes it, not as Prometheus
     returns it.
     """
+    metric = serie.get("metric",{})
+    name = metric.get("__name__",None)
+    if not name:
+        name = ', '.join("%s: %s"%(k,v) for k,v in metric.items() if not k in IGNORE_METRIC_NAMES)
     return {
-        "name": serie.get("metric",{}).get("__name__",None),
+        "name": name,
         "values": serie.get("values",[])
     }
 
