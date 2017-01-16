@@ -36,3 +36,7 @@ components:
     command: serverboards.expiration/command
     call: dns_expiration
     traits: url
+
+  - id: widget
+    type: widget
+    name: Expiration Wizard

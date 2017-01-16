@@ -169,10 +169,16 @@ def update_expirations(**kwfilter):
     #with concurrent.futures.ThreadPoolExecutor() as executor:
     #    expirations = merge_expirations( executor.map(check_service, checks) )
     expirations = merge_expirations( [check_service(sc) for sc in checks] )
+    expirations.sort(key=lambda x: x["date"])
 
     rpc.call("plugin.data_set", "expirations", expirations)
 
     return expirations
+
+@serverboards.rpc_method
+def list_expirations():
+    return rpc.call("plugin.data_get", "expirations") or []
+
 
 if __name__=='__main__':
     if len(sys.argv)>1:
