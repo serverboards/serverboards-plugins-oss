@@ -208,6 +208,7 @@ class Cron:
     def add(self, timespec, f):
         spec_id=self.maxspec
         cs=Cronspec(timespec, f)
+        cs.spec_id=spec_id
         self.specs[spec_id]=cs
         self.maxspec+=1
         return cs

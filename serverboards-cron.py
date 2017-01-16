@@ -10,7 +10,7 @@ cron=Cron()
 def add_cron(id, timespec, **kwargs):
     cronid=cron.add( timespec, id )
     update_cron_timer()
-    return cronid.id
+    return cronid.spec_id
 
 @serverboards.rpc_method
 def del_cron(cronid):
