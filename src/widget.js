@@ -59,6 +59,8 @@ const Model = React.createClass({
 function main(el, config){
   Serverboards.ReactDOM.render(<Model {...config}/>, el)
 
+  $(el).css({overflow:"auto"})
+
   return function(){
     Serverboards.ReactDOM.unmountComponentAtNode(el)
   }
