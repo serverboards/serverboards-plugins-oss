@@ -1,10 +1,10 @@
 const {React, moment} = Serverboards
 const {Calendar} = Serverboards.Components
 
-function TimelineLine({expiration, service, onClick, hasDivider}){
+function TimelineLine({expiration, service, onClick, hasDivider, showCalendar}){
   const date = moment(expiration.date)
   const expired = date.isBefore(moment())
-  let style = {paddingLeft: 5, paddingBottom: "1rem"}
+  let style = {paddingLeft: 5, paddingBottom: "1rem", cursor: "pointer"}
   if (hasDivider){
     style.borderTop="1px solid #eee"
     style.paddingTop="1rem"
@@ -13,10 +13,12 @@ function TimelineLine({expiration, service, onClick, hasDivider}){
     <div className="row"
       key={`${expiration.service}/${expiration.name}/${expiration.date}/${expiration.id}`}
       data-tooltip={`${expiration.name}\n${expiration.description || ""}`}
+      data-date={date.format("YYYY-MM-DD")}
       style={style}
+      onClick={() => showCalendar(date.year(), date.month())}
       >
         <div>
-          <a onClick={onClick}><b>{service.name}</b></a> - {date.fromNow()}
+          <a onClick={(ev) => onClick() && ev.stopPropagation()}><b>{service.name}</b></a> - {date.fromNow()}
         </div><div className={expired ? "ui text red" : ""}>
           {expired ? "Expired" : "Expires" } on {date.format("MMM Do, YY")}
         </div>
@@ -38,19 +40,30 @@ const Timeline = React.createClass({
       marks,
     }
   },
+  gotoDate(date){
+    date=date.format("YYYY-MM-DD")
+    const vel = $(this.refs.list).find(`[data-date="${date}"]:first`)
+    const parent=vel.parent()
+    const offset=vel.offset().top - parent.offset().top + parent.scrollTop()
+    parent.scrollTop( offset )
+  },
+  showCalendar(year, month){
+    this.setState({year, month})
+  },
   render(){
     const {expirations, onShowService, getServiceByUUID, maxHeight} = this.props
     const state = this.state
     return (
       <div>
-        <Calendar marks={state.marks} navigation={true}/>
-        <div className="ui vertically divided list" style={{overflow:"auto", maxHeight: maxHeight}}>
+        <Calendar marks={state.marks} navigation={true} onClick={this.gotoDate} month={this.state.month} year={this.state.year}/>
+        <div ref="list" className="ui vertically divided list" style={{overflow:"auto", maxHeight: maxHeight}}>
           {expirations.map( (e, n) => (
             <TimelineLine
               expiration={e}
               service={getServiceByUUID(e.service)}
               onClick={() => onShowService(e.service)}
               hasDivider={n!=0}
+              showCalendar={this.showCalendar}
               />
           ))}
         </div>
