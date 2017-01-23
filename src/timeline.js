@@ -1,4 +1,5 @@
 const {React, moment} = Serverboards
+const {Calendar} = Serverboards.Components
 
 function TimelineLine({expiration, service, onClick, hasDivider}){
   const date = moment(expiration.date)
@@ -23,19 +24,39 @@ function TimelineLine({expiration, service, onClick, hasDivider}){
   )
 }
 
-function Timeline({expirations, onShowService, getServiceByUUID}){
-  return (
-    <div className="ui vertically divided">
-      {expirations.map( (e, n) => (
-        <TimelineLine
-          expiration={e}
-          service={getServiceByUUID(e.service)}
-          onClick={() => onShowService(e.service)}
-          hasDivider={n!=0}
-          />
-      ))}
-    </div>
-  )
-}
+const Timeline = React.createClass({
+  getInitialState(){
+    let marks = {}
+    const now = moment()
+    marks[now.format("YYYY-MM-DD")]="bold text teal"
+
+    for (let exp of this.props.expirations){
+      marks[moment(exp.date).format("YYYY-MM-DD")]="background light grey"
+    }
+
+    return {
+      marks,
+    }
+  },
+  render(){
+    const {expirations, onShowService, getServiceByUUID} = this.props
+    const state = this.state
+    return (
+      <div>
+        <Calendar marks={state.marks} navigation={true}/>
+        <div className="ui vertically divided" style={{overflow:"auto"}}>
+          {expirations.map( (e, n) => (
+            <TimelineLine
+              expiration={e}
+              service={getServiceByUUID(e.service)}
+              onClick={() => onShowService(e.service)}
+              hasDivider={n!=0}
+              />
+          ))}
+        </div>
+      </div>
+    )
+  }
+})
 
 export default Timeline
