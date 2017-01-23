@@ -40,7 +40,7 @@ const Model = React.createClass({
         <Loading>Expirations</Loading>
       )
     return (
-      <div>
+      <div className={`ui expirations ${this.props.layout}`}>
         <Timeline
           expirations={this.state.expirations}
           onShowService={this.handleShowService}
@@ -56,8 +56,16 @@ const Model = React.createClass({
 })
 
 
-function main(el, config){
-  Serverboards.ReactDOM.render(<Model {...config}/>, el)
+function main(el, config, extra){
+  let layout
+  if (extra.layout.width==1 && extra.layout.height==2)
+    layout="small"
+  else if (extra.layout.width > extra.layout.height)
+    layout="horizontal"
+  else
+    layout="vertical"
+
+  Serverboards.ReactDOM.render(<Model {...config} layout={layout}/>, el)
 
   return function(){
     Serverboards.ReactDOM.unmountComponentAtNode(el)

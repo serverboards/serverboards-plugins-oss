@@ -1,14 +1,141 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(factory());
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (factory());
 }(this, (function () { 'use strict';
 
 var _Serverboards$1=Serverboards;
 var React$1=_Serverboards$1.React;
 var moment=_Serverboards$1.moment;
 var {Calendar:Calendar}=Serverboards.Components;
-function TimelineLine(_ref){var a=_ref.expiration,b=_ref.service,c=_ref.onClick,d=_ref.hasDivider,f=moment(a.date),g=f.isBefore(moment()),h={paddingLeft:5,paddingBottom:"1rem"};return d&&(h.borderTop="1px solid #eee",h.paddingTop="1rem"),React$1.createElement("div",{className:"row",key:a.service+"/"+a.name+"/"+a.date+"/"+a.id,"data-tooltip":a.name+"\n"+(a.description||""),style:h},React$1.createElement("div",null,React$1.createElement("a",{onClick:c},React$1.createElement("b",null,b.name))," - ",f.fromNow()),React$1.createElement("div",{className:g?"ui text red":""},g?"Expired":"Expires"," on ",f.format("MMM Do, YY")))}var Timeline=React$1.createClass({displayName:"Timeline",getInitialState:function getInitialState(){var a={},b=moment();a[b.format("YYYY-MM-DD")]="bold text teal";var _iteratorNormalCompletion=!0,_didIteratorError=!1,_iteratorError=void 0;try{for(var _step,_iterator=this.props.expirations[Symbol.iterator]();!(_iteratorNormalCompletion=(_step=_iterator.next()).done);_iteratorNormalCompletion=!0){var c=_step.value;a[moment(c.date).format("YYYY-MM-DD")]="background light grey"}}catch(err){_didIteratorError=!0,_iteratorError=err}finally{try{!_iteratorNormalCompletion&&_iterator.return&&_iterator.return()}finally{if(_didIteratorError)throw _iteratorError}}return{marks:a}},render:function render(){var _props=this.props,a=_props.expirations,b=_props.onShowService,c=_props.getServiceByUUID,d=this.state;return React$1.createElement("div",null,React$1.createElement(Calendar,{marks:d.marks,navigation:!0}),React$1.createElement("div",{className:"ui vertically divided",style:{overflow:"auto"}},a.map(function(f,g){return React$1.createElement(TimelineLine,{expiration:f,service:c(f.service),onClick:function onClick(){return b(f.service)},hasDivider:0!=g})})))}});
+function TimelineLine(_ref){var a=_ref.expiration,b=_ref.service,c=_ref.onClick,d=_ref.hasDivider,f=moment(a.date),g=f.isBefore(moment()),h={paddingLeft:5,paddingBottom:"1rem"};return d&&(h.borderTop="1px solid #eee",h.paddingTop="1rem"),React$1.createElement("div",{className:"row",key:a.service+"/"+a.name+"/"+a.date+"/"+a.id,"data-tooltip":a.name+"\n"+(a.description||""),style:h},React$1.createElement("div",null,React$1.createElement("a",{onClick:c},React$1.createElement("b",null,b.name))," - ",f.fromNow()),React$1.createElement("div",{className:g?"ui text red":""},g?"Expired":"Expires"," on ",f.format("MMM Do, YY")))}var Timeline=React$1.createClass({displayName:"Timeline",getInitialState:function getInitialState(){var a={},b=moment();a[b.format("YYYY-MM-DD")]="bold text teal";var _iteratorNormalCompletion=!0,_didIteratorError=!1,_iteratorError=void 0;try{for(var _step,_iterator=this.props.expirations[Symbol.iterator]();!(_iteratorNormalCompletion=(_step=_iterator.next()).done);_iteratorNormalCompletion=!0){var c=_step.value;a[moment(c.date).format("YYYY-MM-DD")]="background light grey"}}catch(err){_didIteratorError=!0,_iteratorError=err}finally{try{!_iteratorNormalCompletion&&_iterator.return&&_iterator.return()}finally{if(_didIteratorError)throw _iteratorError}}return{marks:a}},render:function render(){var _props=this.props,a=_props.expirations,b=_props.onShowService,c=_props.getServiceByUUID,d=_props.maxHeight,f=this.state;return React$1.createElement("div",null,React$1.createElement(Calendar,{marks:f.marks,navigation:!0}),React$1.createElement("div",{className:"ui vertically divided list",style:{overflow:"auto",maxHeight:d}},a.map(function(g,h){return React$1.createElement(TimelineLine,{expiration:g,service:c(g.service),onClick:function onClick(){return b(g.service)},hasDivider:0!=h})})))}});
+
+var asyncGenerator = function () {
+  function AwaitValue(value) {
+    this.value = value;
+  }
+
+  function AsyncGenerator(gen) {
+    var front, back;
+
+    function send(key, arg) {
+      return new Promise(function (resolve, reject) {
+        var request = {
+          key: key,
+          arg: arg,
+          resolve: resolve,
+          reject: reject,
+          next: null
+        };
+
+        if (back) {
+          back = back.next = request;
+        } else {
+          front = back = request;
+          resume(key, arg);
+        }
+      });
+    }
+
+    function resume(key, arg) {
+      try {
+        var result = gen[key](arg);
+        var value = result.value;
+
+        if (value instanceof AwaitValue) {
+          Promise.resolve(value.value).then(function (arg) {
+            resume("next", arg);
+          }, function (arg) {
+            resume("throw", arg);
+          });
+        } else {
+          settle(result.done ? "return" : "normal", result.value);
+        }
+      } catch (err) {
+        settle("throw", err);
+      }
+    }
+
+    function settle(type, value) {
+      switch (type) {
+        case "return":
+          front.resolve({
+            value: value,
+            done: true
+          });
+          break;
+
+        case "throw":
+          front.reject(value);
+          break;
+
+        default:
+          front.resolve({
+            value: value,
+            done: false
+          });
+          break;
+      }
+
+      front = front.next;
+
+      if (front) {
+        resume(front.key, front.arg);
+      } else {
+        back = null;
+      }
+    }
+
+    this._invoke = send;
+
+    if (typeof gen.return !== "function") {
+      this.return = undefined;
+    }
+  }
+
+  if (typeof Symbol === "function" && Symbol.asyncIterator) {
+    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
+      return this;
+    };
+  }
+
+  AsyncGenerator.prototype.next = function (arg) {
+    return this._invoke("next", arg);
+  };
+
+  AsyncGenerator.prototype.throw = function (arg) {
+    return this._invoke("throw", arg);
+  };
+
+  AsyncGenerator.prototype.return = function (arg) {
+    return this._invoke("return", arg);
+  };
+
+  return {
+    wrap: function (fn) {
+      return function () {
+        return new AsyncGenerator(fn.apply(this, arguments));
+      };
+    },
+    await: function (value) {
+      return new AwaitValue(value);
+    }
+  };
+}();
+
+var _extends = Object.assign || function (target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  return target;
+};
 
 var _Serverboards=Serverboards;
 var plugin=_Serverboards.plugin;
@@ -18,8 +145,8 @@ var cache=_Serverboards.cache;
 var Flash=_Serverboards.Flash;
 var plugin_id="serverboards.expiration";
 var Loading=Serverboards.Components.Loading;
-var Model=React.createClass({displayName:"Model",getInitialState:function getInitialState(){var a=store.getState();return console.log(a),{expirations:void 0,serverboard:a.serverboard.serverboard,service_by_uuid:void 0}},componentDidMount:function componentDidMount(){var _this=this;plugin.start_call_stop("serverboards.expiration/command","list_expirations",[]).then(function(a){return _this.setState({expirations:a})}),cache.services().then(function(a){var b={};a.map(function(c){return b[c.uuid]=c}),_this.setState({service_by_uuid:b})})},handleShowService:function handleShowService(a){store.goto("/serverboard/"+this.state.serverboard.shortname+"/services/"+a)},handleReload:function handleReload(){var _this2=this;Flash.info("This will take long time"),plugin.start_call_stop("serverboards.expiration/command","update_expirations",[]).then(function(){Flash.info("Expiration updated"),_this2.componentDidMount()}).catch(function(a){return Flash.error(a)})},getServiceByUUID:function getServiceByUUID(a){return this.state.service_by_uuid[a]},render:function render(){return this.state.expirations&&this.state.service_by_uuid?React.createElement("div",null,React.createElement(Timeline,{expirations:this.state.expirations,onShowService:this.handleShowService,getServiceByUUID:this.getServiceByUUID}),React.createElement("button",{className:"ui button yellow with icon",onClick:this.handleReload},React.createElement("i",{className:"ui refresh icon"}))):React.createElement(Loading,null,"Expirations")}});
-function main(a,b){return Serverboards.ReactDOM.render(React.createElement(Model,b),a),function(){Serverboards.ReactDOM.unmountComponentAtNode(a)}}Serverboards.add_widget(plugin_id+"/widget",main);
+var Model=React.createClass({displayName:"Model",getInitialState:function getInitialState(){var a=store.getState();return console.log(a),{expirations:void 0,serverboard:a.serverboard.serverboard,service_by_uuid:void 0}},componentDidMount:function componentDidMount(){var _this=this;plugin.start_call_stop("serverboards.expiration/command","list_expirations",[]).then(function(a){return _this.setState({expirations:a})}),cache.services().then(function(a){var b={};a.map(function(c){return b[c.uuid]=c}),_this.setState({service_by_uuid:b})})},handleShowService:function handleShowService(a){store.goto("/serverboard/"+this.state.serverboard.shortname+"/services/"+a)},handleReload:function handleReload(){var _this2=this;Flash.info("This will take long time"),plugin.start_call_stop("serverboards.expiration/command","update_expirations",[]).then(function(){Flash.info("Expiration updated"),_this2.componentDidMount()}).catch(function(a){return Flash.error(a)})},getServiceByUUID:function getServiceByUUID(a){return this.state.service_by_uuid[a]},render:function render(){return this.state.expirations&&this.state.service_by_uuid?React.createElement("div",{className:"ui expirations "+this.props.layout},React.createElement(Timeline,{expirations:this.state.expirations,onShowService:this.handleShowService,getServiceByUUID:this.getServiceByUUID}),React.createElement("button",{className:"ui button yellow with icon",onClick:this.handleReload},React.createElement("i",{className:"ui refresh icon"}))):React.createElement(Loading,null,"Expirations")}});
+function main(a,b,c){var d=void 0;return d=1==c.layout.width&&2==c.layout.height?"small":c.layout.width>c.layout.height?"horizontal":"vertical",Serverboards.ReactDOM.render(React.createElement(Model,_extends({},b,{layout:d})),a),function(){Serverboards.ReactDOM.unmountComponentAtNode(a)}}Serverboards.add_widget(plugin_id+"/widget",main);
 
 })));
 //# sourceMappingURL=widget.js.map

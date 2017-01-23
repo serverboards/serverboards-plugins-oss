@@ -39,12 +39,12 @@ const Timeline = React.createClass({
     }
   },
   render(){
-    const {expirations, onShowService, getServiceByUUID} = this.props
+    const {expirations, onShowService, getServiceByUUID, maxHeight} = this.props
     const state = this.state
     return (
       <div>
         <Calendar marks={state.marks} navigation={true}/>
-        <div className="ui vertically divided" style={{overflow:"auto"}}>
+        <div className="ui vertically divided list" style={{overflow:"auto", maxHeight: maxHeight}}>
           {expirations.map( (e, n) => (
             <TimelineLine
               expiration={e}
