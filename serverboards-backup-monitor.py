@@ -86,7 +86,7 @@ class RemoteCheck:
             dict(url=url, command="stat -c '%%s %%y' %s; stat -f -c '%%f %%s' %s"%(filename, filename)))
         rpc.debug("SSH stat result: %s"%res)
 
-        exists = res['exit']==0
+        exists = res.get('exit', -1)==0
         if exists != self.prev_exists:
             if exists:
                 serverboards.rpc.event("trigger", id=self.id, state="exists")
