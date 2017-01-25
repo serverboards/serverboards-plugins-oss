@@ -59,11 +59,9 @@ def ssl_expiration(service, defport=443, scheme="https"):
         return []
 
     try:
-        cp=subprocess.run(
-        "/usr/bin/timeout {timeout} /usr/bin/openssl s_client -connect '{domain}:{port} -servername '{domain}' 2>/dev/null | /usr/bin/openssl x509 -noout -dates"
-        .format(domain=domain, port=port, timeout=TIMEOUT),
-        shell=True, stdout=subprocess.PIPE
-        )
+        cmd =("/usr/bin/timeout {timeout} /usr/bin/openssl s_client -connect '{domain}:{port}' -servername '{domain}' 2>/dev/null | /usr/bin/openssl x509 -noout -dates"
+            .format(domain=domain, port=port, timeout=TIMEOUT))
+        cp=subprocess.run(cmd, shell=True, stdout=subprocess.PIPE )
 
         not_after = next(x[9:] for x in cp.stdout.split(b'\n') if x.startswith(b"notAfter="))
         date=(dateparse(not_after))
