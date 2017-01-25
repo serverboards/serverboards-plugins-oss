@@ -60,7 +60,7 @@ def ssl_expiration(service, defport=443, scheme="https"):
 
     try:
         cp=subprocess.run(
-        "/usr/bin/timeout {timeout} /usr/bin/openssl s_client -connect '{domain}:{port}' 2>/dev/null | /usr/bin/openssl x509 -noout -dates"
+        "/usr/bin/timeout {timeout} /usr/bin/openssl s_client -connect '{domain}:{port} -servername '{domain}' 2>/dev/null | /usr/bin/openssl x509 -noout -dates"
         .format(domain=domain, port=port, timeout=TIMEOUT),
         shell=True, stdout=subprocess.PIPE
         )
