@@ -13,7 +13,7 @@ description: |
   This is not a calendar service in a classical sense as all the items it
   contains are get from the real world and are not user updatable unless some
   action is taken to extend the expiration.
-url: https://gitlab.com/serverboards/serverboards-plugin-expiration-wizard.git
+url: https://github.com/serverboards/serverboards-plugin-expiration-wizard.git
 
 components:
   - id: command
