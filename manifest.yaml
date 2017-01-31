@@ -1,10 +1,11 @@
 id: serverboards.plugin.serviceheatmap
 name: Service Heatmap
 author: David Moreno <dmoreno@serverboards.io>
-url: https://serverboards.io
-description: Show status of all services in this Serverboard in one heatmap.
+url: https://github.com/serverboards/serverboards-plugin-serviceheatmap
+description: Shows heatmap of services in current Serverboard
 
 components:
   - id: widget
     type: widget
     name: Service Heatmap
+    description: Shows heatmap of services in current Serverboard
