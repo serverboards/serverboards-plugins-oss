@@ -24,6 +24,18 @@ components:
     timeout: 1h
     strategy: one_for_one
 
+  - id: checker
+    type: cron
+    name: Update expirations at 2:11am UTC 
+    cron: 11 2 * * *
+    action: serverboards.expiration/update
+
+  - id: update
+    type: action
+    name: Update expirations
+    command: serverboards.expiration/command
+    call: update_expirations
+
   - id: sslchecker
     name: SSL Expiration Checker
     type: serverboards.expiration
