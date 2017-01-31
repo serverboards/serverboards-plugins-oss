@@ -43,23 +43,55 @@ const Model = React.createClass({
   }
 })
 
+function logo(name){
+  let ns=name.split(' ')
+  if (ns.length>=2){
+    return ns.map((n) => n[0]).join('').slice(0,2).toUpperCase()
+  }
+  return name.slice(0,2).toUpperCase()
+}
+
+const Cell = React.createClass({
+  componentDidMount(){
+    $(this.refs.el).popup({
+      position: "bottom center"
+    })
+  },
+  render(){
+    const {service, cell_style} = this.props
+    const title = `${service.name}: ${service.tags.join(', ')}`
+    return (
+      <div
+        ref="el"
+        className={`cell ${Serverboards.utils.colorize(service.tags[0] || "")}`}
+        title={title}
+        data-content={title}
+        onClick={() => Serverboards.store.goto(`/services/${service.uuid}`)}
+        style={cell_style}
+        >
+          {logo(service.name)}
+      </div>
+      )
+  }
+})
+
 function View(props){
-  const style = {
+  const cell_style = {
     width: props.size,
     minWidth: props.size,
     height: props.size,
-    cursor: "pointer"
+    cursor: "pointer",
+    display: "flex",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    color: "white",
+    padding: "5px 10px",
+    fontSize: Math.max(props.size/5, 12)
   }
   return (
     <div className="ui heatmap" style={{justifyContent:"center"}}>
       {props.services.map( (s) => (
-        <span
-          className={`cell ${Serverboards.utils.colorize(s.tags[0] || "")}`}
-          title={`${s.name}: ${s.tags.join(', ')}`}
-          data-tooltip={`${s.name}: ${s.tags.join(', ')}`}
-          onClick={() => Serverboards.store.goto(`/services/${s.uuid}`)}
-          style={style}
-          />
+        <Cell key={s.uuid} service={s} cell_style={cell_style}/>
       ) ) }
     </div>
   )
