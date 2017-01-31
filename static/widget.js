@@ -13,6 +13,17 @@
     let graph=new LineGraph($el[0])
     function update(){
       const {start, end} = store.getState().serverboard.daterange
+      let title
+      {
+        const has_title=config.expr.indexOf(':') < 20
+        if (has_title){
+          title=config.expr.split(':')[0]
+        }
+        else{
+          title="Prometheus"
+        }
+      }
+
       const params = {
         expression: config.expr,
         start: start.format("X"),
@@ -26,7 +37,7 @@
 
       return rpc.call(prometheus+".get", params).then( (data) => {
         graph.set_data(data)
-        context.setTitle(config.expr)
+        context.setTitle(title)
       }).catch( (e) => {
         graph.set_error(e)
       })

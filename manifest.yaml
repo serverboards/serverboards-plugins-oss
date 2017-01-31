@@ -47,6 +47,10 @@ components:
         description: |
           Check the [Prometheus documentation](https://prometheus.io/docs/querying/basics/)
           for more information.
+
+          Its possible to set several graphs, one on each line.
+
+          Each graph can have a name set as `name:` at the begining of the definition.
         placeholder: "scrape_duration_seconds"
 
   - id: daemon

@@ -5,13 +5,13 @@ from serverboards import rpc
 
 IGNORE_METRIC_NAMES=set(['node','instance','job'])
 
-def decorate_serie(serie):
+def decorate_serie(serie, name=None):
     """
     Returns the series decorated as Serverboards likes it, not as Prometheus
     returns it.
     """
     metric = serie.get("metric",{})
-    name = metric.get("__name__",None)
+    name = name or metric.get("__name__",None)
     if not name:
         name = ', '.join("%s: %s"%(k,v) for k,v in metric.items() if not k in IGNORE_METRIC_NAMES)
     return {
@@ -58,6 +58,11 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
     ret=[]
     for expr in expression.split('\n'): # maybe several expresions, one per line
         expr=expr.strip()
+        name=None
+        if ':' in expr:
+            d=expr.split(':')
+            name=d[0]
+            expr=d[1].strip()
         if not expr:
             continue
         params = {
@@ -67,7 +72,7 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
             "step": step,
             "_": now
         }
-        serverboards.debug("Get data from %s, %s"%(url,repr(ssh_proxy)))
+        serverboards.debug("Get data from %s, %s: %s"%(url,repr(ssh_proxy), expr))
         res = requests.get(url+"/api/v1/query_range", params=params)
         if res.status_code!=200:
             raise Exception(res.text)
@@ -76,7 +81,7 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
         if js.get("status")!="success":
             raise Exception("Unknown response from prometheus")
         for x in js.get("data",{}).get("result",[]):
-            ret.append(decorate_serie(x))
+            ret.append(decorate_serie(x, name=name))
     return ret
 
 def test():
