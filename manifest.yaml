@@ -1,0 +1,38 @@
+id: serverboards.facebookads
+name: Facebook Ads Integration
+description: |
+  Provides access to metrics from facebook ads.
+author: David Moreno <dmoreno@serverboards.io>
+version: 0.1.0
+
+
+components:
+  - id: service
+    type: service
+    name: Facebook Ads
+    icon: facebook
+    description: |
+      Access to facebook ads data via the Facebook API. Needs to configure your
+      own access tokens and provide them here.
+
+      To be able to get all this data you need to subscribe as a Facebook
+      developer and create an app.
+    fields:
+      - name: app_id
+        label: App ID
+        type: text
+      - name: app_secret_pw
+        label: App Secret
+        type: password
+      - name: access_token
+        label: Access Token
+        description: The access token can be obtained at the Marketing API at the [app dashboard](https://developers.facebook.com/apps/).
+        placeholder: " "
+        type: text
+
+  - id: widget
+    type: widget
+    name: Facebook Insights
+    icon: facebook
+    description: |
+      Show an snapshot of the facebook insights for the selected period.
