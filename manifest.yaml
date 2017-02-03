@@ -22,7 +22,7 @@ components:
       - name: app_id
         label: App ID
         type: text
-      - name: app_secret_pw
+      - name: app_secret
         label: App Secret
         type: password
       - name: access_token

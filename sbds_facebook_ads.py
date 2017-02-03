@@ -13,8 +13,12 @@ import serverboards, sys, datetime
 from facebookads.api import FacebookAdsApi
 from facebookads import objects
 
-import settings
-FacebookAdsApi.init(settings.APP_ID, settings.APP_SECRET, settings.ACCESS_TOKEN)
+try:
+    import settings
+    FacebookAdsApi.init(settings.APP_ID, settings.APP_SECRET, settings.ACCESS_TOKEN)
+    print("Using default config from settings.py")
+except:
+    pass
 
 @serverboards.rpc_method
 def get_accounts():
@@ -76,7 +80,14 @@ def get_possible_insights(service=None, **kwargs):
     return ret
 
 @serverboards.rpc_method
-def get_insights(insight_id=None, timerange=None, fields=None, action_breakdown=False):
+def get_insights(insight_id=None, timerange=None, fields=None, action_breakdown=False, service=None):
+    if service:
+        FacebookAdsApi.init(
+            service["app_id"],
+            service["app_secret"],
+            service["access_token"]
+            )
+
     if not timerange:
         today = datetime.datetime.now()
         timerange={
