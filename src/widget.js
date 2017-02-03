@@ -25,7 +25,6 @@ const Model = React.createClass({
       per_row = Math.floor( this.props.layout.width * 280 / size )
       max_row_count = Math.floor( this.props.layout.height * 240 / size )
       row_count = Math.ceil( this.state.services.length /  per_row )
-      console.log("max w", size, per_row, row_count, max_row_count)
       ok = (row_count <= max_row_count )
       if (!ok)
         size-=1
