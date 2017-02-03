@@ -11,6 +11,7 @@ components:
     type: service
     name: Facebook Ads
     icon: facebook
+    traits: facebookads
     description: |
       Access to facebook ads data via the Facebook API. Needs to configure your
       own access tokens and provide them here.
@@ -36,3 +37,30 @@ components:
     icon: facebook
     description: |
       Show an snapshot of the facebook insights for the selected period.
+    params:
+      - name: service
+        label: Facebook Service
+        type: service
+        traits: facebookads
+      - name: insight
+        label: Insight
+        type: select call
+        options:
+          command: serverboards.facebookads/command
+          call: get_possible_insights
+      - name: type
+        label: Type of graph
+        type: select
+        options:
+          - name: Sum of data
+            value: sum
+          - name: Evolution of data
+            value: evolution
+
+
+  - id: command
+    type: cmd
+    command: ./sbds_facebook_ads.py
+    strategy: singleton
+    timeout: 10s
+    name: Facebook Ads API Connector

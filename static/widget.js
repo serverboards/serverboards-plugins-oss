@@ -1,72 +1,29 @@
 (function(){
-  let widget_id = "serverboards.facebookads/widget"
-  let {rpc, moment, store} = Serverboards
-  let {PieChart} = Serverboards.graphs
-
-  let CDATA= {
-  "data": [
-    {
-      "total_actions": 33,
-      "actions": [
-        {
-          "action_type": "like",
-          "value": 2
-        },
-        {
-          "action_type": "link_click",
-          "value": 2
-        },
-        {
-          "action_type": "post_like",
-          "value": 3
-        },
-        {
-          "action_type": "comment",
-          "value": 3
-        },
-        {
-          "action_type": "mobile_app_install",
-          "value": 12
-        }
-      ],
-      "date_start": "2009-03-28",
-      "date_stop": "2016-04-04"
-    }
-  ],
-  "paging": {
-    "cursors": {
-      "before": "MAZDZD",
-      "after": "MAZDZD"
-    }
-  }
-}
-
-  const id_to_name={
-    like: "Likes",
-    link_click: "Link clicks",
-    post_like: "Post Likes",
-    comment: "Comments",
-    mobile_app_install: "Mobile App Installations",
-  }
-
-
+  let plugin_id = "serverboards.facebookads"
+  let widget_id = plugin_id + "/widget"
+  let {plugin} = Serverboards
+  let {PieChart, LineGraph} = Serverboards.graphs
 
   function main(el, config, extra){
     let $el=$('<div>')
     $(el).append($el)
+    console.log(config)
 
-    let data = {}
+    if (config.type=="sum"){
+      let graph=new PieChart($el[0])
+      graph.update_config({hole: 0.5})
 
-    $(CDATA.data[0].actions).map( function(n, dt){
-      console.log(dt, this)
-      let name = dt.action_type
-      name=id_to_name[name] || name
-      data[name]=dt.value
-    })
+      plugin.start_call_stop(plugin_id+"/command", "get_insights", {insight_id: config.insight, action_breakdown: true}).then( function(data){
+        graph.set_data(data)
+      }).catch( (e) => graph.set_error(e) )
+    }
+    else if (config.type=="evolution"){
+      let graph=new LineGraph($el[0])
 
-    let graph=new PieChart($el[0])
-    graph.update_config({hole: 0.5})
-    graph.set_data(data)
+      plugin.start_call_stop(plugin_id+"/command", "get_insights", {insight_id: config.insight, action_breakdown: false}).then( function(data){
+        graph.set_data(data)
+      }).catch( (e) => graph.set_error(e) )
+    }
   }
 
   Serverboards.add_widget(widget_id, main)
