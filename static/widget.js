@@ -1,7 +1,7 @@
 (function(){
   let plugin_id = "serverboards.facebookads"
   let widget_id = plugin_id + "/widget"
-  let {plugin} = Serverboards
+  let {plugin, store} = Serverboards
   let {PieChart, LineGraph} = Serverboards.graphs
 
   function main(el, config, extra){
@@ -9,6 +9,7 @@
     $(el).append($el)
     console.log(config)
     let service = config.service.config
+
 
     if (config.type=="sum"){
       let graph=new PieChart($el[0])

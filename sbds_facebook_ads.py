@@ -68,6 +68,13 @@ def get_ads(adset_id):
 
 @serverboards.rpc_method
 def get_possible_insights(service=None, **kwargs):
+    if service:
+        service=service["config"]
+        FacebookAdsApi.init(
+            service["app_id"],
+            service["app_secret"],
+            service["access_token"]
+            )
     ret=[]
     for acc in get_accounts():
         ret.append({"value": "account/%s"%acc["value"], "name": acc["name"]})
