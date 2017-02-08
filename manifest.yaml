@@ -11,7 +11,16 @@ components:
     type: settings
     perms: settings
     name: Telegram settings
-    description: Telegram settings requried to send telegrams to users. You can get a new API token using the [BotFather](https://web.telegram.org/#/im?p=@BotFather) telegram bot.
+    description: |
+      Telegram settings required to send telegrams to users.
+
+      You can get a new API token using the
+      [BotFather](https://web.telegram.org/#/im?p=@BotFather) telegram bot.
+
+      Just create a new bot and add here the token.
+
+      Users must connect to the bot with the given name, and will receive a
+      code within a minute.
     fields:
       - name: token
         label: API Key
@@ -34,6 +43,18 @@ components:
     traits: telegram
     perms:
       - settings.view[serverboards.telegram/settings.telegram]
-      - settings.view[serverboards.telegram/base]
       - plugin.data[serverboards.telegram/telegram]
     command: serverboards_telegram.py
+    type: singleton
+    timeout: 3600s
+
+  - id: refresh
+    type: action
+    command: serverboards.telegram/daemon.telegram
+    call: refresh
+
+  - id: refresh_cron
+    name: Check for new messages and users
+    type: cron
+    cron: "* * * * *"
+    action: serverboards.telegram/refresh
