@@ -12,7 +12,6 @@ def tg_url(method):
 
 def tg_get(cmd, query = None):
     ret = requests.get(tg_url(cmd), params=query)
-    print(ret)
     if ret.status_code == 200:
         return ret.json()["result"]
     else:
@@ -43,7 +42,7 @@ def info():
     return tg_get("getMe")
 
 @serverboards.rpc_method
-def updates(offset=None, timeout=60):
+def get_updates(offset=None, timeout=60):
     query={
         "timeout": timeout
     }
@@ -53,12 +52,17 @@ def updates(offset=None, timeout=60):
     return tg_get("getUpdates", query)
 
 @serverboards.rpc_method
-def refresh():
+def message_check_loop():
     ensure_has_config()
+    while True:
+        message_check_loop()
 
+@serverboards.rpc_method
+def message_check(timeout=3600):
+    ensure_has_config()
     update=False
     code_to_chatid=status.get("code_to_chatid",{})
-    msgs=updates(status.get("lastid"), timeout=59)
+    msgs=get_updates(status.get("lastid"), timeout=3600)
     for msg in msgs:
         serverboards.rpc.debug(msg)
         update=True
@@ -94,10 +98,13 @@ def refresh():
     return update
 
 def ensure_has_config():
-    global settings, status
     if not settings or not status:
-        settings=serverboards.rpc.call("settings.get", "serverboards.telegram/settings.telegram")
-        status=serverboards.rpc.call("plugin.data_get", "status")
+        update_config()
+
+def update_config():
+    global settings, status
+    settings=serverboards.rpc.call("settings.get", "serverboards.telegram/settings.telegram")
+    status=serverboards.rpc.call("plugin.data_get", "status")
 
 if __name__=="__main__":
     if len(sys.argv)==2 and sys.argv[1]=="test":
