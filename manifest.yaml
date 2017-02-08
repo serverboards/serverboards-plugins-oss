@@ -51,7 +51,11 @@ components:
   - id: refresh
     type: action
     command: serverboards.telegram/daemon.telegram
-    call: refresh
+    call:
+      method: message_check
+      params:
+        - name: timeout
+          value: 59
 
   - id: refresh_cron
     name: Check for new messages and users
