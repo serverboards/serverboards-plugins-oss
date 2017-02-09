@@ -43,8 +43,8 @@
       })
     }
 
-    store.on("serverboard.daterange.start", update)
-    store.on("serverboard.daterange.end", update)
+    store_off_start = store.on("serverboard.daterange.start", update)
+    store_on_start = store.on("serverboard.daterange.end", update)
     let calls=[]
     calls.push(
       rpc.call("plugin.start", ["serverboards.prometheus/daemon"]).then( (prom) => {
@@ -68,6 +68,8 @@
       if (ssh_proxy)
         // FIXME
         console.warn("Might be leaking SSH proxy ports.")
+      store_off_end()
+      store_off_start()
     }
   }
 
