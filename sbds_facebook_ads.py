@@ -112,16 +112,16 @@ def get_insights(insight_id=None, timerange=None, fields=None, action_breakdown=
         params['action_breakdown'] = 'action_type'
     else:
         params['time_increment'] = '1'
-
+    print(params)
     cdata=None
     if insight_id.startswith("account/"):
-        cdata=get_account_insights(insight_id[8:], timerange, fields, params)
+        cdata=get_account_insights(insight_id[8:], fields, params)
     if insight_id.startswith("campaign/"):
-        cdata=get_campaign_insights(insight_id[9:], timerange, fields, params)
+        cdata=get_campaign_insights(insight_id[9:], fields, params)
     if insight_id.startswith("adset/"):
-        cdata=get_adset_insights(insight_id[6:], timerange, fields, params)
+        cdata=get_adset_insights(insight_id[6:], fields, params)
     if insight_id.startswith("ad/"):
-        cdata=get_ad_insights(insight_id[3:], timerange, fields, params)
+        cdata=get_ad_insights(insight_id[3:], fields, params)
 
     if not cdata:
         return {}
@@ -145,16 +145,16 @@ def get_insights(insight_id=None, timerange=None, fields=None, action_breakdown=
 
     return data
 
-def get_account_insights(id, timerange, fields, params):
+def get_account_insights(id, fields, params):
     account = objects.AdAccount(id)
     return list(account.get_insights(params=params, fields=fields ) )
-def get_campaign_insights(id, timerange, fields, params):
+def get_campaign_insights(id, fields, params):
     campaign = objects.Campaign(id)
     return list(campaign.get_insights(params=params, fields=fields ) )
-def get_adset_insights(id, timerange, fields, params):
+def get_adset_insights(id, fields, params):
     adset = objects.AdSet(id)
     return list(adset.get_insights(params=params, fields=fields ) )
-def get_ad_insights(id, timerange, fields, params):
+def get_ad_insights(id, fields, params):
     ad = objects.Ad(id)
     return list(ad.get_insights(params=params, fields=fields ) )
 

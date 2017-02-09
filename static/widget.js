@@ -1,7 +1,7 @@
 (function(){
   let plugin_id = "serverboards.facebookads"
   let widget_id = plugin_id + "/widget"
-  let {plugin, store} = Serverboards
+  let {plugin, store, moment} = Serverboards
   let {PieChart, LineGraph} = Serverboards.graphs
 
   function main(el, config, extra){
@@ -9,24 +9,35 @@
     $(el).append($el)
     console.log(config)
     let service = config.service.config
-
+    let graph, params
 
     if (config.type=="sum"){
-      let graph=new PieChart($el[0])
+      graph=new PieChart($el[0])
       graph.update_config({hole: 0.5})
+      params = {insight_id: config.insight, action_breakdown: true, service: service}
+    }
+    else if (config.type=="evolution"){
+      graph=new LineGraph($el[0])
+      params = {insight_id: config.insight, action_breakdown: false, service: service}
+    }
 
-      let params = {insight_id: config.insight, action_breakdown: true, service: service}
+    function update(){
+      const {start, end} = store.getState().serverboard.daterange
+      timerange={"since": start.format("YYYY-MM-DD"), "until": end.format("YYYY-MM-DD")}
+      params.timerange=timerange
+      graph.set_loading()
+
       plugin.start_call_stop(plugin_id+"/command", "get_insights", params).then( function(data){
         graph.set_data(data)
       }).catch( (e) => graph.set_error(e) )
     }
-    else if (config.type=="evolution"){
-      let graph=new LineGraph($el[0])
 
-      let params = {insight_id: config.insight, action_breakdown: false, service: service}
-      plugin.start_call_stop(plugin_id+"/command", "get_insights", params).then( function(data){
-        graph.set_data(data)
-      }).catch( (e) => graph.set_error(e) )
+    store_off_start = store.on("serverboard.daterange.start", update)
+    store_off_end =store.on("serverboard.daterange.end", update)
+    update()
+    return function(){
+      store_off_end()
+      store_off_start()
     }
   }
 
