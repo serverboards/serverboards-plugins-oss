@@ -81,7 +81,7 @@ const BackupFileRow = React.createClass({
           <div><b>{state.size ? `${state.size.toFixed(2)} MB` : ''}</b></div>
           <div className="ui oneline" style={{fontSize:"12px", color: "#666"}}>{state.datetime}</div>
         </td>
-        <td title={state.state} style={{textAlign:"right"}} style={{width: 10}}>
+        <td title={state.state} style={{textAlign:"right"}} style={{width: 10, height: "100%"}}>
           <i className={`ui label rectangular ${state.color}`}/>
         </td>
       </tr>
