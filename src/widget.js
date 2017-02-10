@@ -16,6 +16,7 @@ const Model = React.createClass({
   componentDidMount(){
     plugin.start_call_stop("serverboards.expiration/command", "list_expirations", [])
       .then( (expirations) => this.setState( {expirations} ) )
+      .catch( e => Flash.error(e) )
     cache.services().then( (services) => {
       let service_by_uuid={}
       services.map( (s) => service_by_uuid[s.uuid]=s )

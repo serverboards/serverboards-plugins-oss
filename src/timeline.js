@@ -1,30 +1,37 @@
 const {React, moment} = Serverboards
 const {Calendar} = Serverboards.Components
 
-function TimelineLine({expiration, service, onClick, hasDivider, showCalendar}){
-  const date = moment(expiration.date)
-  const expired = date.isBefore(moment())
-  let style = {paddingLeft: 5, paddingBottom: "1rem", cursor: "pointer"}
-  if (hasDivider){
-    style.borderTop="1px solid #eee"
-    style.paddingTop="1rem"
+const TimelineLine = React.createClass({
+  componentDidMount(){
+    $(this.refs.el).popup()
+  },
+  render(){
+    const {expiration, service, onClick, hasDivider, showCalendar} = this.props
+    const date = moment(expiration.date)
+    const expired = date.isBefore(moment())
+    let style = {paddingLeft: 5, paddingBottom: "1rem", cursor: "pointer"}
+    if (hasDivider){
+      style.borderTop="1px solid #eee"
+      style.paddingTop="1rem"
+    }
+    return (
+      <div className="row" ref="el"
+        key={`${expiration.service}/${expiration.name}/${expiration.date}/${expiration.id}`}
+        data-content={`${expiration.name}\n${expiration.description || ""}`}
+        data-position="bottom center"
+        data-date={date.format("YYYY-MM-DD")}
+        style={style}
+        onClick={() => showCalendar(date.year(), date.month())}
+        >
+          <div>
+            <a onClick={(ev) => onClick() && ev.stopPropagation()}><b>{service.name}</b></a> - {date.fromNow()}
+          </div><div className={expired ? "ui text red" : ""}>
+            {expired ? "Expired" : "Expires" } on {date.format("MMM Do, YY")}
+          </div>
+      </div>
+    )
   }
-  return (
-    <div className="row"
-      key={`${expiration.service}/${expiration.name}/${expiration.date}/${expiration.id}`}
-      data-tooltip={`${expiration.name}\n${expiration.description || ""}`}
-      data-date={date.format("YYYY-MM-DD")}
-      style={style}
-      onClick={() => showCalendar(date.year(), date.month())}
-      >
-        <div>
-          <a onClick={(ev) => onClick() && ev.stopPropagation()}><b>{service.name}</b></a> - {date.fromNow()}
-        </div><div className={expired ? "ui text red" : ""}>
-          {expired ? "Expired" : "Expires" } on {date.format("MMM Do, YY")}
-        </div>
-    </div>
-  )
-}
+})
 
 const Timeline = React.createClass({
   getInitialState(){
@@ -59,6 +66,7 @@ const Timeline = React.createClass({
         <div ref="list" className="ui vertically divided list" style={{overflow:"auto", maxHeight: maxHeight}}>
           {expirations.map( (e, n) => (
             <TimelineLine
+              key={`${e.service}/${e.check}`}
               expiration={e}
               service={getServiceByUUID(e.service)}
               onClick={() => onShowService(e.service)}

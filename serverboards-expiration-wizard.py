@@ -177,8 +177,12 @@ def update_expirations(**kwfilter):
 
 @serverboards.rpc_method
 def list_expirations():
-    return rpc.call("plugin.data_get", "expirations") or []
-
+    expirations = rpc.call("plugin.data_get", "expirations")
+    if expirations == {}:
+        serverboards.info("Calculating initial expiration list")
+        update_expirations()
+        expirations = rpc.call("plugin.data_get", "expirations")
+    return expirations
 
 if __name__=='__main__':
     if len(sys.argv)>1:
