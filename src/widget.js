@@ -56,6 +56,10 @@ const Cell = React.createClass({
       position: "bottom center"
     })
   },
+  gotoService(){
+    $(this.refs.el).popup("destroy")
+    Serverboards.store.goto(`/services/${this.props.service.uuid}`)
+  },
   render(){
     const {service, cell_style} = this.props
     const title = `${service.name}: ${service.tags.join(', ')}`
@@ -65,7 +69,7 @@ const Cell = React.createClass({
         className={`cell ${Serverboards.utils.colorize(service.tags[0] || "")}`}
         title={title}
         data-content={title}
-        onClick={() => Serverboards.store.goto(`/services/${service.uuid}`)}
+        onClick={this.gotoService}
         style={cell_style}
         >
           {logo(service.name)}
