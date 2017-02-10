@@ -14,6 +14,7 @@ description: |
   contains are get from the real world and are not user updatable unless some
   action is taken to extend the expiration.
 url: https://github.com/serverboards/serverboards-plugin-expirationwizard.git
+postinst: postinst.sh
 
 components:
   - id: command

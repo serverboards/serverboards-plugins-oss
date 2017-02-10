@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import serverboards, urllib, sys, subprocess
+sys.path.append('env/lib/python3.5/site-packages/')
+
 from urllib.parse import urlparse
 from dateutil.parser import parse as dateparse
 import concurrent.futures
