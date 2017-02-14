@@ -30,7 +30,7 @@ components:
     type: notification
     name: Telegram notifications
     description: A code will be sent to pair. Please connect to the [@serverboards_test_bot](https://web.telegram.org/#/im?p=@serverboards_test_bot) in telegram.
-    command: serverboards.telegram/daemon.telegram
+    command: serverboards.telegram/daemon.writer
     fields:
       - name: code
         label: User code
@@ -38,7 +38,16 @@ components:
         description: Code as sent by the serverboards_test_bot. Needed to pair user and chats.
     call: send_telegram
 
-  - id: daemon.telegram
+  - id: daemon.writer
+    type: cmd
+    traits: telegram
+    perms:
+      - settings.view[serverboards.telegram/settings.telegram]
+    command: serverboards_telegram.py
+    type: singleton
+    timeout: 60s
+
+  - id: daemon.listener
     type: cmd
     traits: telegram
     perms:
@@ -46,19 +55,10 @@ components:
       - plugin.data[serverboards.telegram/telegram]
     command: serverboards_telegram.py
     type: singleton
-    timeout: 3600s
+    timeout: 1d
 
-  - id: refresh
-    type: action
-    command: serverboards.telegram/daemon.telegram
-    call:
-      method: message_check
-      params:
-        - name: timeout
-          value: 59
-
-  - id: refresh_cron
-    name: Check for new messages and users
-    type: cron
-    cron: "* * * * *"
-    action: serverboards.telegram/refresh
+  - id: init
+    type: init
+    traits: telegram
+    command: serverboards.telegram/daemon.listener
+    call: poll_for_messages

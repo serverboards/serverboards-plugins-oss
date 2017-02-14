@@ -55,7 +55,7 @@ def get_updates(offset=None, timeout=60):
 def message_check_loop():
     ensure_has_config()
     while True:
-        message_check_loop()
+        message_check()
 
 @serverboards.rpc_method
 def message_check(timeout=3600):
@@ -97,6 +97,13 @@ def message_check(timeout=3600):
 
     return update
 
+
+@serverboards.rpc_method
+def poll_for_messages():
+    serverboards.rpc.subscribe("settings.updated[serverboards.telegram/settings.telegram]", message_check_loop)
+    message_check_loop()
+
+
 def ensure_has_config():
     if not settings or not status:
         update_config()
@@ -104,7 +111,12 @@ def ensure_has_config():
 def update_config():
     global settings, status
     settings=serverboards.rpc.call("settings.get", "serverboards.telegram/settings.telegram")
-    status=serverboards.rpc.call("plugin.data_get", "status")
+    try:
+        status=serverboards.rpc.call("plugin.data_get", "status")
+    except:
+        status=dict(lastid=0, code_to_chatid={})
+    if not settings:
+        raise Exception("Not configured")
 
 if __name__=="__main__":
     if len(sys.argv)==2 and sys.argv[1]=="test":
