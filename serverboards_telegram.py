@@ -2,7 +2,7 @@
 
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__),'../bindings/python/'))
-import serverboards, requests, random
+import serverboards, requests, random, time
 
 settings=None
 status=None
@@ -98,11 +98,35 @@ def message_check(timeout=3600):
     return update
 
 
+def got_new_config(*args, **kwargs):
+    update_config()
+    serverboards.info("Reloading telegram as got new configuration")
+    try:
+        message_check_loop()
+    except Exception as e:
+        if str(e)=="Not configured":
+            serverboards.debug("Not configured, waiting for configuration")
+        elif str(e)=="Not Found":
+            serverboards.debug(repr(settings))
+            serverboards.error("Invalid configuration, check your tokens")
+        else:
+            raise e
+
 @serverboards.rpc_method
 def poll_for_messages():
-    serverboards.rpc.subscribe("settings.updated[serverboards.telegram/settings.telegram]", message_check_loop)
-    message_check_loop()
-
+    serverboards.rpc.subscribe("settings.updated[serverboards.telegram/settings.telegram]", got_new_config)
+    try:
+        message_check_loop()
+    except Exception as e:
+        if str(e)=="Not configured":
+            serverboards.debug("Not configured, waiting for configuration")
+            serverboards.rpc.delayed_result() # I dont plan to answer ever
+        elif str(e)=="Not Found":
+            serverboards.debug(repr(settings))
+            serverboards.error("Invalid configuration, check your tokens")
+            serverboards.rpc.delayed_result()
+        else:
+            raise e
 
 def ensure_has_config():
     if not settings or not status:
@@ -110,12 +134,13 @@ def ensure_has_config():
 
 def update_config():
     global settings, status
-    settings=serverboards.rpc.call("settings.get", "serverboards.telegram/settings.telegram")
+    settings=None
     try:
+        settings=serverboards.rpc.call("settings.get", "serverboards.telegram/settings.telegram")
         status=serverboards.rpc.call("plugin.data_get", "status")
     except:
         status=dict(lastid=0, code_to_chatid={})
-    if not settings:
+    if not settings or not settings["token"]:
         raise Exception("Not configured")
 
 if __name__=="__main__":
