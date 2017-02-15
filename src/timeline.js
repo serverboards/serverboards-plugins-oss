@@ -14,18 +14,24 @@ const TimelineLine = React.createClass({
       style.borderTop="1px solid #eee"
       style.paddingTop="1rem"
     }
+    let tooltip={}
+    if (expiration.description){
+      tooltip["data-content"]=expiration.description
+      tooltip["data-position"]="bottom center"
+    }
     return (
       <div className="row" ref="el"
         key={`${expiration.service}/${expiration.name}/${expiration.date}/${expiration.id}`}
-        data-content={`${expiration.name}\n${expiration.description || ""}`}
-        data-position="bottom center"
         data-date={date.format("YYYY-MM-DD")}
         style={style}
         onClick={() => showCalendar(date.year(), date.month())}
+        {...tooltip}
         >
           <div>
             <a onClick={(ev) => onClick() && ev.stopPropagation()}><b>{service.name}</b></a> - {date.fromNow()}
-          </div><div className={expired ? "ui text red" : ""}>
+          </div>
+          <div>{expiration.name}</div>
+          <div className={expired ? "ui text red" : ""}>
             {expired ? "Expired" : "Expires" } on {date.format("MMM Do, YY")}
           </div>
       </div>
