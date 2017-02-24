@@ -1,0 +1,77 @@
+id: serverboards.google.drive
+name: Google Drive
+author: David Moreno <dmoreno@serverboards.io>
+url: https://github.com/serverboards/serverboards-plugin-google-drive
+description: Watches for changes at Google Drive
+
+components:
+  - id: daemon
+    name: Google Drive Proxy
+    type: cmd
+    command: serverboards-google-drive.py
+    strategy: singleton
+    timeout: 5s
+    perms:
+      - settings.view[serverboards.google.drive/settings]
+      - settings.view[serverboards.core.settings/base]
+
+  - id: service
+    type: service
+    name: Google Drive
+    icon: green google
+    description: |
+      Connection to Google Drive.
+    traits: google.drive
+    fields:
+      - name: access_description
+        type: description
+        description: |
+          Please click on the following URL to start the authorization process.
+
+          [Authorize Serverboards to access Drive Data]({{authorization_url}})
+
+          If already authorized, clicking on the URL will renew/refresh the
+          authorization, discarding the old one.
+        vars:
+          - id: authorization_url
+            command: serverboards.google.drive/daemon
+            call: authorize_url
+
+  - id: auth
+    type: screen
+    traits: hidden
+    name: Authorized
+    description: Screen to show at Oauth2 authorization phase.
+
+  - id: settings
+    type: settings
+    perms: settings
+    name: Google Drive Integration
+    description: |
+      To be able to use Google integration, you require an authorization Token.
+
+      Serverboards can not provide one in the Community Edition as there are
+      quotas involved.
+
+      Get the API token credentials at [Google API Console](https://console.developers.google.com/)
+      at *Credentials / Create / Oauth API / Client Id / Web*
+
+      The redirect URI must be the servername including protocol
+      `https://example.com/static/serverboards.google.drive/auth.html`
+
+    fields:
+      - name: client_id
+        label: Client Id
+      - name: client_secret
+        label: Client Secret
+
+  - id: widget
+    type: widget
+    name: Google Drive
+    traits: google.drive
+    params:
+      - id: drive
+        name: service
+        type: service
+        traits: google.drive
+        label: Related Google Drive Service
