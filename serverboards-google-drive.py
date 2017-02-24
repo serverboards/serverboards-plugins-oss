@@ -115,7 +115,6 @@ class DriveWatcher:
 
         rpc.add_timer(300, self.watch_check)
     def watch_check(self):
-        serverboards.info("Tick")
         serverboards.rpc.call("ping", True) # to prevent death of server at 5m timeout
         for service_id, c in self.get_all_changes():
             for k,sv in self.watchs.items():
@@ -127,7 +126,6 @@ class DriveWatcher:
                     serverboards.rpc.event("trigger", {"type": "drive_change", "id": k, "state" : "change"})
 
     def match(self, service_id, change, expr):
-        serverboards.debug("Check match %s %s"%(change, expr))
         if expr in change.get("file",{}).get("name",""):
             return True
 
@@ -137,7 +135,6 @@ class DriveWatcher:
         for parent in more_info.get("parents",[]):
             folder_info = get_file_info(drive, parent, ["name"])
 
-            serverboards.debug("Check parent match %s %s"%(folder_info, expr))
             if expr in folder_info.get("name"):
                 return True
 
