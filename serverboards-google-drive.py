@@ -10,8 +10,6 @@ setup(
 
 drive = {}
 def get_drive(service_id, version='v3'):
-    serverboards.debug("%s"%(service_id))
-
     ank=(service_id, version)
     if not drive.get(ank):
         storage = ServerboardsStorage(service_id)
@@ -106,6 +104,82 @@ def get_changes(service_id, folder_filter=None):
             lastv["entries"].append(x)
     grouped.reverse()
     return grouped
+
+
+watcher = None
+class DriveWatcher:
+    def __init__(self):
+        self.watcher_id = None
+        self.page_tokens = {}
+        self.watchs = {}
+
+        rpc.add_timer(300, self.watch_check)
+    def watch_check(self):
+        serverboards.info("Tick")
+        serverboards.rpc.call("ping", True) # to prevent death of server at 5m timeout
+        for service_id, c in self.get_all_changes():
+            for k,sv in self.watchs.items():
+                s, v = sv
+                if s!=service_id:
+                    continue # this watch was not for this service
+                if self.match(service_id, c, v):
+                    serverboards.info("Trigger changes at rule %s"%(k))
+                    serverboards.rpc.event("trigger", {"type": "drive_change", "id": k, "state" : "change"})
+
+    def match(self, service_id, change, expr):
+        serverboards.debug("Check match %s %s"%(change, expr))
+        if expr in change.get("file",{}).get("name",""):
+            return True
+
+        # maybe at parent?
+        drive = get_drive(service_id)
+        more_info = get_file_info(drive, change.get("fileId"), ["parents"])
+        for parent in more_info.get("parents",[]):
+            folder_info = get_file_info(drive, parent, ["name"])
+
+            serverboards.debug("Check parent match %s %s"%(folder_info, expr))
+            if expr in folder_info.get("name"):
+                return True
+
+        return False
+
+    def add_trigger(self, ruleid, service, expression):
+        self.watchs[ruleid] = (service["uuid"], expression)
+        if service["uuid"] not in self.page_tokens:
+            self.add_start_page_token(service["uuid"])
+
+    def add_start_page_token(self, service_id):
+        drive_service=get_drive(service_id)
+        pt = drive_service.changes().getStartPageToken().execute().get('startPageToken')
+        self.page_tokens[service_id]=pt
+
+    def remove_trigger(self, ruleid):
+        del self.watchs[ruleid]
+
+    def get_all_changes(self):
+        for service_id, page_token in self.page_tokens.items():
+            drive_service=get_drive(service_id)
+            response = drive_service.changes().list(pageToken=page_token,
+                                                    spaces='drive').execute()
+            for change in response.get('changes'):
+                yield (service_id, change)
+
+            if 'newStartPageToken' in response:
+                # Last page, save this token for the next polling interval
+                self.page_tokens[service_id] = response.get('newStartPageToken')
+
+@serverboards.rpc_method
+def watch_start(id, service, expression, *args, **kwargs):
+    print(args, kwargs)
+    global watcher
+    if not watcher:
+        watcher = DriveWatcher()
+    watcher.add_trigger(id, service, expression)
+    return id
+
+@serverboards.rpc_method
+def watch_stop(id):
+    watcher.remove_trigger(id)
 
 if __name__=='__main__':
     serverboards.loop()
