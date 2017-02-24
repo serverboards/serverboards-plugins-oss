@@ -16,7 +16,7 @@ let drive
 
 const Model = React.createClass({
   getInitialState(){
-    return {lines:[], loading: true}
+    return {lines:[], loading: true, error: false, link: false}
   },
   update(){
     const folder_filter = this.props.config.folder_filter
@@ -25,6 +25,17 @@ const Model = React.createClass({
       .filter( s => s!="" );
     drive.call("get_changes", [this.props.config.service.uuid, folder_filter]).then( (changes) => {
       this.setState({lines: changes, loading: false})
+    }).catch( (e) => {
+      if (e=="invalid_grant"){
+        drive.call("authorize_url", [this.props.config.service]).then( (url) => {
+          this.setState({error: "Google Drive grant has expired and was not automatically refreshed. Click here to renew.", link: url})
+          Flash.error(e)
+        })
+      }
+      else{
+        this.setState({error: e})
+        Flash.error(e)
+      }
     })
   },
   componentDidMount(){
@@ -34,6 +45,15 @@ const Model = React.createClass({
       } ).then( this.update )
   },
   render(){
+    if (this.state.error){
+      return (
+        <div className="ui message error">
+          {this.state.link ? (
+            <a href={this.state.link} target="_blank">{this.state.error}</a>  
+          ): this.state.error }
+        </div>
+      )
+    }
     if (this.state.loading)
       return (
         <Components.Loading>Google Drive Changes</Components.Loading>
