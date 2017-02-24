@@ -70,8 +70,12 @@ components:
     name: Google Drive
     traits: google.drive
     params:
-      - id: drive
-        name: service
+      - name: service
         type: service
         traits: google.drive
         label: Related Google Drive Service
+      - name: folder_filter
+        label: Folder Filter
+        type: text
+        description: Comma separated folder names to filter results. Empty for all.
+        placeholder: "My Folder, Documents, ..."

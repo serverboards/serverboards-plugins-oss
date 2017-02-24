@@ -23,10 +23,15 @@ function DriveLine(props){
         </a>
       </div>
       <div className="data">
-        <b>{props.author}</b>&nbsp;
-        {props.what}&nbsp;
-        <b>{props.file}</b>&nbsp;
-        <b>{props.to}</b>
+        <b>{props.author} </b>
+        {props.what}
+        <b> {props.file} </b>
+        {props.to ? (
+          <span>
+            {props.what=="removed" ? "from" : "at"}
+            <a href={props.to_link} target="_blank"><b> {props.to} </b></a>
+          </span>
+        ) : null}
       </div>
       <div className="time">
         {props.downloadLink ? (

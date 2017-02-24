@@ -24,7 +24,7 @@ def get_drive(service_id, version='v3'):
 
 file_info_cache={}
 def get_file_info(drive_service, fileid, fields=None):
-    fieldsl=''
+    fieldsl=None
     if fields:
         fieldsl = ','.join(fields)
     data = file_info_cache.get((drive_service, fileid, fieldsl))
@@ -33,7 +33,7 @@ def get_file_info(drive_service, fileid, fields=None):
         file_info_cache[(drive_service, fileid, fieldsl)] = data
     return data
 @serverboards.rpc_method
-def get_changes(service_id):
+def get_changes(service_id, folder_filter=None):
     drive_service=get_drive(service_id)
     def decorate(file):
         datetime=file["time"]
@@ -47,28 +47,29 @@ def get_changes(service_id):
         else:
             what=kind
 
-        more_info = get_file_info(drive_service, file["file"]["id"], ["lastModifyingUser","modifiedTime","webViewLink","webContentLink","parents"])
+        more_info = get_file_info(drive_service, file.get("fileId"), ["mimeType","name","lastModifyingUser","modifiedTime","webViewLink","webContentLink","parents"])
         parents = more_info.get("parents",[])
         if parents:
-            folder_info = get_file_info(drive_service, parents[0])
+            folder_info = get_file_info(drive_service, parents[0], ["name","webViewLink"])
         else:
             folder_info = {}
-        serverboards.debug("folder_info %s %s %s "%(file, more_info, folder_info))
         return {
             "author": more_info.get("lastModifyingUser",{}).get("displayName"),
             "what": what,
-            "type": file["file"]["mimeType"],
-            "file": file["file"]["name"],
+            "type": more_info.get("mimeType"),
+            "file": more_info.get("name"),
             "to": folder_info.get("name"),
+            "to_link": folder_info.get("webViewLink"),
             "time": datetime[11:16],
             "date": datetime[:10],
             "downloadLink": more_info.get("webContentLink"),
-            "viewLink": more_info.get("webViewLink")
+            "viewLink": more_info.get("webViewLink"),
+            "removed": file.get("removed")
         }
 
     page_token = drive_service.changes().getStartPageToken().execute().get('startPageToken')
     # hack, show something
-    page_token = int(page_token) - 100
+    page_token = int(page_token) - 1000
     changes=[]
     while page_token is not None:
         response = drive_service.changes().list(pageToken=page_token,
@@ -90,6 +91,13 @@ def get_changes(service_id):
     lastd=None
     lastv=None
     for x in [decorate(x) for x in changes]:
+        # in some cases may be empty, because it was not a file update
+        if not x:
+            continue
+        # skip if not at filtered folders
+        if folder_filter and x.get("to") not in folder_filter:
+            #serverboards.debug("Skip %s as not in %s"%(x, folder_filter))
+            continue
         if lastd != x["date"]:
             lastd=x["date"]
             lastv={"entries": [x], "date": x["date"]}

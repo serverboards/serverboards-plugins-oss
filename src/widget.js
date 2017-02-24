@@ -1,4 +1,4 @@
-const {rpc, React, plugin} = Serverboards
+const {rpc, React, plugin, Components} = Serverboards
 const plugin_id="serverboards.google.drive"
 import Day from './day'
 
@@ -19,9 +19,12 @@ const Model = React.createClass({
     return {lines:[], loading: true}
   },
   update(){
-    drive.call("get_changes", [this.props.config.service.uuid]).then( (changes) => {
-      console.log(changes)
-      this.setState({lines: changes})
+    const folder_filter = this.props.config.folder_filter
+      .split(',')
+      .map( s => s.trim() )
+      .filter( s => s!="" );
+    drive.call("get_changes", [this.props.config.service.uuid, folder_filter]).then( (changes) => {
+      this.setState({lines: changes, loading: false})
     })
   },
   componentDidMount(){
@@ -31,6 +34,10 @@ const Model = React.createClass({
       } ).then( this.update )
   },
   render(){
+    if (this.state.loading)
+      return (
+        <Components.Loading>Google Drive Changes</Components.Loading>
+      )
     return (
       <View days={this.state.lines}/>
     )
@@ -39,6 +46,7 @@ const Model = React.createClass({
 
 function main(el, config, extra){
   extra.setTitle("Google Drive activity")
+  $(el).css("overflow", "auto")
   Serverboards.ReactDOM.render(<Model config={config}/>, el)
 
   return function(){
