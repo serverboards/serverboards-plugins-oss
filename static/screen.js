@@ -3,16 +3,18 @@
 var rpc = Serverboards.rpc
 var Flash = Serverboards.Flash
 var plugin = Serverboards.plugin
+var cache = Serverboards.cache
 
 function main(element, config){
   function open_port(ssh_id, config){
-    var url = config.service.config.via.config.url || "localhost"
-    var op = rpc.call(ssh_id+".open_port", {url: url, hostname: "localhost", port: port }).then(
-      (port) => {
-        //console.log("Opened port %o -> localhost:%o", port, config.service.config.port)
-        return rpc.call("http.add_port", [port]).then( (uuid) =>  ({uuid: uuid, port: port}) )
-      })
-    return op
+    return cache.service(config.service.config.via)
+      .then( via =>
+          (via && via.config.url) || "localhost"
+      ).then( url =>
+        rpc.call(ssh_id+".open_port", {url: url, hostname: "localhost", port: port })
+      ).then( port =>
+        rpc.call("http.add_port", [port]).then( (uuid) =>  ({uuid: uuid, port: port}) )
+      )
   }
 
   function open_in_tab(config){
@@ -55,7 +57,6 @@ function main(element, config){
   var ws_uuid, ssh_id, spice_port
   var port = config.service.config.port || 5900
   var spice_url = "spice://"+hostname+":"+port
-  var via=config.service.config.via && config.service.config.via.config.url
   if (config.service.config.remote_desktop){
     spice_url=config.service.config.remote_desktop
     var matches=spice_url.match(/spice:\/\/(.*):(.*)/)
@@ -79,8 +80,10 @@ function main(element, config){
       $(element).find('#fullscreenable').removeClass("fullscreen")
   })
 
-  if (via && via!=hostname){
-    console.log("Connect via: %o %o",config.service.config.via.config.url, config)
+  if (config.via && config.via!=hostname){
+    cache.service(via).then( via =>
+      console.log("Connect via: %o %o", via.name, via.config.url)
+    )
     //spice_url+="?via="+via
   }
   else{
@@ -88,10 +91,10 @@ function main(element, config){
   }
 
   $(element).find('#spice-link').attr('href',spice_url)
-  rpc.call("plugin.start",["serverboards.core.ssh/daemon"]).then((ssh) => {
-      ssh_id = ssh
-      return open_port(ssh_id, config)
-    }).then( (uuid_port) => {
+  rpc.call("plugin.start",["serverboards.core.ssh/daemon"])
+    .then((ssh) =>
+      open_port(ssh, config)
+    ).then( (uuid_port) => {
       console.log("Connect to ws %o", uuid_port.uuid)
       spice_port = uuid_port.port
       ws_uuid = uuid_port.uuid
