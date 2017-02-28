@@ -10,7 +10,7 @@ components:
     type: cmd
     command: serverboards-google-drive.py
     strategy: singleton
-    timeout: 10s
+    timeout: 10m
     perms:
       - settings.view[serverboards.google.drive/settings]
       - settings.view[serverboards.core.settings/base]

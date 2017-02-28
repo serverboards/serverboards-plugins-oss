@@ -20,6 +20,7 @@ var rpc=_Serverboards.rpc;
 var React=_Serverboards.React;
 var plugin=_Serverboards.plugin;
 var Components=_Serverboards.Components;
+var Flash=_Serverboards.Flash;
 var plugin_id="serverboards.google.drive";
 function View(a){return React.createElement("div",{className:"google drive"},a.days.map(function(b){return React.createElement(DriveDay,b)}))}var drive=void 0;
 var Model=React.createClass({displayName:"Model",getInitialState:function getInitialState(){return{lines:[],loading:!0,error:!1,link:!1}},update:function update(){var _this=this,a=this.props.config.folder_filter.split(",").map(function(b){return b.trim()}).filter(function(b){return""!=b});drive.call("get_changes",[this.props.config.service.uuid,a]).then(function(b){_this.setState({lines:b,loading:!1})}).catch(function(b){"invalid_grant"==b?drive.call("authorize_url",[_this.props.config.service]).then(function(c){_this.setState({error:"Google Drive grant has expired and was not automatically refreshed. Click here to renew.",link:c}),Flash.error(b)}):(_this.setState({error:b}),Flash.error(b))})},componentDidMount:function componentDidMount(){plugin.start("serverboards.google.drive/daemon").then(function(a){drive=a}).then(this.update)},render:function render(){return this.state.error?React.createElement("div",{className:"ui message error"},this.state.link?React.createElement("a",{href:this.state.link,target:"_blank"},this.state.error):this.state.error):this.state.loading?React.createElement(Components.Loading,null,"Google Drive Changes"):React.createElement(View,{days:this.state.lines})}});

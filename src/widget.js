@@ -1,4 +1,4 @@
-const {rpc, React, plugin, Components} = Serverboards
+const {rpc, React, plugin, Components, Flash} = Serverboards
 const plugin_id="serverboards.google.drive"
 import Day from './day'
 
@@ -49,7 +49,7 @@ const Model = React.createClass({
       return (
         <div className="ui message error">
           {this.state.link ? (
-            <a href={this.state.link} target="_blank">{this.state.error}</a>  
+            <a href={this.state.link} target="_blank">{this.state.error}</a>
           ): this.state.error }
         </div>
       )
