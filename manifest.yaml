@@ -54,7 +54,7 @@ components:
       quotas involved.
 
       Get the API token credentials at [Google API Console](https://console.developers.google.com/)
-      at *Credentials / Create / Oauth API / Client Id / Web*
+      at *Credentials / Create / Oauth API / Client Id / Other*
 
       The redirect URI must be the servername including protocol
       `https://example.com/static/serverboards.google.drive/auth.html`
