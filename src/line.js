@@ -25,7 +25,7 @@ function DriveLine(props){
       <div className="data">
         <b>{props.author} </b>
         {props.what}
-        <b> {props.file} </b>
+        <b> <a href={props.viewLink} target="_blank">{props.file}</a> </b>
         {props.to ? (
           <span>
             {props.what=="removed" ? "from" : "at"}
@@ -34,14 +34,16 @@ function DriveLine(props){
         ) : null}
       </div>
       <div className="time">
-        {props.downloadLink ? (
-          <a href={props.downloadLink} target="_blank">
-            <i className="ui icon download"/>
-          </a>
-        ) : null }
-      </div>
-      <div className="time">
-        {props.time}
+        <div>
+          {props.time}
+        </div>
+        <div className="download">
+          {props.downloadLink ? (
+            <a href={props.downloadLink} target="_blank">
+              <i className="ui icon download"/>
+            </a>
+          ) : null }
+        </div>
       </div>
     </div>
   )
