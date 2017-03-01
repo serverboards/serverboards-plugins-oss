@@ -9,7 +9,7 @@ const Model = React.createClass({
     console.log(state)
     return {
       expirations: undefined,
-      serverboard: state.serverboard.serverboard,
+      project: state.project.project,
       service_by_uuid: undefined
     }
   },
@@ -24,7 +24,7 @@ const Model = React.createClass({
     })
   },
   handleShowService(serviceid){
-    store.goto(`/serverboard/${this.state.serverboard.shortname}/services/${serviceid}`)
+    store.goto(`/project/${this.state.project.shortname}/services/${serviceid}`)
   },
   handleReload(){
     Flash.info("This will take long time")
