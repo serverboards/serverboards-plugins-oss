@@ -12,7 +12,7 @@
 
     let graph=new LineGraph($el[0])
     function update(){
-      const {start, end} = store.getState().serverboard.daterange
+      const {start, end} = store.getState().project.daterange
       let title
       {
         const has_title=config.expr.indexOf(':') < 20
@@ -43,8 +43,8 @@
       })
     }
 
-    store_off_start = store.on("serverboard.daterange.start", update)
-    store_on_start = store.on("serverboard.daterange.end", update)
+    store_off_start = store.on("project.daterange.start", update)
+    store_on_start = store.on("project.daterange.end", update)
     let calls=[]
     calls.push(
       rpc.call("plugin.start", ["serverboards.prometheus/daemon"]).then( (prom) => {
@@ -68,7 +68,7 @@
       if (ssh_proxy)
         // FIXME
         console.warn("Might be leaking SSH proxy ports.")
-      store_off_end()
+      store_on_start()
       store_off_start()
     }
   }
