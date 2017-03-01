@@ -18,9 +18,9 @@ const View = React.createClass({
     }
   },
   componentDidMount(){
-    rpc.call('plugin.data_keys', [plugin_id, `${this.props.serverboard}.`]).then( (keys) => {
+    rpc.call('plugin.data_keys', [plugin_id, `${this.props.project}.`]).then( (keys) => {
       let secrets={}
-      const slicepoint = this.props.serverboard.length + 1
+      const slicepoint = this.props.project.length + 1
       keys.map( (k) => {
         secrets[k]=k.slice(slicepoint)
       })
@@ -41,7 +41,7 @@ const View = React.createClass({
   },
   handleAddSecret(title, secret){
     let self=this
-    const secret_id = `${this.props.serverboard}.${title}`
+    const secret_id = `${this.props.project}.${title}`
     rpc.call('plugin.data_set', [plugin_id, secret_id, secret]).then( (res) => {
       console.log("Saved encrypted data: %o: %o", title, res)
       const secrets = utils.merge(this.state.secrets, { [secret_id]: title})
@@ -77,12 +77,12 @@ const View = React.createClass({
     this.setState({visible})
   },
   handleSave(title, secret){
-    rpc.call("plugin.data_set", [plugin_id, `${this.props.serverboard}.${title}`, secret])
+    rpc.call("plugin.data_set", [plugin_id, `${this.props.project}.${title}`, secret])
       .then( () => {
         if (title!=this.state.title) // remove old one
-          return rpc.call("plugin.data_remove", [plugin_id, `${this.props.serverboard}.${this.state.title}`])
+          return rpc.call("plugin.data_remove", [plugin_id, `${this.props.project}.${this.state.title}`])
       })
-      .then( () => this.reload(`${this.props.serverboard}.${title}`) )
+      .then( () => this.reload(`${this.props.project}.${title}`) )
       .catch( (e) => {
         console.error(e)
         Flash.error("Error saving secret")
@@ -129,7 +129,7 @@ const View = React.createClass({
 
 function main(el, config){
   console.log("secrets config:",config)
-  Serverboards.ReactDOM.render(<View serverboard={config.serverboard.shortname}/>, el)
+  Serverboards.ReactDOM.render(<View project={config.project.shortname}/>, el)
 
   return function(){
     Serverboards.ReactDOM.unmountComponentAtNode(el)
