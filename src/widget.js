@@ -4,13 +4,13 @@ const plugin_id="serverboards.plugin.serviceheatmap"
 const Model = React.createClass({
   getInitialState(){
     return {
-      services: store.getState().serverboard.serverboard.services,
+      services: store.getState().project.project.services,
       size: 20
     }
   },
   updateServices(){
     this.setState( {
-      services: store.getState().serverboard.serverboard.services
+      services: store.getState().project.project.services
     } )
   },
   componentDidMount(){
