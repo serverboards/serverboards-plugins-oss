@@ -22,7 +22,7 @@
     }
 
     function update(){
-      const {start, end} = store.getState().serverboard.daterange
+      const {start, end} = store.getState().project.daterange
       timerange={"since": start.format("YYYY-MM-DD"), "until": end.format("YYYY-MM-DD")}
       params.timerange=timerange
       graph.set_loading()
@@ -32,8 +32,8 @@
       }).catch( (e) => graph.set_error(e) )
     }
 
-    store_off_start = store.on("serverboard.daterange.start", update)
-    store_off_end =store.on("serverboard.daterange.end", update)
+    store_off_start = store.on("project.daterange.start", update)
+    store_off_end =store.on("project.daterange.end", update)
     update()
     return function(){
       store_off_end()
