@@ -105,7 +105,7 @@ const EditFileRow = React.createClass({
       description: props.rule.description,
       is_active: status.is_active,
       service: status.service,
-      serverboard: props.serverboard.shortname,
+      project: props.project.shortname,
       trigger: {
         trigger: `${plugin_id}/file_exists`,
         params: {

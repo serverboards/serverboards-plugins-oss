@@ -10,7 +10,7 @@ const Widget = Serverboards.React.createClass({
     }
   },
   componentDidMount(){
-    rpc.call("rules.list", {serverboard: this.props.config.serverboard.shortname}).then( (list) => {
+    rpc.call("rules.list", {project: this.props.config.project.shortname}).then( (list) => {
       const files = list
         .filter( (el) => el.trigger.trigger == `${plugin_id}/file_exists` && el.is_active )
         .map( (el) => ({

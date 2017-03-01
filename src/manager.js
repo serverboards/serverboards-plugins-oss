@@ -9,7 +9,7 @@ function by_when(A, B){
 
 const Manager=React.createClass({
   getInitialState(){
-    const services = this.props.serverboard.services.filter( (s) => s.type == "serverboards.core.ssh/ssh" )
+    const services = this.props.project.services.filter( (s) => s.type == "serverboards.core.ssh/ssh" )
     return {
       services: services,
       rules: []
@@ -19,7 +19,7 @@ const Manager=React.createClass({
     this.reload_rules()
   },
   reload_rules(){
-    rpc.call("rules.list", {serverboard:this.props.serverboard.shortname}).then( (all_rules) => {
+    rpc.call("rules.list", {project:this.props.project.shortname}).then( (all_rules) => {
       const rules = all_rules
         .filter( (r) => r.trigger.trigger == `${plugin_id}/file_exists` )
         .map( (r) => ({
@@ -42,7 +42,7 @@ const Manager=React.createClass({
         params: { file_expression:"", when: "7am" },
       },
       actions: [],
-      serverboard: this.props.serverboard.shortname,
+      project: this.props.project.shortname,
     }).then( () => {
       this.reload_rules()
     })
@@ -69,7 +69,7 @@ const Manager=React.createClass({
           </thead>
           <tbody>
             {state.rules.sort(by_when).map( (r) => (
-              <EditFileRow rule={r} services={state.services} serverboard={props.serverboard} handleReload={this.reload_rules}/>
+              <EditFileRow rule={r} services={state.services} project={props.project} handleReload={this.reload_rules}/>
             ))}
           </tbody>
         </table>
@@ -85,7 +85,7 @@ const Manager=React.createClass({
 })
 
 const main=function(el, config){
-  Serverboards.ReactDOM.render(React.createElement(Manager, {serverboard: config.serverboard}), el)
+  Serverboards.ReactDOM.render(React.createElement(Manager, {project: config.project}), el)
 
   return function(){
     Serverboards.ReactDOM.unmountComponentAtNode(el)
