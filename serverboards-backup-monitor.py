@@ -101,7 +101,7 @@ class RemoteCheck:
                     (self.file_expression + "-" + self.service["uuid"]).encode('utf8')
                     ).hexdigest()
 
-                rpc.call("plugin.data_set", plugin_id, 'test-'+sha, data)
+                rpc.call("plugin.data.update", plugin_id, 'test-'+sha, data)
             else:
                 serverboards.rpc.event("trigger", {"id": self.id, "state" : "not-exists"})
             self.prev_exists = exists

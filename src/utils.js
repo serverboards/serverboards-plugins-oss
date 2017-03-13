@@ -40,7 +40,7 @@ export function old_backup(date){
 
 export function get_servername(uuid){
   let p = new Promise(function(accept, reject){
-    rpc.call("service.info", [uuid]).then( (service) => {
+    rpc.call("service.get", [uuid]).then( (service) => {
       accept(service.name)
     }).catch( (e) => {
       reject( e )
@@ -54,7 +54,7 @@ export function get_state({file_expression, service}){
   var to_check = new TextEncoder("utf-8").encode(file_expression + "-" + service);
   var p = crypto.subtle.digest("SHA-256", to_check).then( (sha) => {
     var key="test-"+hex(sha)
-    return rpc.call("plugin.data_get",[plugin_id, key])
+    return rpc.call("plugin.data.get",[plugin_id, key])
   } ).then( (data) => {
     if (!data.filename){
       return {
