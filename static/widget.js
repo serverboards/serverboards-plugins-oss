@@ -53,7 +53,7 @@
     )
     if (config.service.config.via){
       calls.push(
-        rpc.call("service.info",[config.service.config.via]).then( (service) => {
+        rpc.call("service.get",[config.service.config.via]).then( (service) => {
           ssh_proxy=service.config.url
           console.log("Setting ssh proxy: %s", ssh_proxy)
         })
