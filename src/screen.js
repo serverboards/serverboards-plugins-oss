@@ -46,8 +46,9 @@ const Manager = React.createClass({
     const {cronlines, action_catalog} = this.state
 
     if (!cronlines || !action_catalog){
+      const Loading = Serverboards.Components
       return (
-        <Serverboards.Components.Loading>Cron info</Serverboards.Components.Loading>
+        <Loading>Cron info</Loading>
       )
     }
     return (
