@@ -75,18 +75,15 @@ class RPC:
         caller.update(extra)
         return caller
 
-    def debug(self, *msg, extra={}, level=0):
+    def debug(self, msg, extra={}, level=0):
         self.debug_stdout(msg)
-        return self.event("log.debug", str(' '.join(str(x) for x in msg)), self.__decorate_log(extra, level=2+level))
-    def error(self, *msg, extra={}, level=0):
+        return self.event("log.debug", str(msg), self.__decorate_log(extra, level=2+level))
+    def error(self, msg, extra={}, level=0):
         self.debug_stdout(msg)
-        return self.event("log.error", str(' '.join(str(x) for x in msg)), self.__decorate_log(extra, level=2+level))
-    def info(self, *msg, extra={}, level=0):
+        return self.event("log.error", str(msg), self.__decorate_log(extra, level=2+level))
+    def info(self, msg, extra={}, level=0):
         self.debug_stdout(msg)
-        return self.event("log.info", str(' '.join(str(x) for x in msg)), self.__decorate_log(extra, level=2+level))
-    def warning(self, *msg, extra={}, level=0):
-        self.debug_stdout(msg)
-        return self.event("log.warning", str(' '.join(str(x) for x in msg)), self.__decorate_log(extra, level=2+level))
+        return self.event("log.info", str(msg), self.__decorate_log(extra, level=2+level))
 
     def debug_stdout(self, x):
         if not self.stderr:
@@ -362,14 +359,14 @@ def loop(debug=None):
         rpc.set_debug(debug)
     rpc.loop()
 
-def debug(*s):
-    rpc.debug(*s, level=1)
-def info(*s):
-    rpc.info(*s, level=1)
-def warning(*s):
-    rpc.warning(*s, level=1)
-def error(*s):
-    rpc.error(*s, level=1)
+def debug(s):
+    rpc.debug(s, level=1)
+def info(s):
+    rpc.debug(s, level=1)
+def warning(s):
+    rpc.debug(s, level=1)
+def error(s):
+    rpc.debug(s, level=1)
 
 class Config:
     def __init__(self):
@@ -390,33 +387,5 @@ class Config:
         except OSError as e:
             if 'File exists' not in str(e):
                 raise
-
-class Plugin:
-    def __init__(self, id):
-        self.id=id
-        self.uuid=None
-    def start(self):
-        assert not self.uuid
-        self.uuid = rpc.call("plugin.start", self.id)
-        return self
-    def call(self, command, *args, **kwargs):
-        assert self.uuid
-        return rpc.call("%s.%s"%(self.uuid, command), *args, **kwargs)
-    def stop(self):
-        assert self.uuid
-        rpc.call("plugin.stop", self.uuid)
-        self.uuid=None
-        return self
-
-    @staticmethod
-    def start_call_stop(plugin, command, *args, **kwargs):
-        pl = Plugin(plugin).start()
-        ret = None
-        try:
-            ret = pl.call(command, *args, **kwargs)
-        finally:
-            pl.stop()
-        return ret
-
 
 config=Config()

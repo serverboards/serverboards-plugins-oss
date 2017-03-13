@@ -136,7 +136,7 @@ def update_expirations(**kwfilter):
     Data is later stored into the plugin database.
     """
     services = rpc.call("service.list", **kwfilter)
-    checkers = rpc.call("plugin.list_components", {"type": "serverboards.expiration"})
+    checkers = rpc.call("plugin.component.catalog", {"type": "serverboards.expiration"})
 
     def check_service(sc):
         s,c = sc
@@ -171,17 +171,17 @@ def update_expirations(**kwfilter):
     expirations = merge_expirations( [check_service(sc) for sc in checks] )
     expirations.sort(key=lambda x: x["date"])
 
-    rpc.call("plugin.data_set", "expirations", expirations)
+    rpc.call("plugin.data.update", "expirations", expirations)
 
     return expirations
 
 @serverboards.rpc_method
 def list_expirations():
-    expirations = rpc.call("plugin.data_get", "expirations")
+    expirations = rpc.call("plugin.data.get", "expirations")
     if expirations == {}:
         serverboards.info("Calculating initial expiration list")
         update_expirations()
-        expirations = rpc.call("plugin.data_get", "expirations")
+        expirations = rpc.call("plugin.data.get", "expirations")
     return expirations
 
 if __name__=='__main__':
