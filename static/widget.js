@@ -27,4 +27,3 @@ var Model=React.createClass({displayName:"Model",getInitialState:function getIni
 function main(a,b,c){return c.setTitle("Google Drive activity"),$(a).css("overflow","auto"),Serverboards.ReactDOM.render(React.createElement(Model,{config:b}),a),function(){Serverboards.ReactDOM.unmountComponentAtNode(a)}}Serverboards.add_widget(plugin_id+"/widget",main);
 
 })));
-//# sourceMappingURL=widget.js.map
