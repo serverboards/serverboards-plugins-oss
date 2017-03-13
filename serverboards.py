@@ -237,7 +237,7 @@ class RPC:
         rpc = json.dumps(dict(method=method, params=params or kparams))
         self.println(rpc)
 
-    def reply(self, a, b=None):
+    def reply(self, result):
         """
         Shortcuts request processing returning an inmediate answer. The final
         answer will be ignored.
@@ -246,31 +246,9 @@ class RPC:
         loop.
 
         If more calls are expected, it is recomended to spawn new threads.
-
-        It has two possible call options: `reply(id, result)` | `reply(result)`,
-        if has an id it is the result id as returned by `delayed_result()`.
-
-        @see delayed_result
-        """
-        if b:
-            id=a
-            result=b
-        else:
-            id=self.last_rpc_id
-            result=b
-        self.manual_replies.add(id)
-        self.println(json.dumps({"id": id, "result": result}))
-        
-    def delayed_result(self):
-        """
-        Marks the current called rpc call as already answered. This allows to
-        delay the result as much as needed calling later delayed result, but
-        going back to the normal rpc.loop.
-
-        Returns the current id, so it can be answered later, if required.
         """
         self.manual_replies.add(self.last_rpc_id)
-        return self.last_rpc_id
+        self.println(json.dumps({"id": self.last_rpc_id, "result": result}))
 
     def call(self, method, *params, **kparams):
         """

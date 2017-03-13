@@ -93,7 +93,7 @@ def message_check(timeout=3600):
     status["code_to_chatid"]=code_to_chatid
 
     if update:
-        serverboards.rpc.call("plugin.data_set", "status", status)
+        serverboards.rpc.call("plugin.data.update", "status", status)
 
     return update
 
@@ -137,7 +137,7 @@ def update_config():
     settings=None
     try:
         settings=serverboards.rpc.call("settings.get", "serverboards.telegram/settings.telegram")
-        status=serverboards.rpc.call("plugin.data_get", "status")
+        status=serverboards.rpc.call("plugin.data.get", "status")
     except:
         status=dict(lastid=0, code_to_chatid={})
     if not settings or not settings["token"]:
