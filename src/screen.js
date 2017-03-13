@@ -32,7 +32,7 @@ const View = React.createClass({
   },
   handleSecretSelect(secret){
     console.log("secret %o", secret )
-    rpc.call("plugin.data_get", [plugin_id, secret]).then( (data) => {
+    rpc.call("plugin.data.get", [plugin_id, secret]).then( (data) => {
       this.setState({secret: data, title: this.state.secrets[secret], secret_id: secret, add: false, visible: false})
     })
   },
@@ -42,7 +42,7 @@ const View = React.createClass({
   handleAddSecret(title, secret){
     let self=this
     const secret_id = `${this.props.project}.${title}`
-    rpc.call('plugin.data_set', [plugin_id, secret_id, secret]).then( (res) => {
+    rpc.call('plugin.data.update', [plugin_id, secret_id, secret]).then( (res) => {
       console.log("Saved encrypted data: %o: %o", title, res)
       const secrets = utils.merge(this.state.secrets, { [secret_id]: title})
       self.setState({add: false, secret, title, secrets, secret_id})
@@ -53,7 +53,7 @@ const View = React.createClass({
   },
   handleDeleteSecret(){
     const secret_id = this.state.secret_id
-    rpc.call("plugin.data_remove", [plugin_id, secret_id]).then( () => {
+    rpc.call("plugin.data.delete", [plugin_id, secret_id]).then( () => {
       console.log("Deleted secret %o", secret_id)
       let secrets = {}
       Object.keys(this.state.secrets).map( (k) => {
@@ -77,10 +77,10 @@ const View = React.createClass({
     this.setState({visible})
   },
   handleSave(title, secret){
-    rpc.call("plugin.data_set", [plugin_id, `${this.props.project}.${title}`, secret])
+    rpc.call("plugin.data.update", [plugin_id, `${this.props.project}.${title}`, secret])
       .then( () => {
         if (title!=this.state.title) // remove old one
-          return rpc.call("plugin.data_remove", [plugin_id, `${this.props.project}.${this.state.title}`])
+          return rpc.call("plugin.data.delete", [plugin_id, `${this.props.project}.${this.state.title}`])
       })
       .then( () => this.reload(`${this.props.project}.${title}`) )
       .catch( (e) => {
@@ -127,8 +127,8 @@ const View = React.createClass({
   }
 })
 
-function main(el, config){
-  console.log("secrets config:",config)
+function main(el, config, extra){
+  console.log("secrets config:",config, extra)
   Serverboards.ReactDOM.render(<View project={config.project.shortname}/>, el)
 
   return function(){
