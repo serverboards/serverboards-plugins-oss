@@ -21,13 +21,13 @@ components:
     type: cmd
     command: ./serverboards-expiration-wizard.py
     name: Expiration Checker
-    perms: service.info plugin
+    perms: service.get plugin action.update
     timeout: 1h
     strategy: one_for_one
 
   - id: checker
     type: cron
-    name: Update expirations at 2:11am UTC 
+    name: Update expirations at 2:11am UTC
     cron: 11 2 * * *
     action: serverboards.expiration/update
 
@@ -35,7 +35,10 @@ components:
     type: action
     name: Update expirations
     command: serverboards.expiration/command
-    call: update_expirations
+    call:
+      method: update_expirations
+      params:
+        - name: action_id
 
   - id: sslchecker
     name: SSL Expiration Checker

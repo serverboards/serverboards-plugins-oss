@@ -48,7 +48,7 @@ def imaps_expiration(service):
 
 @serverboards.rpc_method
 def ssl_expiration(service, defport=443, scheme="https"):
-    serverboards.debug("Check SSL ", service)
+    serverboards.debug("Check SSL %s"%service)
     url = service_url(service)
     if url.scheme != scheme:
         return []
@@ -73,7 +73,7 @@ def ssl_expiration(service, defport=443, scheme="https"):
 
 @serverboards.rpc_method
 def dns_expiration(service):
-    serverboards.debug("Check DNS ", service)
+    serverboards.debug("Check DNS %s "%service)
     domain = service_url(service).hostname
     def decorate(l, d):
         try:
@@ -126,7 +126,7 @@ def slimmed_service(s):
     }
 
 @serverboards.rpc_method
-def update_expirations(**kwfilter):
+def update_expirations(action_id=None, **kwfilter):
     """
     Gathers a list of all services from the server, and runs all known
     expiration checkers on all of them.
@@ -140,14 +140,14 @@ def update_expirations(**kwfilter):
 
     def check_service(sc):
         s,c = sc
-        serverboards.debug("Check ",s["name"], c["name"])
+        serverboards.debug("Check %s %s"%(s["name"], c["name"]))
         try:
             ret = []
             expirations_raw = Plugin.start_call_stop(c["extra"]["command"], c["extra"]["call"], slimmed_service(s))
             for r in expirations_raw:
                 r["service"]=s["uuid"]
                 r["check"]=c["id"]
-                r["serverboards"]=s["serverboards"]
+                r["projects"]=s["projects"]
                 ret.append( r )
             serverboards.debug("Expirations: %s"%repr(ret))
             return ret
@@ -158,17 +158,27 @@ def update_expirations(**kwfilter):
 
 
     checks = []
+    count=0
+    progress = 0.01 # to show
     # I calculate possible combinations
+    # and count to get proper progress bar
     for s in services:
         for c in checkers:
             if compatible_traits(s,c):
+                count+=1
                 checks.append( (s,c) )
+    checkers_delta = 100.0/count
+
     # And now go for it
     serverboards.debug("%d checks"%len(checks))
     expirations = []
-    #with concurrent.futures.ThreadPoolExecutor() as executor:
-    #    expirations = merge_expirations( executor.map(check_service, checks) )
-    expirations = merge_expirations( [check_service(sc) for sc in checks] )
+    for sc in checks:
+        if action_id:
+            serverboards.rpc.call("action.update", action_id, {"progress": progress, "label": "%s - %s"%(sc[0]["name"], sc[1]["name"])})
+            progress+=checkers_delta
+        expirations.append( check_service(sc) )
+
+    expirations = merge_expirations( expirations )
     expirations.sort(key=lambda x: x["date"])
 
     rpc.call("plugin.data.update", "expirations", expirations)
