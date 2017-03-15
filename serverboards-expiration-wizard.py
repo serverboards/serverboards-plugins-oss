@@ -4,9 +4,11 @@ import serverboards, urllib, sys, subprocess
 sys.path.append('env/lib/python3.5/site-packages/')
 
 from urllib.parse import urlparse
-from dateutil.parser import parse as dateparse
 import concurrent.futures
 from serverboards import rpc, Plugin
+
+import datetime, pytz, dateutil
+from dateutil.parser import parse as dateparse
 
 TIMEOUT=5
 
@@ -125,6 +127,16 @@ def slimmed_service(s):
         "config" : s["config"]
     }
 
+def matching_rules(exp, status, rules):
+    serverboards.debug(', '.join( repr(x) for x in [exp, status, rules]))
+    for r in rules:
+        if r["last_state"] != status:
+            if not r["service"] or r["service"] == exp["service"]:
+                yield r
+
+
+ORDER_ST={"": -1, "ok": 0, "warning": 1, "error": 2}
+
 @serverboards.rpc_method
 def update_expirations(action_id=None, **kwfilter):
     """
@@ -156,6 +168,27 @@ def update_expirations(action_id=None, **kwfilter):
             serverboards.error("Could not check %s"%s["name"])
             return []
 
+    rule_updates={}
+    rules=serverboards.rpc.call("rules.list", trigger="serverboards.expiration/trigger")
+    now=datetime.datetime.now(tz=dateutil.tz.tzutc())
+    def update_rules_status(exp):
+        for e in exp: # exp is a list of expirations
+            st="ok"
+            date = dateparse(e["date"])
+            if date.tzname()==None:
+                date = pytz.utc.localize(date) # suppose it was originally UTC
+            days = (date - now).days
+            if days<0:
+                st="expired"
+            elif days<=14:
+                st="warning"
+
+            for r in matching_rules(e, st, rules):
+                (cst, _) = rule_updates.get(r["uuid"], ("", None))
+                # get if the new state is more grave than earlier. Initial is OK.
+                mst=max((ORDER_ST[cst], cst), (ORDER_ST[st], st))[1]
+                if cst != mst: # if so, set gravity here
+                    rule_updates[r["uuid"]]=(mst, e)
 
     checks = []
     count=0
@@ -176,12 +209,18 @@ def update_expirations(action_id=None, **kwfilter):
         if action_id:
             serverboards.rpc.call("action.update", action_id, {"progress": progress, "label": "%s - %s"%(sc[0]["name"], sc[1]["name"])})
             progress+=checkers_delta
-        expirations.append( check_service(sc) )
+        exp = check_service(sc)
+        expirations.append( exp )
+        serverboards.debug( exp )
+
+        update_rules_status(exp)
 
     expirations = merge_expirations( expirations )
     expirations.sort(key=lambda x: x["date"])
 
     rpc.call("plugin.data.update", "expirations", expirations)
+    for uuid,v in rule_updates.items():
+        serverboards.rpc.call("rules.trigger", uuid=uuid, state=v[0], expiration=v[1])
 
     return expirations
 
