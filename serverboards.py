@@ -430,7 +430,10 @@ class Plugin:
         try:
             ret = pl.call(method, *args, **kwargs)
         finally:
-            pl.stop()
+            try:
+                pl.stop()
+            except:
+                pass # just cant stop
         return ret
 
 

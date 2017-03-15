@@ -16,7 +16,6 @@ def merge_expirations(all_expirations):
     ret=[]
     ids = set([])
 
-    print(all_expirations)
     for expirations in all_expirations:
         for e in (expirations or []):
             id=e.get('id')
@@ -128,14 +127,15 @@ def slimmed_service(s):
     }
 
 def matching_rules(exp, status, rules):
-    serverboards.debug(', '.join( repr(x) for x in [exp, status, rules]))
+    #serverboards.debug(', '.join( repr(x) for x in [exp, status, rules]))
     for r in rules:
         if r["last_state"] != status:
+            serverboards.debug("%s %s"%(r["service"], exp["service"]))
             if not r["service"] or r["service"] == exp["service"]:
                 yield r
 
 
-ORDER_ST={"": -1, "ok": 0, "warning": 1, "error": 2}
+ORDER_ST={"": -1, "ok": 0, "warning": 1, "expired": 2}
 
 @serverboards.rpc_method
 def update_expirations(action_id=None, **kwfilter):
@@ -152,7 +152,7 @@ def update_expirations(action_id=None, **kwfilter):
 
     def check_service(sc):
         s,c = sc
-        serverboards.debug("Check %s %s"%(s["name"], c["name"]))
+        #serverboards.debug("Check %s %s"%(s["name"], c["name"]))
         try:
             ret = []
             expirations_raw = Plugin.start_call_stop(c["extra"]["command"], c["extra"]["call"], slimmed_service(s))
@@ -161,7 +161,7 @@ def update_expirations(action_id=None, **kwfilter):
                 r["check"]=c["id"]
                 r["projects"]=s["projects"]
                 ret.append( r )
-            serverboards.debug("Expirations: %s"%repr(ret))
+            #serverboards.debug("Expirations: %s"%repr(ret))
             return ret
         except:
             import traceback; traceback.print_exc()
@@ -169,7 +169,7 @@ def update_expirations(action_id=None, **kwfilter):
             return []
 
     rule_updates={}
-    rules=serverboards.rpc.call("rules.list", trigger="serverboards.expiration/trigger")
+    rules=serverboards.rpc.call("rules.list", trigger="serverboards.expiration/trigger", is_active=True)
     now=datetime.datetime.now(tz=dateutil.tz.tzutc())
     def update_rules_status(exp):
         for e in exp: # exp is a list of expirations
@@ -211,7 +211,6 @@ def update_expirations(action_id=None, **kwfilter):
             progress+=checkers_delta
         exp = check_service(sc)
         expirations.append( exp )
-        serverboards.debug( exp )
 
         update_rules_status(exp)
 
@@ -219,6 +218,7 @@ def update_expirations(action_id=None, **kwfilter):
     expirations.sort(key=lambda x: x["date"])
 
     rpc.call("plugin.data.update", "expirations", expirations)
+    serverboards.debug("Got this updates to rules: %s"%repr(rule_updates))
     for uuid,v in rule_updates.items():
         serverboards.rpc.call("rules.trigger", uuid=uuid, state=v[0], expiration=v[1])
 
