@@ -5,6 +5,8 @@ description: |
 
   It uses symetric encryption and is all performed in the user interface, so no
   plain data is stored in the backend ever.
+version: 17.04
+author: David Moreno Montero <dmoreno@serverboards.io>
 
 components:
   - id: screen
