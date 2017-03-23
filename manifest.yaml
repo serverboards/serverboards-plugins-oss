@@ -3,6 +3,7 @@ name: Google Drive
 author: David Moreno <dmoreno@serverboards.io>
 url: https://github.com/serverboards/serverboards-plugin-google-drive
 description: Watches for changes at Google Drive
+version: 17.04
 
 components:
   - id: daemon
