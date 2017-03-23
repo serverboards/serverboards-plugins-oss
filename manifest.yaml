@@ -1,6 +1,8 @@
 id: serverboards.cron
 name: Cron type daemon
 description: Can create cron type rules, and an easy editor for them
+author: David Moreno Montero <dmoreno@serverboards.io>
+version: 17.04
 
 components:
   - id: cron
