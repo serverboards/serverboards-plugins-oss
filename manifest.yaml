@@ -13,6 +13,7 @@ description: |
   alerting when some conditions apply.
 
   Prometheus configuration must be done externally to Serverboards.
+version: 17.04
 
 components:
   - id: service
