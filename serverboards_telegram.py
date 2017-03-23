@@ -120,11 +120,11 @@ def poll_for_messages():
     except Exception as e:
         if str(e)=="Not configured":
             serverboards.debug("Not configured, waiting for configuration")
-            serverboards.rpc.delayed_result() # I dont plan to answer ever
+            #serverboards.rpc.delayed_result() # I dont plan to answer ever
         elif str(e)=="Not Found":
             serverboards.debug(repr(settings))
             serverboards.error("Invalid configuration, check your tokens")
-            serverboards.rpc.delayed_result()
+            #serverboards.rpc.delayed_result()
         else:
             raise e
 
