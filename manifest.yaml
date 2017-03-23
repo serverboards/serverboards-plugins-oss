@@ -15,6 +15,7 @@ description: |
   action is taken to extend the expiration.
 url: https://github.com/serverboards/serverboards-plugin-expirationwizard.git
 postinst: postinst.sh
+version: 17.04
 
 components:
   - id: command
