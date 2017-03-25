@@ -27,8 +27,12 @@ def get_file_info(drive_service, fileid, fields=None):
         fieldsl = ','.join(fields)
     data = file_info_cache.get((drive_service, fileid, fieldsl))
     if not data:
-        data = drive_service.files().get(fileId=fileid, fields=fieldsl).execute()
-        file_info_cache[(drive_service, fileid, fieldsl)] = data
+        try:
+            data = drive_service.files().get(fileId=fileid, fields=fieldsl).execute()
+            file_info_cache[(drive_service, fileid, fieldsl)] = data
+        except:
+            import traceback; traceback.print_exc()
+            return {}
     return data
 @serverboards.rpc_method
 def get_changes(service_id, folder_filter=None):
