@@ -73,7 +73,10 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
             "_": now
         }
         serverboards.debug("Get data from %s, %s: %s"%(url,repr(ssh_proxy), expr))
-        res = requests.get(url+"/api/v1/query_range", params=params)
+        try:
+            res = requests.get(url+"/api/v1/query_range", params=params)
+        except:
+            raise Exception("Coult not connect to the Prometheus server. Is it running?")
         if res.status_code!=200:
             raise Exception(res.text)
 
