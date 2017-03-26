@@ -19,7 +19,7 @@ components:
   - id: service
     type: service
     name: Prometheus
-    traits: prometheus
+    traits: prometheus url
     fields:
       - name: via
         label: Via service
@@ -61,3 +61,35 @@ components:
     command: serverboards-prometheus.py
     timeout: 1d
     perms: plugin
+
+  - id: trigger
+    name: Prometheus Alert
+    type: trigger
+    states: nok ok
+    command: daemon
+    trait: prometheus
+    start:
+      method: watch_start
+      params:
+        - name: service
+          label: Prometheus service
+          type: service
+          traits: prometheus
+        - name: period
+          label: Check period
+          description: |
+            Check every given time for the expression.
+            Time can use time modifiers as 1m, 30s, 1h...
+          placeholder: 5m
+          card: true
+          type: text
+        - name: expression
+          label: Prometheus expression
+          placeholder: "up == 1"
+          description: |
+            Which expression to watch. The trigger will stay in the `ok` status
+            as long as data is returned. If no data is returned it changes to
+            the `nok` state. This normally just means to add a comparison at the
+            end of the normal expression.
+          type: text
+    stop: watch_stop

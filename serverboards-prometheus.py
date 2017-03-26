@@ -5,6 +5,24 @@ from serverboards import rpc
 
 IGNORE_METRIC_NAMES=set(['node','instance','job'])
 
+td_to_s_multiplier=[
+    ("ms", 0.001),
+    ("s", 1),
+    ("m", 60),
+    ("h", 60*60),
+    ("d", 24*60*60),
+]
+
+uuid_to_timer={}
+
+def time_description_to_seconds(td):
+    if type(td) in (int, float):
+        return float(td)
+    for sufix, multiplier in td_to_s_multiplier:
+        if td.endswith(sufix):
+            return float(td[:-len(sufix)])*multiplier
+    return float(td)
+
 def decorate_serie(serie, name=None):
     """
     Returns the series decorated as Serverboards likes it, not as Prometheus
@@ -87,9 +105,53 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
             ret.append(decorate_serie(x, name=name))
     return ret
 
+def get_points(ssh_proxy=None, url=None, expression=None):
+    if not url:
+        url="http://localhost:9090"
+    if ssh_proxy:
+        url=urllib.parse.urlparse(url)
+        port=port_tunnel(ssh_proxy, url.hostname, url.port)
+        url="http://localhost:%d"%port
+    now=int(time.time())
+    params = {
+        "query": expression,
+        "time": now,
+        "_": now
+    }
+    res = requests.get(url+"/api/v1/query", params=params)
+    return res.json()["data"]["result"]
+
+@serverboards.rpc_method
+def watch_start(id=None, period=None, service=None, expression=None, **kwargs):
+    state = None
+    ssh_proxy=service.get("config", {}).get("ssh_proxy")
+    url=service.get("config", {}).get("url")
+    period_s = time_description_to_seconds(period or "5m")
+
+    def check_ok():
+        serverboards.debug("Checking expression: %s"%(expression))
+        p = get_points(ssh_proxy=ssh_proxy, url=url, expression=expression)
+        nstate = "ok" if bool(p) else "nok"
+        if state != nstate:
+            serverboards.rpc.event("trigger", {"id":id, "state": nstate})
+        return True
+
+    check_ok()
+    timer_id = serverboards.rpc.add_timer(period_s, check_ok)
+    serverboards.info("Start Prometheus watch %s"%timer_id)
+    return timer_id
+
+@serverboards.rpc_method
+def watch_stop(id):
+    serverboards.info("Stop Prometheus watch %s"%(id))
+    serverboards.rpc.remove_timer(id)
+    return "ok"
+
 def test():
-    assert True
-    res=get(expression="prometheus_rule_evaluation_failures_total")
+    #res=get(expression="prometheus_rule_evaluation_failures_total")
+    #print(json.dumps(res, indent=2))
+
+    res=get_points(expression="up == 1")
     print(json.dumps(res, indent=2))
 
     print("Success")
