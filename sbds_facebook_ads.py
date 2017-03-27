@@ -112,7 +112,6 @@ def get_insights(insight_id=None, timerange=None, fields=None, action_breakdown=
         params['action_breakdown'] = 'action_type'
     else:
         params['time_increment'] = '1'
-    print(params)
     cdata=None
     if insight_id.startswith("account/"):
         cdata=get_account_insights(insight_id[8:], fields, params)
@@ -261,34 +260,6 @@ def create_ad(account_id, adset_id, creative_id, name):
     })
     return ad
 
-CDATA= {
-      "total_actions": 33,
-      "actions": [
-        {
-          "action_type": "like",
-          "value": 22
-        },
-        {
-          "action_type": "link_click",
-          "value": 2
-        },
-        {
-          "action_type": "post_like",
-          "value": 3
-        },
-        {
-          "action_type": "comment",
-          "value": 3
-        },
-        {
-          "action_type": "mobile_app_install",
-          "value": 12
-        }
-      ],
-      "date_start": "2009-03-28",
-      "date_stop": "2016-04-04"
-}
-
 ID_TO_NAME={
     "like": "Likes",
     "link_click": "Link clicks",
@@ -317,6 +288,38 @@ def campaign_insights(campaign_id=None):
         name = ID_TO_NAME.get(name, name)
         data[name]=dt["value"]
     return data
+
+@serverboards.rpc_method
+def check_rules(*_args, **_kwargs):
+    rules = serverboards.rpc.call("rules.list", trigger="serverboards.facebookads/trigger", is_active=True)
+    for r in rules:
+        params = r["trigger"]["params"]
+        service_id = params["service"]["config"]
+        insight = params["insight"]
+        field = params["field"]
+        end = datetime.datetime.now().strftime("%Y-%m-%d")
+        state = False
+        limit = float(params["value"])
+        cond = params["condition"] or ">"
+        data = get_insights(
+            insight_id=insight,
+            timerange={"since": end, "until": end},
+            fields=[field],
+            service=service_id)
+        value = float(data[0]["values"][0][1])
+
+        if cond == "<":
+            state = value < limit
+        elif cond == "<=":
+            state = value <= limit
+        elif cond == ">":
+            state = value > limit
+        elif cond == ">=":
+            state = value >= limit
+        state = "ok" if state else "nok"
+        serverboards.info("Facebook Ads Rule check %s: %s %s %s -> %s"%(r["uuid"], value, cond, limit, state))
+        serverboards.rpc.event("rules.trigger", id=r["uuid"], state=state, value=value)
+
 
 
 def test():

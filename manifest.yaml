@@ -57,10 +57,77 @@ components:
           - name: Evolution of data
             value: evolution
 
-
   - id: command
     type: cmd
     command: ./sbds_facebook_ads.py
     strategy: singleton
     timeout: 10s
     name: Facebook Ads API Connector
+    perms:
+      - rules.view
+      - rules.trigger
+
+  - id: trigger
+    type: trigger
+    name: Facebook Ads
+    description: Watches for some conditions on the Facebook Ads data.
+    traits: facebookads
+    states: ok nok
+    start:
+      params:
+        - name: service
+          label: Facebook Service
+          type: service
+          traits: facebookads
+        - name: insight
+          label: Insight
+          type: select call
+          options:
+            command: serverboards.facebookads/command
+            call: get_possible_insights
+        - name: field
+          label: Field
+          type: select
+          options:
+            - value: call_to_action_clicks
+              name: Call to action Clicks
+            - value: impressions
+              name: Impressions
+            - value: website_clicks
+              name: Website Clicks
+            - value: social_clicks
+              name: Social Clicks
+            - value: ctr
+              name: CTR
+            - value: canvas_avg_view_percent
+              name: Canvas Averag View Percent
+        - name: condition
+          label: Condition
+          type: select
+          options:
+            - name: Greater
+              value: ">"
+            - name: Less
+              value: "<"
+            - name: Greater or equal
+              value: ">="
+            - name: Less or equal
+              value: "<="
+        - name: value
+          label: Value
+          type: text
+
+  - id: rules_cron
+    name: Trigger Cron
+    description: Checks every morning for the Facebook Ads rules.
+    cron: 00 8 * * *
+    action: serverboards.facebookads/check_rules
+    params: {}
+
+  - id: check_rules
+    type: action
+    name: Check Facebook Ads Rules
+    command: command
+    call:
+      method: check_rules
+    traits: facebookads
