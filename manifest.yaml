@@ -22,7 +22,7 @@ components:
     type: cmd
     command: ./serverboards-expiration-wizard.py
     name: Expiration Checker
-    perms: service.get plugin action.update rules.view rules.trigger
+    perms: service.get plugin action.update rules.view rules.trigger action.trigger
     timeout: 1h
     strategy: one_for_one
 

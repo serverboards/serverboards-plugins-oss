@@ -228,9 +228,9 @@ def update_expirations(action_id=None, **kwfilter):
 def list_expirations():
     expirations = rpc.call("plugin.data.get", "expirations")
     if expirations == {}:
-        serverboards.info("Calculating initial expiration list")
-        update_expirations()
-        expirations = rpc.call("plugin.data.get", "expirations")
+        id = rpc.call("action.trigger", "serverboards.expiration/update", {})
+        rpc.call("plugin.data.update", "expirations", {"updating": id})
+        return {"updating": id}
     return expirations
 
 if __name__=='__main__':
