@@ -7,7 +7,6 @@ const {merge} = Serverboards.utils
 const Model = React.createClass({
   getInitialState(){
     const state = store.getState()
-    console.log(state)
     return {
       updating: false,
       expirations: undefined,
