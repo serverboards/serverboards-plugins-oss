@@ -16,6 +16,7 @@ description: |
 url: https://github.com/serverboards/serverboards-plugin-expirationwizard.git
 postinst: postinst.sh
 version: 17.04
+i18n: true
 
 components:
   - id: command

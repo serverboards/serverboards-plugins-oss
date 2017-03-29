@@ -1,4 +1,4 @@
-const {event, plugin, React, store, cache, Flash, rpc} = Serverboards
+const {event, plugin, React, store, cache, Flash, rpc, i18n} = Serverboards
 const plugin_id="serverboards.expiration"
 import Timeline from './timeline'
 const {Loading} = Serverboards.Components
@@ -57,7 +57,7 @@ const Model = React.createClass({
     store.goto(`/project/${this.state.project.shortname}/services/${serviceid}`)
   },
   handleReload(){
-    Flash.info("This will take long time")
+    Flash.info(i18n("This will take long time"))
     rpc.call("action.trigger_wait", ["serverboards.expiration/update", {}])
       .then( () => { Flash.success("Expirations list updated"); this.componentDidMount() } )
       .catch( (e) => Flash.error(e) )
@@ -69,7 +69,7 @@ const Model = React.createClass({
     if (this.state.updating)
       return (
         <Loading>
-          Updating expirations. This will take long time.
+          {i18n("Updating expirations. This will take long time.")}
           <div className="ui text grey">
             {this.state.updating.label} ({(this.state.updating.progress || 0).toFixed(2)}%)
           </div>
@@ -77,7 +77,7 @@ const Model = React.createClass({
       )
     if (!this.state.expirations || !this.state.service_by_uuid)
       return (
-        <Loading>Expirations</Loading>
+        <Loading>{i18n("Expirations")}</Loading>
       )
     return (
       <div className={`ui expirations ${this.props.layout}`}>
