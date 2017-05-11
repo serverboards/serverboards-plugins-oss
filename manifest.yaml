@@ -63,6 +63,7 @@ components:
   - id: trigger
     name: Expiration
     type: trigger
+    traits: expirable
     states: ok warning expired
     start:
       params:
