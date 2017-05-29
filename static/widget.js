@@ -8,6 +8,7 @@
     let prometheus
     let ssh_proxy
     let $el=$('<div>')
+    let url="http://localhost:9090"
     $(el).append($el)
 
     let graph=new LineGraph($el[0])
@@ -30,7 +31,7 @@
         end: end.format("X"),
         step: Math.max(end.diff(start,"seconds") / 256, 14),
 
-        url: config.service.config.url,
+        url: url,
         ssh_proxy: ssh_proxy
       }
       graph.set_loading()
@@ -51,13 +52,16 @@
         prometheus=prom
       })
     )
-    if (config.service.config.via){
-      calls.push(
-        rpc.call("service.get",[config.service.config.via]).then( (service) => {
-          ssh_proxy=service.config.url
-          console.log("Setting ssh proxy: %s", ssh_proxy)
-        })
-      )
+    if (config.service){
+      url = config.service.config.url
+      if (config.service.config.via){
+        calls.push(
+          rpc.call("service.get",[config.service.config.via]).then( (service) => {
+            ssh_proxy=service.config.url
+            console.log("Setting ssh proxy: %s", ssh_proxy)
+          })
+        )
+      }
     }
 
     Promise.all(calls).then( () =>
@@ -65,9 +69,10 @@
     )
 
     return function(){
-      if (ssh_proxy)
+      if (ssh_proxy){
         // FIXME
         console.warn("Might be leaking SSH proxy ports.")
+      }
       store_on_start()
       store_off_start()
     }

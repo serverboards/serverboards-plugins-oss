@@ -1,0 +1,11 @@
+# Installed by Serverboards Prometheus plugin. http://serverboards.io
+
+[Unit]
+Description=Prometheus Node Exporter
+
+[Service]
+User=nobody
+ExecStart=/opt/serverboards/bin/node_exporter
+
+[Install]
+WantedBy=default.target

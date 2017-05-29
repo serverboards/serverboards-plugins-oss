@@ -12,8 +12,9 @@ description: |
   With this plugin is is possible to have graphs in the dashboards as well as
   alerting when some conditions apply.
 
-  Prometheus configuration must be done externally to Serverboards.
-version: 17.04
+  Prometheus configuration is done adding services that will define which
+  external services exist, or even installs  data exporter agents as required.
+version: 17.07a1
 
 components:
   - id: service
@@ -32,6 +33,37 @@ components:
         placeholder: "http://localhost:9090"
         type: url
         card: true
+
+  - id: agent
+    type: service
+    name: Prometheus Agent
+    description: Uses a prometheus agent at that server
+    traits: prometheus.node
+    fields:
+      - name: via
+        label: SSH Server
+        description: Access via this SSH server. leave empty for direct connection.
+        type: service
+        trait: ssh
+      - name: url
+        label: URL
+        description: URL to access prometheus agent, relative to service.
+        placeholder: "http://localhost:9090"
+        default: http://localhost:9090
+        type: url
+        card: true
+
+  - id: node_exporter
+    type: service
+    name: Managed Prometheus Node Exporter
+    description: Install a node exporter on the given SSH server.
+    traits: prometheus.node
+    fields:
+      - name: server
+        label: SSH Server
+        description: Install the node exporter at this SSH server.
+        type: service
+        traits: ssh
 
   - id: widget
     type: widget
@@ -60,7 +92,20 @@ components:
     name: Prometheus proxy
     command: serverboards-prometheus.py
     timeout: 1d
-    perms: plugin
+    perms: plugin service.get
+
+  - id: init.daemon
+    type: cmd
+    strategy: singleton
+    name: Prometheus Supervisor
+    command: prometheus-init.py
+    timeout: 365d
+    perms: plugin service.get
+
+  - id: init
+    type: init
+    command: init.daemon
+    call: start_prometheus
 
   - id: trigger
     name: Prometheus Alert
@@ -93,3 +138,15 @@ components:
             end of the normal expression.
           type: text
     stop: watch_stop
+
+data:
+  prometheus:
+    url: https://github.com/prometheus/prometheus/releases/download/v1.6.3/prometheus-1.6.3.linux-amd64.tar.gz
+    files:
+      - prometheus
+      - prometheus.yml
+      - promtool
+  node_exporter:
+    url: https://github.com/prometheus/node_exporter/releases/download/v0.14.0/node_exporter-0.14.0.linux-amd64.tar.gz
+    files:
+      - node_exporter
