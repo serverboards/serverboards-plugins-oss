@@ -4,6 +4,7 @@ author: David Moreno <dmoreno@serverboards.io>
 url: https://github.com/serverboards/serverboards-plugin-google-drive
 description: Watches for changes at Google Drive
 version: 17.04
+postinst: postinst.sh
 
 components:
   - id: daemon
@@ -57,7 +58,7 @@ components:
       quotas involved.
 
       Get the API token credentials at [Google API Console](https://console.developers.google.com/)
-      at *Credentials / Create / Oauth API / Client Id / Other*
+      at *Credentials / Create / Oauth API / Client Id / Web*
 
       The redirect URI must be the servername including protocol
       `https://example.com/static/serverboards.google.drive/auth.html`
@@ -86,6 +87,7 @@ components:
 
   - id: change_watch
     type: trigger
+    traits: google.drive
     name: Google Drive Watch
     description: |
       Triggers when a watched file expression suffers some change, for example
