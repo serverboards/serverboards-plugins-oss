@@ -18,7 +18,7 @@ const View = React.createClass({
     }
   },
   componentDidMount(){
-    rpc.call('plugin.data_keys', [plugin_id, `${this.props.project}.`]).then( (keys) => {
+    rpc.call('plugin.data.list', [plugin_id, `${this.props.project}.`]).then( (keys) => {
       let secrets={}
       const slicepoint = this.props.project.length + 1
       keys.map( (k) => {
@@ -129,7 +129,7 @@ const View = React.createClass({
 
 function main(el, config, extra){
   console.log("secrets config:",config, extra)
-  Serverboards.ReactDOM.render(<View project={config.project.shortname}/>, el)
+  Serverboards.ReactDOM.render(<View project={config.project.shortname} setSectionMenu={extra.setSectionMenu}/>, el)
 
   return function(){
     Serverboards.ReactDOM.unmountComponentAtNode(el)
