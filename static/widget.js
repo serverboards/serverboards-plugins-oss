@@ -21,9 +21,13 @@
       params = {insight_id: config.insight, action_breakdown: false, service: service}
     }
 
+    let last_update={since:0, until: 0}
     function update(){
       const {start, end} = store.getState().project.daterange
       timerange={"since": start.format("YYYY-MM-DD"), "until": end.format("YYYY-MM-DD")}
+      if (last_update.since==timerange.since && last_update.until == timerange.until)
+        return
+      last_update=timerange
       params.timerange=timerange
       graph.set_loading()
 
