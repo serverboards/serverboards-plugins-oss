@@ -20,6 +20,7 @@ components:
   - id: service
     type: service
     name: Prometheus
+    description: Access to an existing Prometheus instance.
     traits: prometheus url
     fields:
       - name: via
@@ -36,8 +37,8 @@ components:
 
   - id: agent
     type: service
-    name: Prometheus Agent
-    description: Uses a prometheus agent at that server
+    name: Prometheus Target
+    description: Access to a prometheus agent, as a node_exporter, or any other prometheus data exporter.
     traits: prometheus.node
     fields:
       - name: via
@@ -64,6 +65,7 @@ components:
         description: Install the node exporter at this SSH server.
         type: service
         traits: ssh
+        card: true
 
   - id: widget
     type: widget
