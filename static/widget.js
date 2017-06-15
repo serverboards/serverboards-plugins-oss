@@ -34,7 +34,6 @@
         url: url,
         ssh_proxy: ssh_proxy
       }
-      graph.set_loading()
 
       return rpc.call(prometheus+".get", params).then( (data) => {
         graph.set_data(data)
