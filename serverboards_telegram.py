@@ -27,13 +27,17 @@ def send_telegram_basic(chat_id, message):
     }
     return tg_get("sendMessage", data)
 
+def cleanup(msg):
+    msg = msg.replace("\n * ", "\n\n - ")
+    return msg
+
 @serverboards.rpc_method
 def send_telegram(user=None, config=None, message=None):
     ensure_has_config()
     serverboards.debug(repr((status, config)))
     send_telegram_basic(
         status["code_to_chatid"][config["code"]],
-        ("*%s*\n---\n%s"%(message['subject'], message["body"]))
+        ("*%s*\n---\n%s"%(message['subject'], cleanup(message["body"])))
         )
 
 @serverboards.rpc_method
