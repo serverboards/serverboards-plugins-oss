@@ -29,6 +29,9 @@ const View = React.createClass({
         this.handleSecretSelect(this.state.secret_id)
       }
     })
+    if (this.props.setSectionMenu){
+      this.props.setSectionMenu(this.render_header)
+    }
   },
   handleSecretSelect(secret){
     console.log("secret %o", secret )
@@ -93,19 +96,26 @@ const View = React.createClass({
     this.setState({secret_id})
     this.componentDidMount()
   },
+  render_header(show_title){
+    const state=this.state
+    return (
+      <Header
+        secrets={state.secrets}
+        title={state.title}
+        secret={state.secret_id}
+        onSecretSelect={this.handleSecretSelect}
+        onSecretAdd={this.handleAddSecretDialog}
+        onDelete={state.visible && this.handleDeleteSecret}
+        show_title={show_title}
+        />
+      )
+  },
   render(){
     const props=this.props
     const state=this.state
     return (
       <div id="secrets">
-        <Header
-          secrets={state.secrets}
-          title={state.title}
-          secret={state.secret_id}
-          onSecretSelect={this.handleSecretSelect}
-          onSecretAdd={this.handleAddSecretDialog}
-          onDelete={state.visible && this.handleDeleteSecret}
-          />
+        {!props.setSectionMenu ? this.render_header(true) : null}
         {state.add ? (
           <EditSecret
             onSave={this.handleAddSecret}
