@@ -426,7 +426,12 @@ class Plugin:
         self.plugin_id = plugin_id
         self.uuid=rpc.call("plugin.start", plugin_id)
     def __getattr__(self, method):
+        if not self.uuid:
+            self.uuid=rpc.call("plugin.start", plugin_id)
         return Plugin.Method(self, method)
+    def stop(self):
+        rpc.call("plugin.stop", self.uuid)
+        self.uuid = None
 
 
 
