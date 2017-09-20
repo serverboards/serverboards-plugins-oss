@@ -59,7 +59,7 @@ def update_promservices_yaml():
             server = config.get("server")
             serverboards.debug("Opening SSH tunnel to %s:%s:%s"%(server, hostname, port))
             if server:
-                newport = ssh.open_port(ssh_service=server, hostname=hostname, port=port)
+                newport = ssh.open_port(service=server, hostname=hostname, port=port)
                 port_map[s["uuid"]]=newport # FIXME, use for closing ports and so on.
                 target = "localhost:%d"%newport
                 serverboards.debug("Added prometheus managed node_exporter at %s via %s"%(newport, server))

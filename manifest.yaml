@@ -21,7 +21,7 @@ components:
     type: service
     name: Prometheus
     description: Access to an existing Prometheus instance.
-    traits: prometheus url
+    traits: prometheus url cloud server
     fields:
       - name: via
         label: Via service
@@ -39,7 +39,7 @@ components:
     type: service
     name: Prometheus Target
     description: Access to a prometheus agent, as a node_exporter, or any other prometheus data exporter.
-    traits: prometheus.node
+    traits: prometheus.node cloud
     fields:
       - name: via
         label: SSH Server
@@ -58,7 +58,7 @@ components:
     type: service
     name: Managed Prometheus Node Exporter
     description: Install a node exporter on the given SSH server.
-    traits: prometheus.node
+    traits: prometheus.node server
     fields:
       - name: server
         label: SSH Server
@@ -114,7 +114,7 @@ components:
     type: trigger
     states: nok ok
     command: daemon
-    trait: prometheus
+    traits: prometheus cloud server
     start:
       method: watch_start
       params:
