@@ -6,15 +6,27 @@ var plugin = Serverboards.plugin
 var cache = Serverboards.cache
 
 function main(element, config){
+  var hostname = "localhost"
+  var port = 8080
+  var ws_uuid, ssh_id, spice_port
+  var port = config.service.config.port || 5900
+  var spice_url = "spice://"+hostname+":"+port
+  if (config.service.config.remote_desktop){
+    spice_url=config.service.config.remote_desktop
+    var matches=spice_url.match(/spice:\/\/(.*):(.*)/)
+    port=matches[2]
+    hostname=matches[1]
+  }
+
   function open_port(ssh_id, config){
-    return cache.service(config.service.config.via)
-      .then( via =>
-          (via && via.config.url) || "localhost"
-      ).then( url =>
-        rpc.call(ssh_id+".open_port", {url: url, hostname: "localhost", port: port })
-      ).then( port =>
-        rpc.call("http.add_port", [port]).then( (uuid) =>  ({uuid: uuid, port: port}) )
-      )
+    console.log("Open port %s:%s:%s", config.service.config.via, "localhost", port)
+    return rpc.call(ssh_id+".open_port", {
+          service: config.service.config.via,
+          hostname: "localhost",
+          port: port
+    }).then( port =>
+      rpc.call("http.add_port", [port]).then( (uuid) =>  ({uuid: uuid, port: port}) )
+    )
   }
 
   function open_in_tab(config){
@@ -50,18 +62,6 @@ function main(element, config){
     } else if(document.webkitExitFullscreen) {
       document.webkitExitFullscreen();
     }
-  }
-
-  var hostname = "localhost"
-  var port = 8080
-  var ws_uuid, ssh_id, spice_port
-  var port = config.service.config.port || 5900
-  var spice_url = "spice://"+hostname+":"+port
-  if (config.service.config.remote_desktop){
-    spice_url=config.service.config.remote_desktop
-    var matches=spice_url.match(/spice:\/\/(.*):(.*)/)
-    port=matches[2]
-    hostname=matches[1]
   }
 
   $(element).find('#spice-fullscreen').on('click', function(){
