@@ -9,7 +9,6 @@ const mimetypes_to_icon={
 }
 
 function get_icon_for(props){
-  console.log(props.type)
   const maintype = props.type.split("/")[0]
   return mimetypes_to_icon[props.type] || mimetypes_to_icon[maintype] || "file green"
 }
