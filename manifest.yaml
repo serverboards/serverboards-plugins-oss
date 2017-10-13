@@ -25,7 +25,7 @@ components:
     icon: green google
     description: |
       Connection to Google Drive.
-    traits: google.drive
+    traits: google.drive cloud
     fields:
       - name: access_description
         type: description
@@ -87,7 +87,7 @@ components:
 
   - id: change_watch
     type: trigger
-    traits: google.drive
+    traits: google.drive cloud
     name: Google Drive Watch
     description: |
       Triggers when a watched file expression suffers some change, for example
@@ -96,7 +96,7 @@ components:
     start:
       method: watch_start
       params:
-        - name: service
+        - name: service_id
           type: service
           traits: google.drive
           label: Google Drive Service
