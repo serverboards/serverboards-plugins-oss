@@ -5,7 +5,7 @@ const LogMap=React.createClass({
   getInitialState(){
     //var month_ago=d.setMonth(d.getMonth() - 1)
     var month_ago=moment().subtract(1,"months")
-    const daterange=store.getState().serverboard.daterange
+    const daterange=store.getState().project.daterange
     return {
       data: {},
       maxv: 0,
@@ -15,7 +15,7 @@ const LogMap=React.createClass({
   },
   load_more({start}){
     let self=this
-    rpc.call("logs.history",{start, count: 10000}).then( self.update_heatmap )
+    rpc.call("logs.list",{start, count: 10000}).then( self.update_heatmap )
   },
   update_heatmap({lines}){
     let eof
@@ -43,6 +43,7 @@ const LogMap=React.createClass({
       if (v>ts)
         maxv=v
     }
+    console.log("Update heatmap", maxv, data)
     this.setState({maxv,data})
     if (eof)
       console.log(data)
@@ -51,11 +52,11 @@ const LogMap=React.createClass({
     console.log("Reload heatmap: %o - %o", this.state.start, this.state.end)
     let self=this
     this.setState({data: {}, maxv: 0})
-    rpc.call("logs.history", {count: 10000}).then( self.update_heatmap )
+    rpc.call("logs.list", {count: 10000}).then( self.update_heatmap )
   },
   componentDidMount(){
     let self=this
-    store.on("serverboard.daterange", function({start, end}){
+    store.on("project.daterange", function({start, end}){
       if (!start.isSame(self.state.start) || !start.isSame(self.state.end)){
         self.setState({start, end})
         self.reload_heatmap()
@@ -63,17 +64,20 @@ const LogMap=React.createClass({
     })
     this.reload_heatmap()
   },
-  xaxis: function(){
+  xaxis(){
     let i
     let ret=[]
 
-    moment.range(this.state.start, this.state.end).by('days', function(m){
+    for (let m of moment.range(this.state.start, this.state.end).by('days')){
       ret.push(m.format("YYYY-MM-DD"))
-    })
+    }
+
+    if (ret.length==0)
+      return [moment(this.state.start).format("YYYY-MM-DD")]
 
     return ret
   },
-  yaxis: function(){
+  yaxis(){
     let i
     let ret=[]
     for(i=8;i<21;i++)
