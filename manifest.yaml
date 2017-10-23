@@ -14,7 +14,7 @@ description: |
 
   Prometheus configuration is done adding services that will define which
   external services exist, or even installs  data exporter agents as required.
-version: 17.07a1
+version: "17.10"
 
 components:
   - id: service
@@ -87,6 +87,9 @@ components:
 
           Each graph can have a name set as `name:` at the begining of the definition.
         placeholder: "scrape_duration_seconds"
+        autocomplete:
+          command: serverboards.prometheus/daemon
+          call: autocomplete_values
 
   - id: daemon
     type: cmd

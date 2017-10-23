@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import serverboards, sys, requests, time, json, urllib
-from serverboards import rpc
+from serverboards import rpc, print
 
 IGNORE_METRIC_NAMES=set(['node','instance','job'])
 
@@ -146,6 +146,22 @@ def watch_stop(id):
     serverboards.info("Stop Prometheus watch %s"%(id))
     serverboards.rpc.remove_timer(id)
     return "ok"
+
+@serverboards.cache_ttl(30)
+def get_values(ssh_proxy=None, url=None):
+    if not url:
+        url="http://localhost:9090"
+    if ssh_proxy:
+        url=urllib.parse.urlparse(url)
+        port=port_tunnel(ssh_proxy, url.hostname, url.port)
+        url="http://localhost:%d"%port
+    res = requests.get(url+"/api/v1/label/__name__/values")
+    return res.json()["data"]
+
+@serverboards.rpc_method
+def autocomplete_values(current="", ssh_proxy=None, url=None, **kwargs):
+    options = get_values(ssh_proxy, url)
+    return options
 
 def test():
     #res=get(expression="prometheus_rule_evaluation_failures_total")
