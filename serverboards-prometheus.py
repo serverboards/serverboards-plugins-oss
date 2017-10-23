@@ -158,10 +158,55 @@ def get_values(ssh_proxy=None, url=None):
     res = requests.get(url+"/api/v1/label/__name__/values")
     return res.json()["data"]
 
+@serverboards.cache_ttl(30)
+def get_tags(ssh_proxy=None, url=None, value="", tag=None):
+    if not url:
+        url="http://localhost:9090"
+    if ssh_proxy:
+        url=urllib.parse.urlparse(url)
+        port=port_tunnel(ssh_proxy, url.hostname, url.port)
+        url="http://localhost:%d"%port
+    res = requests.get(url+"/api/v1/series?match[]=%s"%value)
+    data = res.json()["data"]
+    print("value", value, data)
+    if not tag:
+        ret = set()
+        for d in data:
+            ret.update(d.keys())
+        return sorted([x for x in ret if not x.startswith('__')])
+    else:
+        ret = set()
+        for d in data:
+            ret.add(d.get(tag))
+        return [x for x in ret if x and not x.startswith('__')]
+
+BUILTINS = ["sum(","min(","max(","avg(","stddev(","stdvar(","count(","count_values(","bottomk(","topk(", "quantile("]
+
 @serverboards.rpc_method
 def autocomplete_values(current="", ssh_proxy=None, url=None, **kwargs):
-    options = get_values(ssh_proxy, url)
-    return options
+    if not current:
+        return []
+    if '=' in current:
+        prefix,suffix = current.split('{')
+        tag, suffix = suffix.split('=')
+        if suffix.startswith('"'):
+            suffix = suffix[1:]
+        options = ['%s{%s="%s"}'%(prefix, tag, x)
+            for x in get_tags(ssh_proxy, url, prefix, tag)
+            if x.startswith(suffix)
+            ]
+    elif '{' in current:
+        prefix,suffix = current.split('{')
+        options = ['%s{%s="'%(prefix, x)
+            for x in get_tags(ssh_proxy, url, prefix)
+            if x.startswith(suffix)
+            ]
+    else:
+        options = get_values(ssh_proxy, url) + BUILTINS
+    print(options)
+    for cpart in current.lower().replace('{','_').replace('=','_').split('_'):
+        options = [x for x in options if cpart in x.lower()]
+    return sorted(options)
 
 def test():
     #res=get(expression="prometheus_rule_evaluation_failures_total")
