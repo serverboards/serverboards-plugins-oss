@@ -1,6 +1,6 @@
 (function(){
   let widget_id = "serverboards.prometheus/widget"
-  let {rpc, moment, store} = Serverboards
+  let {rpc, moment, store, i18n} = Serverboards
   let {LineGraph} = Serverboards.graphs
 
   function main(el, config, context){
@@ -36,8 +36,14 @@
       }
 
       return rpc.call(prometheus+".get", params).then( (data) => {
-        graph.set_data(data)
-        context.setTitle(title)
+        console.log("Got data", data, params)
+        if (data.length==0){
+          graph.set_error(i18n("No data data received"))
+        }
+        else{
+          graph.set_data(data)
+          context.setTitle(title)
+        }
       }).catch( (e) => {
         graph.set_error(e)
       })

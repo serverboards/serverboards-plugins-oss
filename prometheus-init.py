@@ -20,11 +20,12 @@ def node_exporter_updated(service):
     ssh.run(service=service["config"]["server"], command="systemctl node_exporter start")
     update_promservices_yaml()
 
-serverboards.rpc.subscribe("service.updated[serverboards.prometheus/node_exporter]", node_exporter_updated)
-serverboards.rpc.subscribe("service.updated[serverboards.prometheus/service]", node_exporter_updated)
 
 @serverboards.rpc_method
 def start_prometheus():
+    serverboards.rpc.subscribe("service.updated[serverboards.prometheus/node_exporter]", node_exporter_updated)
+    serverboards.rpc.subscribe("service.updated[serverboards.prometheus/service]", node_exporter_updated)
+
     serverboards.info("Starting prometheus")
     try:
         sh.fuser("-n", "tcp", "9090","-k")
