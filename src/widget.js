@@ -1,4 +1,4 @@
-const {rpc, React, store} = Serverboards
+const {rpc, React, store, i18n} = Serverboards
 const plugin_id="serverboards.plugin.serviceheatmap"
 
 const Model = React.createClass({
@@ -62,11 +62,11 @@ const Cell = React.createClass({
   },
   render(){
     const {service, cell_style} = this.props
-    const title = `${service.name}: ${service.tags.join(', ')}`
+    const title = `${service.name}: ${service.tags.join(', ') || i18n("Status not set")}`
     return (
       <div
         ref="el"
-        className={`cell ${Serverboards.utils.colorize(service.tags[0] || "")}`}
+        className={`cell ${Serverboards.utils.colorize(service.tags[0] || "grey")}`}
         title={title}
         data-content={title}
         onClick={this.gotoService}
