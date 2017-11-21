@@ -38,9 +38,9 @@ def start_prometheus():
         serverboards.error("Could not update promservices!")
     try:
         sh.Command(cwd("prometheus/prometheus"))("-web.listen-address", ":9090","-config.file", cwd("prometheus.yml"), _bg=True, _cwd=cwd("."))
-    except:
+    except Exception as e:
         import traceback; traceback.print_exc()
-        serverboards.error("Prometheus could not be started. Check installation.")
+        serverboards.error("Prometheus could not be started. Check installation. %s"%(str(e)))
     return 365*24*60*60 # restart in a year
 
 @serverboards.rpc_method

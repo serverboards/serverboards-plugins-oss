@@ -203,7 +203,6 @@ def autocomplete_values(current="", ssh_proxy=None, url=None, **kwargs):
             ]
     else:
         options = get_values(ssh_proxy, url) + BUILTINS
-    print(options)
     for cpart in current.lower().replace('{','_').replace('=','_').split('_'):
         options = [x for x in options if cpart in x.lower()]
     return sorted(options)
