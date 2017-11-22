@@ -1,11 +1,11 @@
 (function(){
   let widget_id = "serverboards.prometheus/widget"
-  let {rpc, moment, store, i18n} = Serverboards
+  let {rpc, moment, store, i18n, plugin} = Serverboards
   let {LineGraph} = Serverboards.graphs
 
   function main(el, config, context){
     //console.log("Prom config is %o", config)
-    let prometheus
+    let prometheus = new plugin.PluginCaller("serverboards.prometheus/daemon")
     let ssh_proxy
     let $el=$('<div>')
     let url="http://localhost:9090"
@@ -35,8 +35,8 @@
         ssh_proxy: ssh_proxy
       }
 
-      return rpc.call(prometheus+".get", params).then( (data) => {
-        console.log("Got data", data, params)
+      return prometheus.call("get", params).then( (data) => {
+        // console.log("Got data", data, params)
         if (data.length==0){
           graph.set_error(i18n("No data data received"))
         }
@@ -52,11 +52,6 @@
     store_off_start = store.on("project.daterange.start", update)
     store_on_start = store.on("project.daterange.end", update)
     let calls=[]
-    calls.push(
-      rpc.call("plugin.start", ["serverboards.prometheus/daemon"]).then( (prom) => {
-        prometheus=prom
-      })
-    )
     if (config.service){
       url = config.service.config.url
       if (config.service.config.via){
@@ -69,9 +64,13 @@
       }
     }
 
-    Promise.all(calls).then( () =>
+    if (calls.length>0){
+      Promise.all(calls).then( () =>
+        update()
+      )
+    } else {
       update()
-    )
+    }
 
     return function(){
       if (ssh_proxy){
