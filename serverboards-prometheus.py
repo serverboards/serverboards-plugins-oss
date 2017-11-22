@@ -3,7 +3,7 @@
 import serverboards, sys, requests, time, json, urllib
 from serverboards import rpc, print
 
-IGNORE_METRIC_NAMES=set(['node','instance','job'])
+IGNORE_METRIC_NAMES=set(['instance','job'])
 
 td_to_s_multiplier=[
     ("ms", 0.001),
@@ -90,7 +90,7 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
             "step": step,
             "_": now
         }
-        serverboards.debug("Get data from %s, %s: %s"%(url,repr(ssh_proxy), expr))
+        # serverboards.debug("Get data from %s, %s: %s"%(url,repr(ssh_proxy), expr))
         try:
             res = requests.get(url+"/api/v1/query_range", params=params)
         except:
