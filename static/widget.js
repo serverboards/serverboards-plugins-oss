@@ -38,7 +38,7 @@
       return prometheus.call("get", params).then( (data) => {
         // console.log("Got data", data, params)
         if (data.length==0){
-          graph.set_error(i18n("No data data received"))
+          graph.set_error(i18n("No data received"))
         }
         else{
           graph.set_data(data)
