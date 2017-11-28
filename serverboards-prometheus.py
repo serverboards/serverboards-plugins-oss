@@ -40,11 +40,11 @@ def decorate_serie(serie, name=None):
 open_ports={}
 ssh_id=None
 def port_tunnel(ssh_url, hostname, port):
-    rpc.debug("Open at tunel %s"%ssh_url)
+    # rpc.debug("Open at tunel %s"%ssh_url)
     global ssh_id
     ret = open_ports.get( (ssh_url, hostname, port) )
     if ret:
-        serverboards.debug("Using local port from cache: %s"% port)
+        # serverboards.debug("Using local port from cache: %s"% port)
         return ret
     if ssh_id is None:
         ssh_id=rpc.call("plugin.start","serverboards.core.ssh/daemon")
