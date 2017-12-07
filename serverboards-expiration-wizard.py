@@ -5,7 +5,7 @@ sys.path.append('env/lib/python3.5/site-packages/')
 
 from urllib.parse import urlparse
 import concurrent.futures
-from serverboards import rpc, Plugin
+from serverboards import rpc, Plugin, print
 
 import datetime, pytz, dateutil
 from dateutil.parser import parse as dateparse
@@ -37,8 +37,14 @@ def url_expiration(service):
     return [e for e in expirations if e]
 
 def service_url(service):
-    url = urlparse( service.get("config", {}).get("url", "") )
-    if "'" in url.hostname or ';' in url.hostname or '\\' in url.hostname:
+    domain = service.get("config", {}).get("url", "")
+    url = urlparse( domain )
+    print( service.get("config", {}).get("url", ""), url)
+    if url.hostname and (
+            ("'" in url.hostname) or
+            (';' in url.hostname) or
+            ('\\' in url.hostname)
+            ):
         serverboards.error("Invalid domain name %s"%domain)
         return []
     return url
@@ -78,6 +84,7 @@ def dns_expiration(service):
     domain = service_url(service).hostname
     def decorate(l, d):
         try:
+            print(l)
             e = l.split(':')
             date = str(dateparse(e[1]))
             desc = e[0].strip()
@@ -90,11 +97,12 @@ def dns_expiration(service):
             import traceback; traceback.print_exc()
             return None
     def maybe_domains(domain): # removes trailing subdomains to get to proper company.TLD
-        dom=domain.split('.')[:-1]
-        s=0
-        for i in dom:
-            yield domain[s:]
-            s+=len(i)+1
+        if domain:
+            dom=domain.split('.')[:-1]
+            s=0
+            for i in dom:
+                yield domain[s:]
+                s+=len(i)+1
 
     for d in maybe_domains(domain):
         try:
@@ -108,7 +116,7 @@ def dns_expiration(service):
         lines=str(cp.stdout, 'utf8').split('\n')
         expirations = [l for l in lines if 'free' in l or 'Exp' in l]
         if expirations:
-            return [decorate(l, d) for l in expirations]
+            return [x for x in (decorate(l, d) for l in expirations) if x]
     return []
 
 def compatible_traits(service, component):
@@ -155,12 +163,13 @@ def update_expirations(action_id=None, **kwfilter):
         #serverboards.debug("Check %s %s"%(s["name"], c["name"]))
         try:
             ret = []
-            expirations_raw = Plugin.start_call_stop(c["extra"]["command"], c["extra"]["call"], slimmed_service(s))
-            for r in expirations_raw:
-                r["service"]=s["uuid"]
-                r["check"]=c["id"]
-                r["projects"]=s["projects"]
-                ret.append( r )
+            with Plugin(c["extra"]["command"]) as plugin:
+                expirations_raw = plugin.call(c["extra"]["call"], slimmed_service(s))
+                for r in expirations_raw:
+                    r["service"]=s["uuid"]
+                    r["check"]=c["id"]
+                    r["projects"]=s["projects"]
+                    ret.append( r )
             #serverboards.debug("Expirations: %s"%repr(ret))
             return ret
         except:
@@ -169,7 +178,8 @@ def update_expirations(action_id=None, **kwfilter):
             return []
 
     rule_updates={}
-    rules=serverboards.rpc.call("rules.list", trigger="serverboards.expiration/trigger", is_active=True)
+    rules=serverboards.rpc.call("rules_v2.list", trigger="serverboards.expiration/trigger", is_active=True)
+    print(rules)
     now=datetime.datetime.now(tz=dateutil.tz.tzutc())
     def update_rules_status(exp):
         for e in exp: # exp is a list of expirations
