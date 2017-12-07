@@ -235,13 +235,19 @@ def update_expirations(action_id=None, **kwfilter):
     return expirations
 
 @serverboards.rpc_method
-def list_expirations():
+def list_expirations(project=None):
     expirations = rpc.call("plugin.data.get", "expirations")
     if expirations == {}:
         id = rpc.call("action.trigger", "serverboards.expiration/update", {})
         rpc.call("plugin.data.update", "expirations", {"updating": id})
         return {"updating": id}
-    return expirations
+
+    if project: # filter by project
+        print("project:", project)
+        print(expirations)
+        return [e for e in expirations if project in e["projects"]]
+    else:
+        return expirations
 
 if __name__=='__main__':
     if len(sys.argv)>1:

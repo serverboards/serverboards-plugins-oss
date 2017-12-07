@@ -15,7 +15,7 @@ const Model = React.createClass({
     }
   },
   componentDidMount(){
-    plugin.start_call_stop("serverboards.expiration/command", "list_expirations", []
+    plugin.start_call_stop("serverboards.expiration/command", "list_expirations", {project: this.state.project.shortname}
       ).then( (expirations) => {
         if (expirations.updating){
           const update_id = event.on(`action.updated`, this.progressUpdate)
