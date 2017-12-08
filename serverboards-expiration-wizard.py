@@ -39,7 +39,7 @@ def url_expiration(service):
 def service_url(service):
     domain = service.get("config", {}).get("url", "")
     url = urlparse( domain )
-    print( service.get("config", {}).get("url", ""), url)
+    # print( service.get("config", {}).get("url", ""), url)
     if url.hostname and (
             ("'" in url.hostname) or
             (';' in url.hostname) or
@@ -80,11 +80,11 @@ def ssl_expiration(service, defport=443, scheme="https"):
 
 @serverboards.rpc_method
 def dns_expiration(service):
-    serverboards.debug("Check DNS %s "%service)
+    # serverboards.debug("Check DNS %s "%service)
     domain = service_url(service).hostname
     def decorate(l, d):
         try:
-            print(l)
+            # print(l)
             e = l.split(':')
             date = str(dateparse(e[1]))
             desc = e[0].strip()
@@ -135,12 +135,13 @@ def slimmed_service(s):
     }
 
 def matching_rules(exp, status, rules):
+    print("Matching rules", exp, status, rules)
     #serverboards.debug(', '.join( repr(x) for x in [exp, status, rules]))
     for r in rules:
-        if r["last_state"] != status:
-            serverboards.debug("%s %s"%(r["service"], exp["service"]))
-            if not r["service"] or r["service"] == exp["service"]:
-                yield r
+        # serverboards.debug("%s %s"%(repr(r), repr(exp)))
+        rservice=r.get("when",{}).get("params",{}).get("service")
+        if not rservice or rservice == exp.get("service"):
+            yield r
 
 
 ORDER_ST={"": -1, "ok": 0, "warning": 1, "expired": 2}
@@ -166,7 +167,7 @@ def update_expirations(action_id=None, **kwfilter):
             with Plugin(c["extra"]["command"]) as plugin:
                 expirations_raw = plugin.call(c["extra"]["call"], slimmed_service(s))
                 for r in expirations_raw:
-                    r["service"]=s["uuid"]
+                    r["service"]={"uuid": s["uuid"], "name": s["name"], "type": s["type"]}
                     r["check"]=c["id"]
                     r["projects"]=s["projects"]
                     ret.append( r )
@@ -179,7 +180,7 @@ def update_expirations(action_id=None, **kwfilter):
 
     rule_updates={}
     rules=serverboards.rpc.call("rules_v2.list", trigger="serverboards.expiration/trigger", is_active=True)
-    print(rules)
+    # print(rules)
     now=datetime.datetime.now(tz=dateutil.tz.tzutc())
     def update_rules_status(exp):
         for e in exp: # exp is a list of expirations
@@ -193,12 +194,15 @@ def update_expirations(action_id=None, **kwfilter):
             elif days<=14:
                 st="warning"
 
+            service_uuid=e.get("service",{}).get("uuid","")
             for r in matching_rules(e, st, rules):
-                (cst, _) = rule_updates.get(r["uuid"], ("", None))
+                rule_uuid=r.get("uuid")
+                key = (service_uuid, rule_uuid)
+                (cst, _) = rule_updates.get(key, ("", None))
                 # get if the new state is more grave than earlier. Initial is OK.
                 mst=max((ORDER_ST[cst], cst), (ORDER_ST[st], st))[1]
                 if cst != mst: # if so, set gravity here
-                    rule_updates[r["uuid"]]=(mst, e)
+                    rule_updates[key]=(mst, e)
 
     checks = []
     count=0
@@ -226,11 +230,15 @@ def update_expirations(action_id=None, **kwfilter):
 
     expirations = merge_expirations( expirations )
     expirations.sort(key=lambda x: x["date"])
-
     rpc.call("plugin.data.update", "expirations", expirations)
+
+
     serverboards.debug("Got this updates to rules: %s"%repr(rule_updates))
     for uuid,v in rule_updates.items():
-        serverboards.rpc.call("rules.trigger", uuid=uuid, state=v[0], expiration=v[1])
+        _service_uuid, rule_uuid = uuid
+        state, expiration = v
+        print("Trigger expiration: %s %s %s"%(rule_uuid, state, expiration))
+        serverboards.rpc.call("rules_v2.trigger_wait", uuid=rule_uuid, state=state, expiration=expiration)
 
     return expirations
 

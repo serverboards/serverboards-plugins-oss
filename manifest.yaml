@@ -2,7 +2,7 @@ id: serverboards.expiration
 name: Expirations
 author: David Moreno <dmoreno@serverboards.io>
 description: |
-  Shows the fuure expirations in a timeline.
+  Shows the future expirations in a timeline.
 
   Expirations are defined by components by plugins and may contain things as
   SSL expirations, contract expirations, Domain Name expirations and so on.
@@ -36,6 +36,7 @@ components:
   - id: update
     type: action
     name: Update expirations
+    traits: cloud hidden
     command: serverboards.expiration/command
     call:
       method: update_expirations
@@ -62,11 +63,26 @@ components:
 
   - id: trigger
     name: Expiration
+    description: |
+      Updates on the expiration dates of the services.
+
+      Default expiration checkers are DNS and SSL, but more can be installed via plugins.
     type: trigger
-    traits: expirable
     states: ok warning expired
     start:
       params:
         - name: service
           type: service
           description: What service to watch. Leave empty for all.
+    result:
+      state: ok (<14 days) | warning (>14 days) | expired .
+      expiration:
+        service:
+          uuid: Service UUID
+          name: Service name
+          type: Service type
+        check: Id of the check
+        projects: List of projects this service belongs
+        name: Name of the expiration
+        data: Final date of the expiration
+        id: Unique id for the expiration (to avoid duplicates)
