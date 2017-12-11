@@ -16,8 +16,7 @@ def get_drive(service_id, version='v3'):
         credentials = storage.get()
         if not credentials:
             raise Exception("Invalid credentials. Reauthorize.")
-        http = credentials.authorize(http=httplib2.Http())
-        drive[ank] = discovery.build('drive', version, http=http)
+        drive[ank] = discovery.build('drive', version, credentials=credentials)
     return drive.get(ank)
 
 file_info_cache={}
