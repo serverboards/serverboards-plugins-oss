@@ -6,7 +6,7 @@ function View(props){
   return (
     <div className="google drive">
       {props.days.map( d => (
-        <Day {...d}/>
+        <Day key={d.date} {...d}/>
       ))}
     </div>
   )

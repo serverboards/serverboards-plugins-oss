@@ -6,7 +6,7 @@ function DriveDay(props){
     <div>
       <div className="date">{utils.pretty_ago(props.date, moment(), "day")}</div>
       {props.entries.map( l => (
-        <Line {...l}/>
+        <Line key={l.file} {...l}/>
       ))}
     </div>
   )
