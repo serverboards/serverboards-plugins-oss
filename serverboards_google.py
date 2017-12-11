@@ -61,7 +61,9 @@ class ServerboardsStorage(client.Storage):
         rpc.call("service.update", self.id, {"config":{}})
 
 @serverboards.rpc_method
-def authorize_url(service, **kwargs):
+def authorize_url(service=None, **kwargs):
+    if not service:
+        return ""
     service_id=service["uuid"]
     ensure_settings()
 
