@@ -15,7 +15,7 @@ def get_drive(service_id, version='v3'):
         storage = ServerboardsStorage(service_id)
         credentials = storage.get()
         if not credentials:
-            raise Exception("Invalid credentials. Reauthorize.")
+            raise Exception("invalid_grant")
         drive[ank] = discovery.build('drive', version, credentials=credentials)
     return drive.get(ank)
 
