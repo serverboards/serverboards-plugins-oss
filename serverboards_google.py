@@ -27,7 +27,6 @@ def setup(plugin_id=None, **kwargs):
         SCOPES = kwargs.get("scopes")
 
 def ensure_settings():
-    print(settings)
     if "client_id" not in settings:
         data = serverboards.rpc.call("settings.get", PLUGIN_ID+"/settings")
         if not data:
