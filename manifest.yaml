@@ -84,5 +84,5 @@ components:
         check: Id of the check
         projects: List of projects this service belongs
         name: Name of the expiration
-        data: Final date of the expiration
+        date: Final date of the expiration
         id: Unique id for the expiration (to avoid duplicates)
