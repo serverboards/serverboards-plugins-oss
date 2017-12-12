@@ -11,7 +11,7 @@ components:
     type: service
     name: Facebook Ads
     icon: facebook
-    traits: facebookads
+    traits: facebookads cloud
     description: |
       Access to facebook ads data via the Facebook API. Needs to configure your
       own access tokens and provide them here.
@@ -71,7 +71,7 @@ components:
     type: trigger
     name: Facebook Ads
     description: Watches for some conditions on the Facebook Ads data.
-    traits: facebookads
+    traits: facebookads cloud
     states: ok nok
     start:
       params:
@@ -118,6 +118,7 @@ components:
           type: text
 
   - id: rules_cron
+    type: cron
     name: Trigger Cron
     description: Checks every morning for the Facebook Ads rules.
     cron: 00 8 * * *
@@ -130,4 +131,4 @@ components:
     command: command
     call:
       method: check_rules
-    traits: facebookads
+    traits: facebookads hidden
