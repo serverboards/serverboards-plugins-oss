@@ -37,7 +37,12 @@ def start_prometheus():
         import traceback; traceback.print_exc()
         serverboards.error("Could not update promservices!")
     try:
-        sh.Command(cwd("prometheus/prometheus"))("-web.listen-address", ":9090","-config.file", cwd("prometheus.yml"), _bg=True, _cwd=cwd("."))
+        prometheus = sh.Command(cwd("prometheus/prometheus"))
+        prometheus(
+            "-web.listen-address", ":9090",
+            "-config.file", cwd("prometheus.yml"),
+            _bg=True, _cwd=cwd("."), _out=serverboards.stderr, _err_to_out=True,
+            )
     except Exception as e:
         import traceback; traceback.print_exc()
         serverboards.error("Prometheus could not be started. Check installation. %s"%(str(e)))

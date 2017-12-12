@@ -839,6 +839,12 @@ class RPCWrapper:
     def __call__(self, *args, **kwargs):
         return rpc.call(self.module, *args, **kwargs)
 
+class WriteToError:
+    def write(self, data, *args, **kwargs):
+        rpc.error(data)
+
+stderr = WriteToError()
+
 action = RPCWrapper("action")
 auth = RPCWrapper("auth")
 group = RPCWrapper("group")

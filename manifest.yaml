@@ -101,10 +101,9 @@ components:
 
   - id: init.daemon
     type: cmd
-    strategy: singleton
+    strategy: init
     name: Prometheus Supervisor
     command: prometheus-init.py
-    timeout: 365d
     perms: plugin service.get
 
   - id: init
