@@ -72,7 +72,9 @@ def authorize_url(service=None, **kwargs):
         "client_id" : settings["client_id"],
         "redirect_uri" : urljoin(settings["base_url"], "/static/%s/auth.html"%PLUGIN_ID),
         "scope": SCOPES[0],
-        "state": service_id
+        "state": service_id,
+        "access_type": "offline",
+        "approval_prompt": "force"
     }
     url = OAUTH_AUTH_URL+"?"+urlencode(params)
     return url
