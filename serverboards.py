@@ -1,4 +1,5 @@
-import json, os, sys, select, time
+import json, os, sys, select, time, io
+from contextlib import contextmanager
 
 try:
     input=raw_input
@@ -33,7 +34,8 @@ class RPC:
 
         """
         self.rpc_registry={}
-        self.stdin=stdin
+        # ensure input is utf8, https://stackoverflow.com/questions/16549332/python-3-how-to-specify-stdin-encoding
+        self.stdin=io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
         self.stdout=stdout
         self.stderr=None
         self.loop_status='OUT' # IN | OUT | EXIT
@@ -178,7 +180,7 @@ class RPC:
         This is use internally for all incomming rpc calls.
         """
         method=rpc['method']
-        params=rpc['params']
+        params=rpc['params'] or []
         call_id=rpc.get('id')
         (args,kwargs) = ([],params) if type(params)==dict else (params, {})
 
@@ -654,14 +656,27 @@ def loop(debug=None):
         rpc.set_debug(debug)
     rpc.loop()
 
-def debug(*s, extra={}):
-    rpc.debug(*s, extra=extra, level=1)
-def info(*s, extra={}):
-    rpc.info(*s, extra=extra, level=1)
-def warning(*s, extra={}):
-    rpc.warning(*s, extra=extra, level=1)
-def error(*s, extra={}):
-    rpc.error(*s, extra=extra, level=1)
+class WriteTo:
+    def __init__(self, fn):
+        self.fn = fn
+    def __call__(self, *args, **kwargs):
+        self.fn(*args, extra=kwargs, level=1)
+    def write(self, data, *args, **kwargs):
+        if data.endswith('\n'):
+            data=data[:-1]
+        self.fn(data, *args, *kwargs)
+    @contextmanager
+    def context(self, level=2, **kwargs):
+        value = io.StringIO()
+        yield value
+        value.seek(0)
+        self.fn(value.read(), level = level, extra=kwargs)
+
+
+error = WriteTo(rpc.error)
+debug = WriteTo(rpc.debug)
+info = WriteTo(rpc.info)
+warning = WriteTo(rpc.warning)
 
 def __simple_hash__(*args, **kwargs):
     hs = ";".join(str(x) for x in args)
@@ -838,12 +853,6 @@ class RPCWrapper:
         return RPCWrapper(self.module+'.'+sub)
     def __call__(self, *args, **kwargs):
         return rpc.call(self.module, *args, **kwargs)
-
-class WriteToError:
-    def write(self, data, *args, **kwargs):
-        rpc.error(data)
-
-stderr = WriteToError()
 
 action = RPCWrapper("action")
 auth = RPCWrapper("auth")

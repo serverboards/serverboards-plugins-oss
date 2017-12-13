@@ -2,6 +2,7 @@
 
 import serverboards, sys, requests, time, json, urllib, os, shutil, yaml, sh
 from serverboards import rpc
+sys.stderr=serverboards.error
 
 ssh=serverboards.Plugin("serverboards.core.ssh/daemon")
 port_map={} # uuid to port, to know when to close and open again at updates
@@ -41,7 +42,7 @@ def start_prometheus():
         prometheus(
             "-web.listen-address", ":9090",
             "-config.file", cwd("prometheus.yml"),
-            _bg=True, _cwd=cwd("."), _out=serverboards.stderr, _err_to_out=True,
+            _bg=True, _cwd=cwd("."), _out=serverboards.info, _err=serverboards.error,
             )
     except Exception as e:
         import traceback; traceback.print_exc()
