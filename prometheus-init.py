@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 import serverboards, sys, requests, time, json, urllib, os, shutil, yaml, sh
-from serverboards import rpc, action
-sys.stderr=serverboards.error
+from serverboards import rpc, action, print
+#sys.stderr=serverboards.error
 
 ssh=serverboards.Plugin("serverboards.core.ssh/daemon")
 port_map={} # uuid to port, to know when to close and open again at updates
@@ -21,15 +21,45 @@ def node_exporter_updated(service):
     ssh.run(service=service["config"]["server"], command="systemctl node_exporter start")
     update_promservices_yaml()
 
+class PrometheusOutputParse:
+    INFO="\x1b[34mINFO\x1b[0m"
+    WARN="\x1b[31mERRO\x1b[0m"
+    ERRO="\x1b[33mWARN\x1b[0m"
+
+    EXTRA={"file":"prometheus/prometheus", "line":"--"}
+    def write(self, alldata, *args, **kwargs):
+        alldata = alldata.decode('utf8')
+        for data in alldata.split('\n'):
+            if not data:
+                continue
+            if data.startswith(PrometheusOutputParse.INFO):
+                pid=data[14:18]
+                rpc.info(data[20:], pid=pid, **PrometheusOutputParse.EXTRA)
+            elif data.startswith(PrometheusOutputParse.WARN):
+                pid=data[14:18]
+                rpc.warning(data[20:], pid=pid, **PrometheusOutputParse.EXTRA)
+            elif data.startswith(PrometheusOutputParse.ERRO):
+                pid=data[14:18]
+                rpc.error(data[20:], pid=pid, **PrometheusOutputParse.EXTRA)
+            else:
+                rpc.debug(repr(data), **PrometheusOutputParse.EXTRA)
 
 @serverboards.rpc_method
 def start_prometheus():
     serverboards.rpc.subscribe("service.updated[serverboards.prometheus/node_exporter]", node_exporter_updated)
     serverboards.rpc.subscribe("service.updated[serverboards.prometheus/service]", node_exporter_updated)
 
+    if not os.path.exists(cwd("prometheus/prometheus")):
+        serverboards.error("Prometheus binary not available, trying to install")
+        from setup import setup
+        setup()
+        update_promservices_yaml()
+
     serverboards.info("Starting prometheus")
     try:
-        sh.fuser("-n", "tcp", "9090","-k")
+        sh.fuser("-n", "tcp", "9090")
+        print("Prometheus running, do nothing.")
+        return 365*24*60*60 # restart in a year
     except:
         pass # not really running
     try:
@@ -37,14 +67,28 @@ def start_prometheus():
     except Exception as e:
         import traceback; traceback.print_exc()
         serverboards.error("Could not update promservices!")
+
     try:
         prometheus = sh.Command(cwd("prometheus/prometheus"))
-        prometheus(
+        prom = prometheus(
             "-web.listen-address", ":9090",
             "-config.file", cwd("prometheus.yml"),
-            _bg=True, _cwd=cwd("."), _out=serverboards.info, _err=serverboards.error,
+            _bg=True, _cwd=cwd("."), _out=PrometheusOutputParse(), _err_to_out=True,
             )
+        time.sleep(10)
+        print("Check if still running")
+        if os.waitpid(prom.pid, os.WNOHANG) != (0,0):
+            serverboards.error("NOT RUNNING")
+            raise Exception("Could not start prometheus.")
         action.trigger("serverboards.core.actions/close-issue", issue="prometheus.norun")
+    except ChildProcessError:
+        serverboards.error("Started but finished early. Check installation. Command was: %s: %s"%(cwd('.'), prom.ran))
+        action.trigger("serverboards.core.actions/open-issue",
+            issue="prometheus.norun",
+            title="Prometheus failed to start",
+            description="Trying to start prometheus, but exited too early. Maybe broken database?\n\nCheck [Serverboards Forum](https://forum.serverboards.io)."
+            )
+        return 30*60 # try in 30 min.
     except Exception:
         import traceback
         e=traceback.format_exc()
@@ -54,6 +98,7 @@ def start_prometheus():
             title="Prometheus failed to start",
             description="Trying to start prometheus failed with:\n\n```\n%s\n```"%(e)
             )
+        return 30*60 # try in 30 min.
 
     return 365*24*60*60 # restart in a year
 
@@ -94,7 +139,7 @@ def update_promservices_yaml():
                      }
                 })
         except:
-            serverboards.error("Could not open port to service %s/%s."%(s["uuid"], s["name"]), extra=dict(service_id = s["uuid"]))
+            serverboards.error("Could not open port to service %s/%s."%(s["uuid"], s["name"]), service_id = s["uuid"])
 
     serverboards.info("Updated prometheus service list with %d remote services"%(len(promservices)))
     with open(cwd("promservices.yaml"),"wt") as wd:
