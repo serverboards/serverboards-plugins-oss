@@ -104,7 +104,7 @@ components:
     strategy: init
     name: Prometheus Supervisor
     command: prometheus-init.py
-    perms: plugin service.get
+    perms: plugin service.get action.trigger[serverboards.core.actions/open-issue] action.trigger[serverboards.core.actions/close-issue]
 
   - id: init
     type: init

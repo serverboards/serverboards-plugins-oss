@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import serverboards, sys, requests, time, json, urllib, os, shutil, yaml, sh
-from serverboards import rpc
+from serverboards import rpc, action
 sys.stderr=serverboards.error
 
 ssh=serverboards.Plugin("serverboards.core.ssh/daemon")
@@ -44,9 +44,17 @@ def start_prometheus():
             "-config.file", cwd("prometheus.yml"),
             _bg=True, _cwd=cwd("."), _out=serverboards.info, _err=serverboards.error,
             )
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        serverboards.error("Prometheus could not be started. Check installation. %s"%(str(e)))
+        action.trigger("serverboards.core.actions/close-issue", issue="prometheus.norun")
+    except Exception:
+        import traceback
+        e=traceback.format_exc()
+        serverboards.error("Prometheus could not be started. Check installation. %s"%(e))
+        action.trigger("serverboards.core.actions/open-issue",
+            issue="prometheus.norun",
+            title="Prometheus failed to start",
+            description="Trying to start prometheus failed with:\n\n```\n%s\n```"%(e)
+            )
+
     return 365*24*60*60 # restart in a year
 
 @serverboards.rpc_method
