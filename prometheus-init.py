@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
-import serverboards, sys, requests, time, json, urllib, os, shutil, yaml, sh
+import serverboards, sys, requests, time, json, urllib, os, shutil, yaml, sh, re
 from serverboards import rpc, action, print
+import socket
+from contextlib import closing
 #sys.stderr=serverboards.error
 
 ssh=serverboards.Plugin("serverboards.core.ssh/daemon")
@@ -12,61 +14,79 @@ def cwd(*filenames):
 
 @serverboards.rpc_method
 def node_exporter_updated(service):
-    serverboards.info("Updating prometheus config file.")
-    print(service)
-    ssh.run(service=service["config"]["server"], command="mkdir -p /opt/serverboards/bin/")
-    ssh.scp(None, cwd("node_exporter/node_exporter"), service["config"]["server"], "/opt/serverboards/bin/")
-    ssh.scp(None, os.path.join(os.path.dirname(__file__), "node_exporter.service"), service["config"]["server"], "/etc/systemd/system/")
-    ssh.run(service=service["config"]["server"], command="systemctl node_exporter enable")
-    ssh.run(service=service["config"]["server"], command="systemctl node_exporter start")
+    context = dict( task="prometheus.node_exporter_update", service_id=service["uuid"] )
+    server_uuid = service["config"]["server"]
+    serverboards.info("Updating prometheus config file.", **context)
+    try:
+        ssh.run(
+            service=server_uuid,
+            command="mkdir -p /opt/serverboards/bin/",
+            context=context)
+        ssh.scp(
+            fromservice=None, fromfile=cwd("node_exporter/node_exporter"),
+            toservice=server_uuid, tofile="/opt/serverboards/bin/",
+            context=context)
+        ssh.scp(
+            fromservice=None, fromfile=os.path.join(os.path.dirname(__file__), "node_exporter.service"),
+            toserver=server_uuid, tofile="/etc/systemd/system/",
+            context=context)
+        ssh.run(service=server_uuid, command="systemctl node_exporter enable", context=context)
+        ssh.run(service=server_uuid, command="systemctl node_exporter start", context=context)
+    except:
+        serverboards.error("Could not install prometheus node_exporter at the remote server.", **context)
     update_promservices_yaml()
 
+ASNI_TERM_CODES=re.compile("\033.*?m")
 class PrometheusOutputParse:
-    INFO="\x1b[34mINFO\x1b[0m"
-    WARN="\x1b[31mERRO\x1b[0m"
-    ERRO="\x1b[33mWARN\x1b[0m"
+    INFO="INFO"
+    WARN="ERRO"
+    ERRO="WARN"
 
-    EXTRA={"file":"prometheus/prometheus", "line":"--"}
+    EXTRA={"file":"prometheus/prometheus", "line":"--", "task": "prometheus.init"}
     def write(self, alldata, *args, **kwargs):
         alldata = alldata.decode('utf8')
+        alldata = ASNI_TERM_CODES.sub("", alldata)
         for data in alldata.split('\n'):
             if not data:
                 continue
             if data.startswith(PrometheusOutputParse.INFO):
-                pid=data[14:18]
-                rpc.info(data[20:], pid=pid, **PrometheusOutputParse.EXTRA)
+                pid=data[5:9]
+                rpc.info(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
             elif data.startswith(PrometheusOutputParse.WARN):
-                pid=data[14:18]
-                rpc.warning(data[20:], pid=pid, **PrometheusOutputParse.EXTRA)
+                pid=data[5:9]
+                rpc.warning(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
             elif data.startswith(PrometheusOutputParse.ERRO):
-                pid=data[14:18]
-                rpc.error(data[20:], pid=pid, **PrometheusOutputParse.EXTRA)
+                pid=data[5:9]
+                rpc.error(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
             else:
-                rpc.debug(repr(data), **PrometheusOutputParse.EXTRA)
+                rpc.error(repr(data), **PrometheusOutputParse.EXTRA)
+    def flush(*args, **kwargs):
+        pass
 
 @serverboards.rpc_method
 def start_prometheus():
     serverboards.rpc.subscribe("service.updated[serverboards.prometheus/node_exporter]", node_exporter_updated)
     serverboards.rpc.subscribe("service.updated[serverboards.prometheus/service]", node_exporter_updated)
+    context = dict( task="prometheus.init" )
 
     if not os.path.exists(cwd("prometheus/prometheus")):
-        serverboards.error("Prometheus binary not available, trying to install")
+        serverboards.error("Prometheus binary not available, trying to install", **context)
         from setup import setup
         setup()
         update_promservices_yaml()
 
-    serverboards.info("Starting prometheus")
-    try:
-        sh.fuser("-n", "tcp", "9090")
-        print("Prometheus running, do nothing.")
-        return 365*24*60*60 # restart in a year
-    except:
-        pass # not really running
+    serverboards.info("Starting prometheus", **context)
+
+    # If prometheus already running, do nothing.
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+        if sock.connect_ex(("localhost", 9090)) == 0:
+            print("Prometheus already running, do nothing.")
+            return 365*24*60*60 # restart in a year
     try:
         update_promservices_yaml() # first update, maybe something changed when asleep
     except Exception as e:
         import traceback; traceback.print_exc()
-        serverboards.error("Could not update promservices!")
+        serverboards.error("Could not update promservices!", **context)
 
     try:
         prometheus = sh.Command(cwd("prometheus/prometheus"))
@@ -75,14 +95,14 @@ def start_prometheus():
             "-config.file", cwd("prometheus.yml"),
             _bg=True, _cwd=cwd("."), _out=PrometheusOutputParse(), _err_to_out=True,
             )
-        time.sleep(10)
+        time.sleep(3)
         print("Check if still running")
         if os.waitpid(prom.pid, os.WNOHANG) != (0,0):
             serverboards.error("NOT RUNNING")
             raise Exception("Could not start prometheus.")
         action.trigger("serverboards.core.actions/close-issue", issue="prometheus.norun")
     except ChildProcessError:
-        serverboards.error("Started but finished early. Check installation. Command was: %s: %s"%(cwd('.'), prom.ran))
+        serverboards.error("Started but finished early. Check installation. Command was: %s: %s"%(cwd('.'), prom.ran), **context)
         action.trigger("serverboards.core.actions/open-issue",
             issue="prometheus.norun",
             title="Prometheus failed to start",
@@ -92,7 +112,7 @@ def start_prometheus():
     except Exception:
         import traceback
         e=traceback.format_exc()
-        serverboards.error("Prometheus could not be started. Check installation. %s"%(e))
+        serverboards.error("Prometheus could not be started. Check installation. %s"%(e), **context)
         action.trigger("serverboards.core.actions/open-issue",
             issue="prometheus.norun",
             title="Prometheus failed to start",
@@ -104,7 +124,9 @@ def start_prometheus():
 
 @serverboards.rpc_method
 def update_promservices_yaml():
-    serverboards.debug("Update the prometheus services yaml file")
+    context = dict( task="prometheus.update-yaml" )
+
+    serverboards.debug("Update the prometheus services yaml file", **context)
     promservices=[]
     services = serverboards.rpc.call("service.list", type="serverboards.prometheus/node_exporter")
     services += serverboards.rpc.call("service.list", type="serverboards.prometheus/agent")
@@ -117,12 +139,12 @@ def update_promservices_yaml():
             hostname = config.get("hostname","localhost")
             port = config.get("port", "9100")
             server = config.get("server")
-            serverboards.debug("Opening SSH tunnel to %s:%s:%s"%(server, hostname, port))
+            serverboards.debug("Opening SSH tunnel to %s:%s:%s"%(server, hostname, port), service_id=s["uuid"], **context)
             if server:
                 newport = ssh.open_port(service=server, hostname=hostname, port=port)
                 port_map[s["uuid"]]=newport # FIXME, use for closing ports and so on.
                 target = "localhost:%d"%newport
-                serverboards.debug("Added prometheus managed node_exporter at %s via %s"%(newport, server))
+                serverboards.debug("Added prometheus managed node_exporter at %s via %s"%(newport, server), service_id=s["uuid"], **context)
             else:
                 target = config.get("url")
                 if target.startswith('http://'):
@@ -139,11 +161,11 @@ def update_promservices_yaml():
                      }
                 })
         except:
-            serverboards.error("Could not open port to service %s/%s."%(s["uuid"], s["name"]), service_id = s["uuid"])
+            serverboards.error("Could not open port to service %s/%s."%(s["uuid"], s["name"]), service_id = s["uuid"], **context)
 
-    serverboards.info("Updated prometheus service list with %d remote services"%(len(promservices)))
     with open(cwd("promservices.yaml"),"wt") as wd:
         wd.write(yaml.dump(promservices))
+    serverboards.info("Updated prometheus service list with %d remote services"%(len(promservices)), **context)
     return True
 
 
