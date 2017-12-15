@@ -182,14 +182,17 @@ def update_promservices_yaml():
             target="%s:%s"%(host, port)
             serverboards.debug("Added prometheus managed node_exporter at %s:%s via %s"%(host, port, server), service_id=s["uuid"], **context)
 
+            labels = {
+                "projects" : ','.join(s["projects"]),
+                "instance": s["uuid"]
+                }
+            tags = s["tags"]
+            if tags:
+                labels["tags"] = ','.join(tags)
+
             promservices.append({
                 "targets": [target],
-                "labels" : {
-                    "uuid": s["uuid"],
-                    "projects" : ','.join(s["projects"]),
-                    "tags": ','.join(s["tags"]),
-                    "name": s["name"]
-                 }
+                "labels" : labels
             })
         except:
             serverboards.error("Could not open port to service %s/%s."%(s["uuid"], s["name"]), service_id = s["uuid"], **context)
