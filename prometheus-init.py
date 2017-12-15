@@ -7,13 +7,52 @@ from contextlib import closing
 #sys.stderr=serverboards.error
 
 ssh=serverboards.Plugin("serverboards.core.ssh/daemon")
-port_map={} # uuid to port, to know when to close and open again at updates
 
 def cwd(*filenames):
     return os.path.join(os.environ["HOME"], *filenames)
 
+def socket_is_open(host, port):
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+        if sock.connect_ex((host, port)) == 0:
+            return True
+        return False
+
+def open_node_port(uuid, config, context={}):
+    server = config.get("server")
+    hostname = config.get("hostname","localhost")
+    port = int(config.get("port", "9100"))
+    if not server:
+        target = config.get("url")
+        if target.startswith('http://'):
+            target=target[7:]
+
+        if ':' in target:
+            return target.split(':')[:2]
+        return (target, 9100)
+
+    serverboards.debug("Opening SSH tunnel to %s:%s:%s"%(server, hostname, port), service_id=uuid, **context)
+
+    newport = ssh.open_port(service=server, hostname=hostname, port=port)
+
+    return ("localhost", newport)
+
+
 @serverboards.rpc_method
 def node_exporter_updated(service):
+    config = service["config"]
+
+    # no remote SSH server, will not try to install
+    if not config.get("server"):
+        update_promservices_yaml()
+        return
+
+    (host, port) = open_node_port(service["uuid"], config, context={"task":"prometheus.node_exporter_updated"})
+
+    # Already running, no install neede.
+    if socket_is_open(host, port):
+        update_promservices_yaml()
+        return
+
     context = dict( task="prometheus.node_exporter_update", service_id=service["uuid"] )
     server_uuid = service["config"]["server"]
     serverboards.info("Updating prometheus config file.", **context)
@@ -69,6 +108,9 @@ def start_prometheus():
     serverboards.rpc.subscribe("service.updated[serverboards.prometheus/service]", node_exporter_updated)
     context = dict( task="prometheus.init" )
 
+    # Update the service list
+    update_promservices_yaml()
+
     if not os.path.exists(cwd("prometheus/prometheus")):
         serverboards.error("Prometheus binary not available, trying to install", **context)
         from setup import setup
@@ -78,10 +120,10 @@ def start_prometheus():
     serverboards.info("Starting prometheus", **context)
 
     # If prometheus already running, do nothing.
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        if sock.connect_ex(("localhost", 9090)) == 0:
-            print("Prometheus already running, do nothing.")
-            return 365*24*60*60 # restart in a year
+    if socket_is_open("localhost", 9090):
+        print("Prometheus already running, do nothing.")
+        return 365*24*60*60 # restart in a year
+
     try:
         update_promservices_yaml() # first update, maybe something changed when asleep
     except Exception as e:
@@ -96,9 +138,8 @@ def start_prometheus():
             _bg=True, _cwd=cwd("."), _out=PrometheusOutputParse(), _err_to_out=True,
             )
         time.sleep(3)
-        print("Check if still running")
         if os.waitpid(prom.pid, os.WNOHANG) != (0,0):
-            serverboards.error("NOT RUNNING")
+            serverboards.error("Serverboards not running (3 sec wait).")
             raise Exception("Could not start prometheus.")
         action.trigger("serverboards.core.actions/close-issue", issue="prometheus.norun")
     except ChildProcessError:
@@ -136,30 +177,20 @@ def update_promservices_yaml():
             config = s["config"]
             if not config:
                 continue
-            hostname = config.get("hostname","localhost")
-            port = config.get("port", "9100")
             server = config.get("server")
-            serverboards.debug("Opening SSH tunnel to %s:%s:%s"%(server, hostname, port), service_id=s["uuid"], **context)
-            if server:
-                newport = ssh.open_port(service=server, hostname=hostname, port=port)
-                port_map[s["uuid"]]=newport # FIXME, use for closing ports and so on.
-                target = "localhost:%d"%newport
-                serverboards.debug("Added prometheus managed node_exporter at %s via %s"%(newport, server), service_id=s["uuid"], **context)
-            else:
-                target = config.get("url")
-                if target.startswith('http://'):
-                    target=target[7:]
+            (host, port)=open_node_port(s["uuid"], config, context=context)
+            target="%s:%s"%(host, port)
+            serverboards.debug("Added prometheus managed node_exporter at %s:%s via %s"%(host, port, server), service_id=s["uuid"], **context)
 
-            if target:
-                promservices.append({
-                    "targets": [target],
-                    "labels" : {
-                        "uuid": s["uuid"],
-                        "projects" : ','.join(s["projects"]),
-                        "tags": ','.join(s["tags"]),
-                        "name": s["name"]
-                     }
-                })
+            promservices.append({
+                "targets": [target],
+                "labels" : {
+                    "uuid": s["uuid"],
+                    "projects" : ','.join(s["projects"]),
+                    "tags": ','.join(s["tags"]),
+                    "name": s["name"]
+                 }
+            })
         except:
             serverboards.error("Could not open port to service %s/%s."%(s["uuid"], s["name"]), service_id = s["uuid"], **context)
 

@@ -664,13 +664,14 @@ class WriteTo:
         self.fn = fn
         self.extra = extra
     def __call__(self, *args, **extra):
+        nextra = {**{"level":1}, **self.extra, **extra}
         if not args: # if no data, add extras for contexts.
-            return WriteTo(self.fn, **{**self.extra, **extra})
-        self.fn(*args, **{**{"level":1}, **extra})
+            return WriteTo(self.fn, **nextra)
+        self.fn(*args, **nextra)
     def write(self, data, *args, **extra):
         if data.endswith('\n'):
             data=data[:-1]
-        self.fn(data, *args, **{**{"level":1}, **extra})
+        self.fn(data, *args, **{**{"level":1}, **self.extra, **extra})
     def flush(*args, **kwargs):
         pass
     @contextmanager
@@ -678,7 +679,7 @@ class WriteTo:
         value = io.StringIO()
         yield value
         value.seek(0)
-        self.fn(value.read(), **{**{"level":level}, **extra})
+        self.fn(value.read(), **{**{"level":level}, **self.extra, **extra})
 
 error = WriteTo(rpc.error)
 debug = WriteTo(rpc.debug)
