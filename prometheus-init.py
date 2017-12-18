@@ -67,7 +67,7 @@ def node_exporter_updated(service):
             context=context)
         ssh.scp(
             fromservice=None, fromfile=os.path.join(os.path.dirname(__file__), "node_exporter.service"),
-            toserver=server_uuid, tofile="/etc/systemd/system/",
+            toservice=server_uuid, tofile="/etc/systemd/system/",
             context=context)
         ssh.run(service=server_uuid, command="systemctl node_exporter enable", context=context)
         ssh.run(service=server_uuid, command="systemctl node_exporter start", context=context)
