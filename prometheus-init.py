@@ -69,8 +69,8 @@ def node_exporter_updated(service):
             fromservice=None, fromfile=os.path.join(os.path.dirname(__file__), "node_exporter.service"),
             toservice=server_uuid, tofile="/etc/systemd/system/",
             context=context)
-        ssh.run(service=server_uuid, command="systemctl node_exporter enable", context=context)
-        ssh.run(service=server_uuid, command="systemctl node_exporter start", context=context)
+        ssh.run(service=server_uuid, command="systemctl enable node_exporter", context=context)
+        ssh.run(service=server_uuid, command="systemctl start node_exporter", context=context)
     except:
         serverboards.error("Could not install prometheus node_exporter at the remote server.", **context)
     update_promservices_yaml()
