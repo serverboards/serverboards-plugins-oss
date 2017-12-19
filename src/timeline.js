@@ -6,7 +6,8 @@ const TimelineLine = React.createClass({
     $(this.refs.el).popup()
   },
   render(){
-    const {expiration, service, onClick, hasDivider, showCalendar} = this.props
+    const {expiration, onClick, hasDivider, showCalendar} = this.props
+    const service = expiration.service
     const date = moment(expiration.date)
     const expired = date.isBefore(moment())
     let style = {paddingLeft: 5, paddingBottom: "1rem", cursor: "pointer"}
@@ -21,7 +22,7 @@ const TimelineLine = React.createClass({
     }
     return (
       <div className="row" ref="el"
-        key={`${expiration.service}/${expiration.name}/${expiration.date}/${expiration.id}`}
+        key={`${service.uuid}/${expiration.name}/${expiration.date}/${expiration.id}`}
         data-date={date.format("YYYY-MM-DD")}
         style={style}
         onClick={() => showCalendar(date.year(), date.month())}
@@ -64,7 +65,7 @@ const Timeline = React.createClass({
     this.setState({year, month})
   },
   render(){
-    const {expirations, onShowService, getServiceByUUID, maxHeight} = this.props
+    const {expirations, onShowService, maxHeight} = this.props
     const state = this.state
     return (
       <div>
@@ -72,10 +73,9 @@ const Timeline = React.createClass({
         <div ref="list" className="ui vertically divided list" style={{overflow:"auto", maxHeight: maxHeight}}>
           {expirations.map( (e, n) => (
             <TimelineLine
-              key={`${e.service}/${e.check}`}
+              key={`${e.service.uuid}/${e.check}`}
               expiration={e}
-              service={getServiceByUUID(e.service)}
-              onClick={() => onShowService(e.service)}
+              onClick={() => onShowService(e.service.uuid)}
               hasDivider={n!=0}
               showCalendar={this.showCalendar}
               />

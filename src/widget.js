@@ -11,7 +11,6 @@ const Model = React.createClass({
       updating: false,
       expirations: undefined,
       project: state.project.project,
-      service_by_uuid: undefined
     }
   },
   componentDidMount(){
@@ -27,11 +26,6 @@ const Model = React.createClass({
       }).catch( e => {
         Flash.error(e)
       })
-    cache.services().then( (services) => {
-      let service_by_uuid={}
-      services.map( (s) => service_by_uuid[s.uuid]=s )
-      this.setState({service_by_uuid})
-    })
   },
 
   progressUpdate(st){
@@ -62,9 +56,6 @@ const Model = React.createClass({
       .then( () => { Flash.success("Expirations list updated"); this.componentDidMount() } )
       .catch( (e) => Flash.error(e) )
   },
-  getServiceByUUID(uuid){
-    return this.state.service_by_uuid[uuid]
-  },
   render(){
     if (this.state.updating)
       return (
@@ -75,7 +66,7 @@ const Model = React.createClass({
           </div>
         </Loading>
       )
-    if (!this.state.expirations || !this.state.service_by_uuid)
+    if (!this.state.expirations)
       return (
         <Loading>{i18n("Expirations")}</Loading>
       )
@@ -84,7 +75,6 @@ const Model = React.createClass({
         <Timeline
           expirations={this.state.expirations}
           onShowService={this.handleShowService}
-          getServiceByUUID={this.getServiceByUUID}
           />
         <button className="ui button yellow with icon" onClick={this.handleReload}>
           <i className="ui refresh icon"/>
