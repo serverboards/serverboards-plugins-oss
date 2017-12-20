@@ -1,0 +1,32 @@
+id: serverboards.docker
+name: Docker integration
+author: David Moreno <dmoreno@serverboards.io>
+version: 17.10
+description: >
+  Basic docker integration on any SSH accesible docker server.
+
+components:
+  - id: service
+    type: service
+    name: Docker
+    description: Management of Docker containers.
+    traits: core.cloud.compute container server cloud
+    icon: docker-plain.svg
+    fields:
+      - name: server
+        type: service
+        label: Remote Server
+        traits: ssh server
+        card: true
+  - id: daemon
+    name: Docker Daemon
+    strategy: singleton
+    timeout: 30s
+    type: cmd
+    command: serverboards-docker.py
+    perms: service.get plugin
+  - id: vmc
+    type: vmc
+    for: serverboards.docker/service
+    name: Docker management
+    command: serverboards.docker/daemon
