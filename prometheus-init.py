@@ -1,20 +1,20 @@
 #!/usr/bin/python3
 
 import serverboards, sys, requests, time, json, urllib, os, shutil, yaml, sh, re
+import requests
 from serverboards import rpc, action, print
-import socket
-from contextlib import closing
-#sys.stderr=serverboards.error
+sys.stderr=serverboards.error
 
 ssh=serverboards.Plugin("serverboards.core.ssh/daemon")
 
 def cwd(*filenames):
     return os.path.join(os.environ["HOME"], *filenames)
 
-def socket_is_open(host, port):
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        if sock.connect_ex((host, port)) == 0:
-            return True
+def http_open(host, port):
+    try:
+        r = requests.head("http://%s:%s"%(host, port))
+        return r.status_code in (200, 301, 302)
+    except:
         return False
 
 def open_node_port(uuid, config, context={}):
@@ -30,32 +30,34 @@ def open_node_port(uuid, config, context={}):
             return target.split(':')[:2]
         return (target, 9100)
 
-    serverboards.debug("Opening SSH tunnel to %s:%s:%s"%(server, hostname, port), service_id=uuid, **context)
+    # serverboards.debug("Opening SSH tunnel to %s:%s:%s"%(server, hostname, port), service_id=uuid, **context)
 
-    newport = ssh.open_port(service=server, hostname=hostname, port=port)
+    newport = ssh.open_port(service=server, hostname=hostname, port=port, context=context)
 
     return ("localhost", newport)
 
 
 @serverboards.rpc_method
-def node_exporter_updated(service):
+def node_exporter_updated(service, update_promservices=True):
     config = service["config"]
+    context = dict( task="prometheus.node_exporter_update", service_id=service["uuid"] )
 
     # no remote SSH server, will not try to install
     if not config.get("server"):
+        print("No remote server, not installing node_exporter", **context)
         update_promservices_yaml()
         return
 
     (host, port) = open_node_port(service["uuid"], config, context={"task":"prometheus.node_exporter_updated"})
 
     # Already running, no install neede.
-    if socket_is_open(host, port):
+    if http_open(host, port):
+        print("Existing remote node_exporter, not reinstalling. (%s:%s)"%(host,port), **context)
         update_promservices_yaml()
         return
 
-    context = dict( task="prometheus.node_exporter_update", service_id=service["uuid"] )
     server_uuid = service["config"]["server"]
-    serverboards.info("Updating prometheus config file.", **context)
+    serverboards.info("Installing node_exporter.", **context)
     try:
         ssh.run(
             service=server_uuid,
@@ -73,7 +75,9 @@ def node_exporter_updated(service):
         ssh.run(service=server_uuid, command="systemctl start node_exporter", context=context)
     except:
         serverboards.error("Could not install prometheus node_exporter at the remote server.", **context)
-    update_promservices_yaml()
+
+    if update_promservices:
+        update_promservices_yaml()
 
 ASNI_TERM_CODES=re.compile("\033.*?m")
 class PrometheusOutputParse:
@@ -105,7 +109,8 @@ class PrometheusOutputParse:
 @serverboards.rpc_method
 def start_prometheus():
     serverboards.rpc.subscribe("service.updated[serverboards.prometheus/node_exporter]", node_exporter_updated)
-    serverboards.rpc.subscribe("service.updated[serverboards.prometheus/service]", node_exporter_updated)
+    serverboards.rpc.subscribe("service.created[serverboards.prometheus/node_exporter]", node_exporter_updated)
+    #serverboards.rpc.subscribe("service.updated[serverboards.prometheus/service]", node_exporter_updated)
     context = dict( task="prometheus.init" )
 
     # Update the service list
@@ -120,7 +125,7 @@ def start_prometheus():
     serverboards.info("Starting prometheus", **context)
 
     # If prometheus already running, do nothing.
-    if socket_is_open("localhost", 9090):
+    if http_open("localhost", 9090):
         print("Prometheus already running, do nothing.")
         return 365*24*60*60 # restart in a year
 
@@ -180,7 +185,13 @@ def update_promservices_yaml():
             server = config.get("server")
             (host, port)=open_node_port(s["uuid"], config, context=context)
             target="%s:%s"%(host, port)
-            serverboards.debug("Added prometheus managed node_exporter at %s:%s via %s"%(host, port, server), service_id=s["uuid"], **context)
+            serverboards.debug("Added prometheus target at %s:%s via %s"%(host, port, server), service_id=s["uuid"], **context)
+
+            if not http_open(host, port) and s["type"] == "serverboards.prometheus/node_exporter":
+               # update node exporter, maybe install
+                node_exporter_updated(s, update_promservices=False)
+
+
 
             labels = {
                 "projects" : ','.join(s["projects"]),
@@ -195,6 +206,7 @@ def update_promservices_yaml():
                 "labels" : labels
             })
         except:
+            import traceback; traceback.print_exc()
             serverboards.error("Could not open port to service %s/%s."%(s["uuid"], s["name"]), service_id = s["uuid"], **context)
 
     with open(cwd("promservices.yaml"),"wt") as wd:
