@@ -13,7 +13,7 @@ def cwd(*filenames):
 def http_open(host, port):
     try:
         r = requests.head("http://%s:%s"%(host, port))
-        return r.status_code in (200, 301, 302)
+        return True # something is back, no mather if its an error
     except:
         return False
 
@@ -106,6 +106,18 @@ class PrometheusOutputParse:
     def flush(*args, **kwargs):
         pass
 
+def prometheus_close_issue():
+    action.trigger("serverboards.core.actions/close-issue",
+        issue="prometheus.norun"
+        )
+def prometheus_open_issue():
+    action.trigger("serverboards.core.actions/open-issue",
+        issue="prometheus.norun",
+        title="Prometheus failed to start",
+        description="Trying to start prometheus failed. Check the logs."
+        )
+
+
 @serverboards.rpc_method
 def start_prometheus():
     serverboards.rpc.subscribe("service.updated[serverboards.prometheus/node_exporter]", node_exporter_updated)
@@ -113,8 +125,12 @@ def start_prometheus():
     #serverboards.rpc.subscribe("service.updated[serverboards.prometheus/service]", node_exporter_updated)
     context = dict( task="prometheus.init" )
 
-    # Update the service list
-    update_promservices_yaml()
+    # first update, maybe something changed when asleep
+    try:
+        update_promservices_yaml()
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        serverboards.error("Could not update promservices!", **context)
 
     if not os.path.exists(cwd("prometheus/prometheus")):
         serverboards.error("Prometheus binary not available, trying to install", **context)
@@ -126,14 +142,12 @@ def start_prometheus():
 
     # If prometheus already running, do nothing.
     if http_open("localhost", 9090):
-        print("Prometheus already running, do nothing.")
+        print("Prometheus already running, do nothing.", **context)
+        prometheus_close_issue()
         return 365*24*60*60 # restart in a year
+    else:
+        print("Prometheus not running at localhost:9090", **context)
 
-    try:
-        update_promservices_yaml() # first update, maybe something changed when asleep
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        serverboards.error("Could not update promservices!", **context)
 
     try:
         prometheus = sh.Command(cwd("prometheus/prometheus"))
@@ -144,26 +158,19 @@ def start_prometheus():
             )
         time.sleep(3)
         if os.waitpid(prom.pid, os.WNOHANG) != (0,0):
-            serverboards.error("Serverboards not running (3 sec wait).")
+            serverboards.error("Serverboards not running (3 sec wait).", **context)
             raise Exception("Could not start prometheus.")
-        action.trigger("serverboards.core.actions/close-issue", issue="prometheus.norun")
+        else:
+            prometheus_close_issue()
     except ChildProcessError:
         serverboards.error("Started but finished early. Check installation. Command was: %s: %s"%(cwd('.'), prom.ran), **context)
-        action.trigger("serverboards.core.actions/open-issue",
-            issue="prometheus.norun",
-            title="Prometheus failed to start",
-            description="Trying to start prometheus, but exited too early. Maybe broken database?\n\nCheck [Serverboards Forum](https://forum.serverboards.io)."
-            )
+        prometheus_open_issue()
         return 30*60 # try in 30 min.
-    except Exception:
+    except Exception as e:
         import traceback
         e=traceback.format_exc()
         serverboards.error("Prometheus could not be started. Check installation. %s"%(e), **context)
-        action.trigger("serverboards.core.actions/open-issue",
-            issue="prometheus.norun",
-            title="Prometheus failed to start",
-            description="Trying to start prometheus failed with:\n\n```\n%s\n```"%(e)
-            )
+        prometheus_open_issue()
         return 30*60 # try in 30 min.
 
     return 365*24*60*60 # restart in a year
