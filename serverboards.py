@@ -1,3 +1,5 @@
+#cython: language_level=3, boundscheck=False
+
 import json, os, sys, select, time, io
 from contextlib import contextmanager
 

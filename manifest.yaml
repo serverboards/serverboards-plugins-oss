@@ -10,7 +10,7 @@ components:
     type: service
     name: Docker
     description: Management of Docker containers.
-    traits: core.cloud.compute container server cloud
+    traits: optional.cloud.compute container server cloud
     icon: docker-plain.svg
     fields:
       - name: server
