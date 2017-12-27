@@ -180,7 +180,6 @@ class DriveWatcher:
             drive_service=get_drive(service_id)
             response = drive_service.changes().list(pageToken=page_token,
                                                     spaces='drive').execute()
-            print("Changes for", service_id, " => ", response)
             for change in response.get('changes'):
                 yield (service_id, change)
 
