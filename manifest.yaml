@@ -2,7 +2,7 @@ id: serverboards.cron
 name: Cron type daemon
 description: Can create cron type rules, and an easy editor for them
 author: David Moreno Montero <dmoreno@serverboards.io>
-version: 17.04
+version: "17.10"
 
 components:
   - id: cron
@@ -32,7 +32,9 @@ components:
               `everyday`
           placeholder: "* * * * * * *"
           card: true
+      result:
+        datetime: Triggered datetime
+        date: Triggered date
+        time: Triggered time
+
     stop: del_cron
-  - id: screen
-    type: --screen
-    name: Cron Manager

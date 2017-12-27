@@ -60,7 +60,11 @@ def update_cron_timer():
     def trigger(ids):
         serverboards.info("trigger: %s"%repr([i.id for i in ids]))
         for i in ids:
-            serverboards.rpc.event("trigger", id=str(i.id), state="tick")
+            datetime_=datetime.datetime.now()
+            date=datetime_.strftime('%Y-%m-%d')
+            time=datetime_.strftime('%H:%M')
+            datetime_=datetime_.strftime("%Y-%m-%d %H:%M")
+            serverboards.rpc.event("trigger", id=str(i.id), date=date, datetime=datetime_, time=time)
         update_timer()
 
     update_timer()
