@@ -3,7 +3,7 @@ name: Google Drive
 author: David Moreno <dmoreno@serverboards.io>
 url: https://github.com/serverboards/serverboards-plugin-google-drive
 description: Watches for changes at Google Drive
-version: 17.04
+version: "17.10"
 postinst: postinst.sh
 
 components:
@@ -109,9 +109,18 @@ components:
           traits: google.drive
           label: Google Drive Service
         - name: expression
+          label: File or folder name to watch
           type: text
+          card: true
           description: |
             Text that the file name must contain, for example a folder name or
             file name.
-    states: change
+    result:
+      filename: Filename of changed file
+      author:
+        name: Display name for the change author
+        email: Email for the change author
+        avatar: Link to a image of the change author
+      datetime: Datetime of change
+      elapsed: Seconds since change
     stop: watch_stop

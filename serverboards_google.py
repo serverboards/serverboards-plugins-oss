@@ -33,7 +33,7 @@ def ensure_settings():
             raise Exception("Google API Integration not configured. Check system settings.")
         settings.update(data)
 
-        base = serverboards.rpc.call("settings.get", "serverboards.core.settings/base")
+        base = serverboards.rpc.call("settings.get", "serverboards.core.settings/base", {"base_url":"http://localhost:8080"})
         settings.update(base)
 
 class ServerboardsStorage(client.Storage):
@@ -69,7 +69,7 @@ def authorize_url(service=None, **kwargs):
 
     params={
         "response_type" : "code",
-        "client_id" : settings["client_id"],
+        "client_id" : settings["client_id"].strip(),
         "redirect_uri" : urljoin(settings["base_url"], "/static/%s/auth.html"%PLUGIN_ID),
         "scope": SCOPES[0],
         "state": service_id,
@@ -88,8 +88,8 @@ def store_code(service_id, code):
     """
     params={
         "code": code,
-        "client_id": settings["client_id"],
-        "client_secret": settings["client_secret"],
+        "client_id": settings["client_id"].strip(),
+        "client_secret": settings["client_secret"].strip(),
         "redirect_uri": urljoin(settings["base_url"], "/static/%s/auth.html"%PLUGIN_ID),
         "grant_type": "authorization_code",
     }
@@ -100,8 +100,8 @@ def store_code(service_id, code):
     storage = ServerboardsStorage(service_id)
     credentials = client.OAuth2Credentials(
         access_token=js["access_token"],
-        client_id=settings["client_id"],
-        client_secret=settings["client_secret"],
+        client_id=settings["client_id"].strip(),
+        client_secret=settings["client_secret"].strip(),
         refresh_token=js.get("refresh_token"),
         token_expiry=datetime.datetime.utcnow() + datetime.timedelta(seconds=int(js["expires_in"])),
         token_uri=OAUTH_AUTH_TOKEN_URL,
@@ -113,5 +113,7 @@ def store_code(service_id, code):
     )
     credentials.set_store(storage)
     storage.put(credentials)
+
+    serverboards.info("Client authorized Google Drive. OAuth2 credentials saved.", service_id = service_id)
 
     return "ok"
