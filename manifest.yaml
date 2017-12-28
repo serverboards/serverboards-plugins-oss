@@ -114,7 +114,6 @@ components:
   - id: trigger
     name: Prometheus Alert
     type: trigger
-    states: nok ok
     command: daemon
     traits: prometheus cloud server
     start:
@@ -135,12 +134,10 @@ components:
         - name: expression
           label: Prometheus expression
           placeholder: "up == 1"
-          description: |
-            Which expression to watch. The trigger will stay in the `ok` status
-            as long as data is returned. If no data is returned it changes to
-            the `nok` state. This normally just means to add a comparison at the
-            end of the normal expression.
+          description: Which expression to watch.
           type: text
+      result:
+        value: Current value of the expression
     stop: watch_stop
 
 data:

@@ -50,8 +50,8 @@
       })
     }
 
-    store_off_start = store.on("project.daterange.start", update)
-    store_on_start = store.on("project.daterange.end", update)
+    store.on("project.daterange.start", update)
+    store.on("project.daterange.end", update)
     let calls=[]
     if (config.service){
       url = config.service.config.url
@@ -78,8 +78,8 @@
         // FIXME
         console.warn("Might be leaking SSH proxy ports.")
       }
-      store_on_start()
-      store_off_start()
+      store.off("project.daterange.start", update)
+      store.off("project.daterange.end", update)
     }
   }
 

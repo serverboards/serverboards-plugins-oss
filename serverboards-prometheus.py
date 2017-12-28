@@ -131,9 +131,8 @@ def watch_start(id=None, period=None, service=None, expression=None, **kwargs):
     def check_ok():
         serverboards.debug("Checking expression: %s"%(expression))
         p = get_points(ssh_proxy=ssh_proxy, url=url, expression=expression)
-        nstate = "ok" if bool(p) else "nok"
         if state != nstate:
-            serverboards.rpc.event("trigger", {"id":id, "state": nstate})
+            serverboards.rpc.event("trigger", {"id":id, "value": p})
         return True
 
     check_ok()
