@@ -7,7 +7,7 @@ description: >
 
   Includes copy of [Spice Web Client from eyeos](https://github.com/eyeos/spice-web-client).
 license: AGPLv3
-version: 17.04
+version: 18.01
 postinst: ./postinst.sh
 
 components:
