@@ -1,7 +1,7 @@
 id: serverboards.backup.monitor
 name: Backup Manager
 author: David Moreno <dmoreno@serverboards.io>
-version: 17.04
+version: 18.01
 description: |
   Manage and monitor backups.
 
