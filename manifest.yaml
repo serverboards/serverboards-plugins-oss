@@ -3,7 +3,7 @@ name: Log Heatmap
 author: David Moreno <dmoreno@serverboards.io>
 url: https://serverboards.io
 description: Shows a heatmap of log entries
-version: 17.04
+version: "18.01"
 
 components:
   - id: widget
