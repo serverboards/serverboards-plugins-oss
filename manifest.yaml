@@ -3,7 +3,7 @@ name: Service Heatmap
 author: David Moreno <dmoreno@serverboards.io>
 url: https://github.com/serverboards/serverboards-plugin-serviceheatmap
 description: Shows heatmap of services in current Serverboard
-version: "17.10"
+version: "18.01"
 
 components:
   - id: widget
