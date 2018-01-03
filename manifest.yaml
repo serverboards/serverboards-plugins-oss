@@ -4,7 +4,7 @@ description: |
   Telegram integration to allow sending notifications via telegram
 author: David Moreno <dmoreno@serverboards.io>
 url: https://serverboards.io
-version: 17.04
+version: 18.01
 
 components:
   - id: settings.telegram
