@@ -308,18 +308,7 @@ def check_rules(*_args, **_kwargs):
             service=service_id)
         value = float(data[0]["values"][0][1])
 
-        if cond == "<":
-            state = value < limit
-        elif cond == "<=":
-            state = value <= limit
-        elif cond == ">":
-            state = value > limit
-        elif cond == ">=":
-            state = value >= limit
-        state = "ok" if state else "nok"
-        serverboards.info("Facebook Ads Rule check %s: %s %s %s -> %s"%(r["uuid"], value, cond, limit, state))
-        serverboards.rpc.event("rules.trigger", id=r["uuid"], state=state, value=value)
-
+        serverboards.rpc.event("rules.trigger", id=r["uuid"], value=value)
 
 
 def test():

@@ -3,7 +3,7 @@ name: Facebook Ads Integration
 description: |
   Provides access to metrics from facebook ads.
 author: David Moreno <dmoreno@serverboards.io>
-version: 17.04
+version: "18.01"
 
 
 components:
@@ -72,7 +72,6 @@ components:
     name: Facebook Ads
     description: Watches for some conditions on the Facebook Ads data.
     traits: facebookads cloud
-    states: ok nok
     start:
       params:
         - name: service
@@ -101,21 +100,8 @@ components:
               name: CTR
             - value: canvas_avg_view_percent
               name: Canvas Averag View Percent
-        - name: condition
-          label: Condition
-          type: select
-          options:
-            - name: Greater
-              value: ">"
-            - name: Less
-              value: "<"
-            - name: Greater or equal
-              value: ">="
-            - name: Less or equal
-              value: "<="
-        - name: value
-          label: Value
-          type: text
+    result:
+      value: Value of the insight
 
   - id: rules_cron
     type: cron
