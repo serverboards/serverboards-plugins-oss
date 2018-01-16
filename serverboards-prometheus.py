@@ -2,6 +2,7 @@
 
 import serverboards, sys, requests, time, json, urllib
 from serverboards import rpc, print
+sys.stderr=serverboards.error
 
 IGNORE_METRIC_NAMES=set(['instance','job'])
 
@@ -37,31 +38,22 @@ def decorate_serie(serie, name=None):
         "values": serie.get("values",[])
     }
 
-open_ports={}
-ssh_id=None
-def port_tunnel(ssh_url, hostname, port):
-    # rpc.debug("Open at tunel %s"%ssh_url)
-    global ssh_id
-    ret = open_ports.get( (ssh_url, hostname, port) )
-    if ret:
-        # serverboards.debug("Using local port from cache: %s"% port)
-        return ret
-    if ssh_id is None:
-        ssh_id=rpc.call("plugin.start","serverboards.core.ssh/daemon")
-    newport = rpc.call(ssh_id+".open_port", url=ssh_url, hostname=hostname, port=port)
-    open_ports[ (ssh_url, hostname, port) ] = newport
+ssh=serverboards.Plugin("serverboards.core.ssh/daemon")
+@serverboards.cache_ttl(3000)
+def port_tunnel(via, hostname, port):
+    newport = ssh.open_port(service=via, hostname=hostname, port=port)
     serverboards.debug("Opened new port: %s"% newport)
     return newport
 
 @serverboards.rpc_method
-def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
+def get(expression, via=None, url=None, start=None, end=None, step=None):
     if not expression:
         raise Exception("An expression is required")
     if not url:
         url="http://localhost:9090"
-    if ssh_proxy:
+    if via:
         url=urllib.parse.urlparse(url)
-        port=port_tunnel(ssh_proxy, url.hostname, url.port)
+        port=port_tunnel(via, url.hostname, url.port)
         url="http://localhost:%d"%port
 
     now=int(time.time())
@@ -90,7 +82,7 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
             "step": step,
             "_": now
         }
-        # serverboards.debug("Get data from %s, %s: %s"%(url,repr(ssh_proxy), expr))
+        # serverboards.debug("Get data from %s, %s: %s"%(url,repr(via), expr))
         try:
             res = requests.get(url+"/api/v1/query_range", params=params)
         except:
@@ -105,12 +97,12 @@ def get(expression, ssh_proxy=None, url=None, start=None, end=None, step=None):
             ret.append(decorate_serie(x, name=name))
     return ret
 
-def get_points(ssh_proxy=None, url=None, expression=None):
+def get_points(via=None, url=None, expression=None):
     if not url:
         url="http://localhost:9090"
-    if ssh_proxy:
+    if via:
         url=urllib.parse.urlparse(url)
-        port=port_tunnel(ssh_proxy, url.hostname, url.port)
+        port=port_tunnel(via, url.hostname, url.port)
         url="http://localhost:%d"%port
     now=int(time.time())
     params = {
@@ -124,13 +116,13 @@ def get_points(ssh_proxy=None, url=None, expression=None):
 @serverboards.rpc_method
 def watch_start(id=None, period=None, service=None, expression=None, **kwargs):
     state = None
-    ssh_proxy=service.get("config", {}).get("ssh_proxy")
+    via=service.get("config", {}).get("via")
     url=service.get("config", {}).get("url")
     period_s = time_description_to_seconds(period or "5m")
 
     def check_ok():
         serverboards.debug("Checking expression: %s"%(expression))
-        p = get_points(ssh_proxy=ssh_proxy, url=url, expression=expression)
+        p = get_points(via=via, url=url, expression=expression)
         if state != nstate:
             serverboards.rpc.event("trigger", {"id":id, "value": p})
         return True
@@ -147,23 +139,23 @@ def watch_stop(id):
     return "ok"
 
 @serverboards.cache_ttl(30)
-def get_values(ssh_proxy=None, url=None):
+def get_values(via=None, url=None):
     if not url:
         url="http://localhost:9090"
-    if ssh_proxy:
+    if via:
         url=urllib.parse.urlparse(url)
-        port=port_tunnel(ssh_proxy, url.hostname, url.port)
+        port=port_tunnel(via, url.hostname, url.port)
         url="http://localhost:%d"%port
     res = requests.get(url+"/api/v1/label/__name__/values")
     return res.json()["data"]
 
 @serverboards.cache_ttl(30)
-def get_tags(ssh_proxy=None, url=None, value="", tag=None):
+def get_tags(via=None, url=None, value="", tag=None):
     if not url:
         url="http://localhost:9090"
-    if ssh_proxy:
+    if via:
         url=urllib.parse.urlparse(url)
-        port=port_tunnel(ssh_proxy, url.hostname, url.port)
+        port=port_tunnel(via, url.hostname, url.port)
         url="http://localhost:%d"%port
     res = requests.get(url+"/api/v1/series?match[]=%s"%value)
     data = res.json()["data"]
@@ -182,7 +174,7 @@ def get_tags(ssh_proxy=None, url=None, value="", tag=None):
 BUILTINS = ["sum(","min(","max(","avg(","stddev(","stdvar(","count(","count_values(","bottomk(","topk(", "quantile("]
 
 @serverboards.rpc_method
-def autocomplete_values(current="", ssh_proxy=None, url=None, **kwargs):
+def autocomplete_values(current="", via=None, url=None, **kwargs):
     if not current:
         return []
     if '=' in current:
@@ -191,20 +183,58 @@ def autocomplete_values(current="", ssh_proxy=None, url=None, **kwargs):
         if suffix.startswith('"'):
             suffix = suffix[1:]
         options = ['%s{%s="%s"}'%(prefix, tag, x)
-            for x in get_tags(ssh_proxy, url, prefix, tag)
+            for x in get_tags(via, url, prefix, tag)
             if x.startswith(suffix)
             ]
     elif '{' in current:
         prefix,suffix = current.split('{')
         options = ['%s{%s="'%(prefix, x)
-            for x in get_tags(ssh_proxy, url, prefix)
+            for x in get_tags(via, url, prefix)
             if x.startswith(suffix)
             ]
     else:
-        options = get_values(ssh_proxy, url) + BUILTINS
+        options = get_values(via, url) + BUILTINS
     for cpart in current.lower().replace('{','_').replace('=','_').split('_'):
         options = [x for x in options if cpart in x.lower()]
     return sorted(options)
+
+def connect_url_via_status(url, via):
+    print("Check ", url, via)
+    if via:
+        url=urllib.parse.urlparse(url)
+        print("Tunel to", url.hostname, url.port)
+        try:
+            port=port_tunnel(via, url.hostname, url.port)
+        except:
+            return "ssh-proxy-error"
+        url="http://localhost:%d"%port
+    print("Check url", url)
+    try:
+        res = requests.get(url)
+    except Exception as e:
+        return "down"
+    if res.status_code==200:
+        return "ok"
+    else:
+        return "nok"
+
+@serverboards.rpc_method
+def prometheus_is_up(service):
+    return connect_url_via_status(
+        url=service["config"].get("url") or "http://localhost:9090",
+        via=service["config"]["via"])
+
+@serverboards.rpc_method
+def agent_is_up(service):
+    return connect_url_via_status(
+        url=service["config"].get("url") or "http://localhost:9090",
+        via=service["config"]["via"])
+
+@serverboards.rpc_method
+def node_exporter_is_up(service):
+    return connect_url_via_status(
+        url=service["config"].get("url") or "http://localhost:9100",
+        via=service["config"]["server"])
 
 def test():
     #res=get(expression="prometheus_rule_evaluation_failures_total")

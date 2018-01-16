@@ -34,6 +34,10 @@ components:
         placeholder: "http://localhost:9090"
         type: url
         card: true
+    status:
+      command: serverboards.prometheus/daemon
+      call: prometheus_is_up
+      frequency: 10m
 
   - id: agent
     type: service
@@ -49,10 +53,14 @@ components:
       - name: url
         label: URL
         description: URL to access prometheus agent, relative to service.
-        placeholder: "http://localhost:9090"
+        placeholder: "http://localhost:9100"
         default: http://localhost:9090
         type: url
         card: true
+    status:
+      command: serverboards.prometheus/daemon
+      call: agent_is_up
+      frequency: 10m
 
   - id: node_exporter
     type: service
@@ -66,6 +74,10 @@ components:
         type: service
         traits: ssh
         card: true
+    status:
+      command: serverboards.prometheus/daemon
+      call: node_exporter_is_up
+      frequency: 10m
 
   - id: widget
     type: widget

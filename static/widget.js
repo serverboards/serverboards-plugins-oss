@@ -6,7 +6,7 @@
   function main(el, config, context){
     //console.log("Prom config is %o", config)
     let prometheus = new plugin.PluginCaller("serverboards.prometheus/daemon")
-    let ssh_proxy
+    let via
     let $el=$('<div>')
     let url="http://localhost:9090"
     $(el).append($el)
@@ -32,7 +32,7 @@
         step: Math.max(end.diff(start,"seconds") / 256, 14),
 
         url: url,
-        ssh_proxy: ssh_proxy
+        via: via
       }
 
       return prometheus.call("get", params).then( (data) => {
@@ -56,12 +56,7 @@
     if (config.service){
       url = config.service.config.url
       if (config.service.config.via){
-        calls.push(
-          rpc.call("service.get",[config.service.config.via]).then( (service) => {
-            ssh_proxy=service.config.url
-            console.log("Setting ssh proxy: %s", ssh_proxy)
-          })
-        )
+        via=config.service.config.via
       }
     }
 
@@ -74,9 +69,9 @@
     }
 
     return function(){
-      if (ssh_proxy){
+      if (via){
         // FIXME
-        console.warn("Might be leaking SSH proxy ports.")
+        console.warn("Might be leaking SSH proxy ports (for some time).")
       }
       store.off("project.daterange.start", update)
       store.off("project.daterange.end", update)
