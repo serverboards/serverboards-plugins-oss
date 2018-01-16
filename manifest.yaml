@@ -14,7 +14,7 @@ description: |
 
   Prometheus configuration is done adding services that will define which
   external services exist, or even installs  data exporter agents as required.
-version: "17.10"
+version: "18.01"
 
 components:
   - id: service
@@ -27,7 +27,7 @@ components:
         label: Via service
         description: Connect via this service to access prometheus.
         type: service
-        trait: ssh
+        traits: ssh
       - name: url
         label: URL
         description: URL to access prometheus, relative to service
@@ -45,7 +45,7 @@ components:
         label: SSH Server
         description: Access via this SSH server. leave empty for direct connection.
         type: service
-        trait: ssh
+        traits: ssh
       - name: url
         label: URL
         description: URL to access prometheus agent, relative to service.
@@ -114,7 +114,6 @@ components:
   - id: trigger
     name: Prometheus Alert
     type: trigger
-    states: nok ok
     command: daemon
     traits: prometheus cloud server
     start:
@@ -135,12 +134,10 @@ components:
         - name: expression
           label: Prometheus expression
           placeholder: "up == 1"
-          description: |
-            Which expression to watch. The trigger will stay in the `ok` status
-            as long as data is returned. If no data is returned it changes to
-            the `nok` state. This normally just means to add a comparison at the
-            end of the normal expression.
+          description: Which expression to watch.
           type: text
+      result:
+        value: Current value of the expression
     stop: watch_stop
 
 data:
