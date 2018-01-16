@@ -48,6 +48,10 @@ components:
           - id: authorization_url
             command: serverboards.google.drive/daemon
             call: authorize_url
+    status:
+      command: serverboards.google.drive/daemon
+      call: drive_is_up
+      frequency: 6h
 
   - id: auth
     type: screen

@@ -181,5 +181,15 @@ def watch_start(id, service, expression, *args, **kwargs):
 def watch_stop(id):
     watcher.remove_trigger(id)
 
+@serverboards.rpc_method
+def drive_is_up(service):
+    try:
+        if get_drive(service["uuid"]):
+            return "ok"
+        else:
+            return "nok"
+    except:
+        return "unauthorized"
+
 if __name__=='__main__':
     serverboards.loop()
