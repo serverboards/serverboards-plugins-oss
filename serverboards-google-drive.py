@@ -2,6 +2,7 @@
 
 import sys, itertools
 from serverboards_google import *
+from serverboards import print
 
 setup(
     "serverboards.google.drive",
@@ -116,7 +117,12 @@ class DriveWatcher:
         self.page_tokens = {}
         self.watchs = {}
 
-        rpc.add_timer(300, self.watch_check)
+        self.watch_check()
+        self.timer_id = rpc.add_timer(10, self.watch_check, rearm=True)
+
+    def __del__(self):
+        rpc.remove_timer(self.timer_id)
+
     def watch_check(self):
         serverboards.rpc.call("ping", True) # to prevent death of server at 5m timeout
         for service_id, c in self.get_all_changes():
@@ -124,29 +130,42 @@ class DriveWatcher:
                 s, v = sv
                 if s!=service_id:
                     continue # this watch was not for this service
-                if self.match(service_id, c, v):
-                    serverboards.info("Trigger changes at rule %s"%(k))
-                    serverboards.rpc.event("trigger", {"type": "drive_change", "id": k, "state" : "change"})
+                extra_info = self.match(service_id, c, v)
+                if extra_info:
+                    serverboards.info("Trigger changes at rule %s"%(k), service_id=service_id, rule_id=k)
+                    user = extra_info.get("lastModifyingUser") or {}
+                    serverboards.rpc.event("trigger", {
+                        "type": "drive_change",
+                        "id": k,
+                        "author" : {
+                            "name": user.get("displayName"),
+                            "email" : user.get("emailAddress"),
+                            "avatar": user.get("photoLink"),
+                        },
+                        "datetime": c.get("time"),
+                        "filename": c.get("file",{}).get("name","")
+                        })
 
     def match(self, service_id, change, expr):
-        if expr in change.get("file",{}).get("name",""):
-            return True
-
         # maybe at parent?
         drive = get_drive(service_id)
-        more_info = get_file_info(drive, change.get("fileId"), ["parents"])
+        more_info = get_file_info(drive, change.get("fileId"), ["parents","lastModifyingUser"])
+
+        if expr in change.get("file",{}).get("name",""):
+            return more_info
+
         for parent in more_info.get("parents",[]):
             folder_info = get_file_info(drive, parent, ["name"])
 
             if expr in folder_info.get("name"):
-                return True
+                return more_info
 
         return False
 
-    def add_trigger(self, ruleid, service, expression):
-        self.watchs[ruleid] = (service["uuid"], expression)
-        if service["uuid"] not in self.page_tokens:
-            self.add_start_page_token(service["uuid"])
+    def add_trigger(self, ruleid, service_id, expression):
+        self.watchs[ruleid] = (service_id, expression)
+        if service_id not in self.page_tokens:
+            self.add_start_page_token(service_id)
 
     def add_start_page_token(self, service_id):
         drive_service=get_drive(service_id)
@@ -169,12 +188,11 @@ class DriveWatcher:
                 self.page_tokens[service_id] = response.get('newStartPageToken')
 
 @serverboards.rpc_method
-def watch_start(id, service, expression, *args, **kwargs):
-    print(args, kwargs)
+def watch_start(id, service_id, expression, *args, **kwargs):
     global watcher
     if not watcher:
         watcher = DriveWatcher()
-    watcher.add_trigger(id, service, expression)
+    watcher.add_trigger(id, service_id, expression)
     return id
 
 @serverboards.rpc_method
