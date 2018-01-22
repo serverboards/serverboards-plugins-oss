@@ -51,7 +51,7 @@ function logo(name){
 }
 
 function service_status(tags){
-  console.log(tags)
+  // console.log(tags)
   const s = tags.filter(s => s.startsWith("status:")).map( s => s.slice(7) )
   if (s.length>0)
     return s[0]
