@@ -15,21 +15,27 @@ const Model = React.createClass({
   },
   componentDidMount(){
     this.unsubscribe = store.subscribe( () => this.updateServices() )
+    console.log(this.props)
     // This is the initial size, but it will make last row unfilled, butcutted, same last column
     let size = Math.floor( Math.sqrt(
-      (this.props.layout.width*this.props.layout.height*280*240) / this.state.services.length
+      (this.props.layout.width*this.props.layout.height*280*120) / this.state.services.length
     ) )
     let ok = false
     let per_row, row_count, max_row_count
     while( !ok ){
       per_row = Math.floor( this.props.layout.width * 280 / size )
-      max_row_count = Math.floor( this.props.layout.height * 240 / size )
+      max_row_count = Math.floor( this.props.layout.height * 120 / size )
       row_count = Math.ceil( this.state.services.length /  per_row )
       ok = (row_count <= max_row_count )
       if (!ok)
         size-=1
       if (size<20){
         break;
+      }
+      // iNan!!
+      if (size != size){
+        size=20
+        break
       }
     }
     this.setState({size: size - 2})
@@ -111,7 +117,6 @@ function View(props){
 }
 
 function main(el, config, extra){
-  console.log(extra)
   Serverboards.ReactDOM.render(<Model layout={extra.layout}/>, el)
 
   return function(){
