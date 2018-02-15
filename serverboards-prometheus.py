@@ -45,12 +45,19 @@ def port_tunnel(via, hostname, port):
     serverboards.debug("Opened new port: %s"% newport)
     return newport
 
+
+@serverboards.cache_ttl(300)
+def service_get(service_id):
+    return serverboards.service.get(service_id)
+
+
 @serverboards.rpc_method
-def get(expression, via=None, url=None, start=None, end=None, step=None):
+def get(expression, service=None, start=None, end=None, step=None):
     if not expression:
         raise Exception("An expression is required")
-    if not url:
-        url="http://localhost:9090"
+    service = service_get(service)
+    url = service.get("config", {}).get("url", "http://localhost:9090")
+    via = service.get("config", {}).get("via")
     if via:
         url=urllib.parse.urlparse(url)
         port=port_tunnel(via, url.hostname, url.port)

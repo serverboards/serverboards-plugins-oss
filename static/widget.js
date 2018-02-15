@@ -6,10 +6,9 @@
   function main(el, config, context){
     //console.log("Prom config is %o", config)
     let prometheus = new plugin.PluginCaller("serverboards.prometheus/daemon")
-    let via
     let $el=$('<div>')
-    let url="http://localhost:9090"
     $(el).append($el)
+    const service_id = config.service.uuid || config.service  // from 18.04 services does not provide all data.
 
     let graph=new LineGraph($el[0])
     function update(){
@@ -30,9 +29,7 @@
         start: start.format("X"),
         end: end.format("X"),
         step: Math.max(end.diff(start,"seconds") / 256, 14),
-
-        url: url,
-        via: via
+        service: service_id
       }
 
       return prometheus.call("get", params).then( (data) => {
@@ -53,12 +50,6 @@
     store.on("project.daterange.start", update)
     store.on("project.daterange.end", update)
     let calls=[]
-    if (config.service){
-      url = config.service.config.url
-      if (config.service.config.via){
-        via=config.service.config.via
-      }
-    }
 
     if (calls.length>0){
       Promise.all(calls).then( () =>
@@ -69,10 +60,6 @@
     }
 
     return function(){
-      if (via){
-        // FIXME
-        console.warn("Might be leaking SSH proxy ports (for some time).")
-      }
       store.off("project.daterange.start", update)
       store.off("project.daterange.end", update)
     }
