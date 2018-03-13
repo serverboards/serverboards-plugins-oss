@@ -22,6 +22,7 @@ const Model = React.createClass({
       props = this.props
 
     this.unsubscribe = store.subscribe( () => this.updateServices() )
+    console.log(this.props)
     // This is the initial size, but it will make last row unfilled, butcutted, same last column
     const layout = props.layout
     let size = Math.floor( Math.sqrt(
@@ -64,6 +65,16 @@ function logo(name){
   return name.slice(0,2).toUpperCase()
 }
 
+function service_status(tags){
+  // console.log(tags)
+  const s = tags.filter(s => s.startsWith("status:")).map( s => s.slice(7) )
+  if (s.length>0)
+    return s[0]
+  if (tags.length>0)
+    return tags[0]
+  return ""
+}
+
 const Cell = React.createClass({
   componentDidMount(){
     $(this.refs.el).popup({
@@ -80,7 +91,7 @@ const Cell = React.createClass({
     return (
       <div
         ref="el"
-        className={`cell ${Serverboards.utils.colorize(service.tags[0] || "grey")}`}
+        className={`cell ${Serverboards.utils.colorize(service_status(service.tags))}`}
         title={title}
         data-content={title}
         onClick={this.gotoService}
