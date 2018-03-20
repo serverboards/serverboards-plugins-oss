@@ -13,18 +13,26 @@ const Model = React.createClass({
       services: store.getState().project.project.services
     } )
   },
-  componentDidMount(){
+  componentWillReceiveProps(newprops){
+    if (!Serverboards.utils.object_is_equal(newprops, this.props))
+      this.componentDidMount(newprops)
+  },
+  componentDidMount(props){
+    if (!props)
+      props = this.props
+
     this.unsubscribe = store.subscribe( () => this.updateServices() )
     console.log(this.props)
     // This is the initial size, but it will make last row unfilled, butcutted, same last column
+    const layout = props.layout
     let size = Math.floor( Math.sqrt(
-      (this.props.layout.width*this.props.layout.height) / this.state.services.length
+      ((layout.width - 10)*(layout.height - 50)) / this.state.services.length
     ) )
     let ok = false
     let per_row, row_count, max_row_count
     while( !ok ){
-      per_row = Math.floor( this.props.layout.width / size )
-      max_row_count = Math.floor( this.props.layout.height / size )
+      per_row = Math.floor( layout.width / size )
+      max_row_count = Math.floor( layout.height / size )
       row_count = Math.ceil( this.state.services.length /  per_row )
       ok = (row_count <= max_row_count )
       if (!ok)
@@ -32,9 +40,9 @@ const Model = React.createClass({
       if (size<20){
         break;
       }
-      // iNan!!
       if (size != size){
-        size=20
+        console.error("Error calculating size! NaN")
+        size = 30 // A default size
         break
       }
     }
@@ -44,7 +52,8 @@ const Model = React.createClass({
     this.unsubscribe()
   },
   render(){
-    return <View services={this.state.services} size={this.state.size}/>
+    const size = this.state.size
+    return <View services={this.state.services} size={size}/>
   }
 })
 
@@ -116,12 +125,4 @@ function View(props){
   )
 }
 
-function main(el, config, extra){
-  Serverboards.ReactDOM.render(<Model layout={extra.layout}/>, el)
-
-  return function(){
-    Serverboards.ReactDOM.unmountComponentAtNode(el)
-  }
-}
-
-Serverboards.add_widget(`${plugin_id}/widget`, main)
+Serverboards.add_widget(`${plugin_id}/widget`, Model, {react: true})
