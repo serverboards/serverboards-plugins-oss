@@ -1,5 +1,5 @@
 import {basename, hex, get_state, get_servername} from './utils'
-const {React, rpc} = Serverboards
+const {React, rpc, i18n} = Serverboards
 
 const plugin_id = 'serverboards.backup.monitor'
 
@@ -10,7 +10,7 @@ const Widget = Serverboards.React.createClass({
     }
   },
   componentDidMount(){
-    rpc.call("rules.list", {project: this.props.config.project.shortname}).then( (list) => {
+    rpc.call("rules.list", {project: this.props.project}).then( (list) => {
       const files = list
         .filter( (el) => el.trigger.trigger == `${plugin_id}/file_exists` && el.is_active )
         .map( (el) => ({
@@ -25,6 +25,14 @@ const Widget = Serverboards.React.createClass({
   render(){
     const props=this.props
     const state=this.state
+
+    if (state.files.length == 0){
+      return (
+        <div>
+          {i18n("No backups are being watched.")}
+        </div>
+      )
+    }
 
     return (
       <table className="ui very basic selectable table">
@@ -89,8 +97,8 @@ const BackupFileRow = React.createClass({
   }
 })
 
-function main(el, config){
-  Serverboards.ReactDOM.render(React.createElement(Widget, {config}), el)
+function main(el, config, {project}){
+  Serverboards.ReactDOM.render(React.createElement(Widget, {config, project}), el)
 
   return function(){
     Serverboards.ReactDOM.unmountComponentAtNode(el)
