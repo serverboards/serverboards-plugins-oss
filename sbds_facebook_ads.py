@@ -6,19 +6,24 @@
 # https://developers.facebook.com/docs/marketing-api/insights/action-breakdowns/v2.7
 # https://developers.facebook.com/tools/explorer
 
-# To test, create a sandbox application, and create manually the ads (follow buying API docs)
-# but it is still (2017-02-01) quite limited; no ads and no insights
+# To test, create a sandbox application, and create manually the ads (follow
+# buying API docs) but it is still (2017-02-01) quite limited; no ads and no
+# insights
 
-import serverboards, sys, datetime
+import serverboards
+import sys
+import datetime
 from facebookads.api import FacebookAdsApi
 from facebookads import objects
 
 try:
     import settings
-    FacebookAdsApi.init(settings.APP_ID, settings.APP_SECRET, settings.ACCESS_TOKEN)
+    FacebookAdsApi.init(
+        settings.APP_ID, settings.APP_SECRET, settings.ACCESS_TOKEN)
     print("Using default config from settings.py")
-except:
+except Exception:
     pass
+
 
 @serverboards.rpc_method
 def get_accounts():
@@ -30,9 +35,11 @@ def get_accounts():
     me = objects.AdUser(settings.AD_USER)
     return [decorate(x) for x in me.get_ad_accounts(["id", "name"])]
 
+
 @serverboards.rpc_method
 def get_campaigns(account_id):
-    fields = ["id","name"]
+    fields = ["id", "name"]
+
     def decorate(x):
         return {
             "value": x["id"],
@@ -42,130 +49,156 @@ def get_campaigns(account_id):
     account = objects.AdAccount(account_id)
     return [decorate(x) for x in account.get_campaigns(fields)]
 
+
 @serverboards.rpc_method
 def get_adsets(campaign_id):
-    fields = ["id","name"]
-    def decorate(n,x):
+    fields = ["id", "name"]
+
+    def decorate(n, x):
         return {
             "value": x["id"],
-            "name": x.get("name", "Adset #%s"%n)
+            "name": x.get("name", "Adset #%s" % n)
         }
 
     account = objects.Campaign(campaign_id)
     return [decorate(n, x) for n, x in enumerate(account.get_ad_sets(fields))]
 
+
 @serverboards.rpc_method
 def get_ads(adset_id):
-    fields = ["id","name"]
-    def decorate(n,x):
+    fields = ["id", "name"]
+
+    def decorate(n, x):
         return {
             "value": x["id"],
-            "name": x.get("name", "Ad #%s"%n)
+            "name": x.get("name", "Ad #%s" % n)
         }
 
     adset = objects.AdSet(adset_id)
     return [decorate(n, x) for n, x in enumerate(adset.get_ads(fields))]
 
+
 @serverboards.rpc_method
 def get_possible_insights(service=None, **kwargs):
     if service:
-        service=service["config"]
+        service = service["config"]
         FacebookAdsApi.init(
             service["app_id"],
             service["app_secret"],
             service["access_token"]
-            )
-    ret=[]
+        )
+    ret = []
     for acc in get_accounts():
-        ret.append({"value": "account/%s"%acc["value"], "name": acc["name"]})
+        ret.append({"value": "account/%s" % acc["value"], "name": acc["name"]})
         for camp in get_campaigns(acc["value"]):
-            ret.append({"value": "campaign/%s"%camp["value"], "name": "-" + camp["name"]})
+            ret.append({
+                "value": "campaign/%s" % camp["value"],
+                "name": "-" + camp["name"]
+            })
             for adset in get_adsets(camp["value"]):
-                ret.append({"value": "adset/%s"%adset["value"], "name": "--" + adset["name"]})
+                ret.append({
+                    "value": "adset/%s" % adset["value"],
+                    "name": "--" + adset["name"]
+                })
                 for ad in get_ads(adset["value"]):
-                    ret.append({"value": "ad/%s"%adset["value"], "name": "---" + adset["name"]})
+                    ret.append({
+                        "value": "ad/%s" % adset["value"],
+                        "name": "---" + adset["name"]
+                    })
     return ret
 
+
 @serverboards.rpc_method
-def get_insights(insight_id=None, timerange=None, fields=None, action_breakdown=False, service=None):
+def get_insights(insight_id=None, timerange=None, fields=None,
+                 action_breakdown=False, service=None):
     if service:
         FacebookAdsApi.init(
             service["app_id"],
             service["app_secret"],
             service["access_token"]
-            )
+        )
 
     if not timerange:
         today = datetime.datetime.now()
-        timerange={
+        timerange = {
             "since": (today - datetime.timedelta(days=7)).strftime("%Y-%m-%d"),
             "until": today.strftime("%Y-%m-%d")
         }
     if not fields:
-        fields = "call_to_action_clicks,canvas_avg_view_percent,impressions,social_clicks,website_clicks,ctr".split(",")
+        fields = ("call_to_action_clicks,canvas_avg_view_percent," +
+                  "impressions,social_clicks,website_clicks,ctr").split(",")
 
     params = {
-            'time_range': timerange,
+        'time_range': timerange,
     }
 
     if action_breakdown:
         params['action_breakdown'] = 'action_type'
     else:
         params['time_increment'] = '1'
-    cdata=None
+    cdata = None
     if insight_id.startswith("account/"):
-        cdata=get_account_insights(insight_id[8:], fields, params)
+        cdata = get_account_insights(insight_id[8:], fields, params)
     if insight_id.startswith("campaign/"):
-        cdata=get_campaign_insights(insight_id[9:], fields, params)
+        cdata = get_campaign_insights(insight_id[9:], fields, params)
     if insight_id.startswith("adset/"):
-        cdata=get_adset_insights(insight_id[6:], fields, params)
+        cdata = get_adset_insights(insight_id[6:], fields, params)
     if insight_id.startswith("ad/"):
-        cdata=get_ad_insights(insight_id[3:], fields, params)
+        cdata = get_ad_insights(insight_id[3:], fields, params)
 
     if not cdata:
         return {}
 
-    data=None
+    data = None
     if action_breakdown:
-        data={}
-        dt=cdata[0]
+        data = {}
+        dt = cdata[0]
         for f in fields:
             name = ID_TO_NAME.get(f, f)
-            data[name]=dt[f]
+            data[name] = dt[f]
     else:
-        data=[]
+        data = []
         for f in fields:
-            v=[]
+            v = []
             for cd in cdata:
-                date=cd["date_start"]
+                date = cd["date_start"]
                 v.append([date, cd[f]])
             name = ID_TO_NAME.get(f, f)
-            data.append({'name':name, 'values': v})
+            data.append({'name': name, 'values': v})
 
     return data
 
+
 def get_account_insights(id, fields, params):
     account = objects.AdAccount(id)
-    return list(account.get_insights(params=params, fields=fields ) )
+    return list(account.get_insights(params=params, fields=fields))
+
+
 def get_campaign_insights(id, fields, params):
     campaign = objects.Campaign(id)
-    return list(campaign.get_insights(params=params, fields=fields ) )
+    return list(campaign.get_insights(params=params, fields=fields))
+
+
 def get_adset_insights(id, fields, params):
     adset = objects.AdSet(id)
-    return list(adset.get_insights(params=params, fields=fields ) )
+    return list(adset.get_insights(params=params, fields=fields))
+
+
 def get_ad_insights(id, fields, params):
     ad = objects.Ad(id)
-    return list(ad.get_insights(params=params, fields=fields ) )
+    return list(ad.get_insights(params=params, fields=fields))
+
 
 def create_campaign(account_id, name, objective, status):
     account = objects.AdAccount(account_id)
 
-    campaign = objects.Campaign(parent_id = account.get_id_assured())
-    campaign[objects.Campaign.Field.name]=name
-    campaign[objects.Campaign.Field.objective]=objective
-    campaign[objects.Campaign.Field.configured_status]=status
+    campaign = objects.Campaign(parent_id=account.get_id_assured())
+    campaign[objects.Campaign.Field.name] = name
+    campaign[objects.Campaign.Field.objective] = objective
+    campaign[objects.Campaign.Field.configured_status] = status
 
     print(campaign.remote_create())
+
 
 def define_targeting(q):
     from facebookads.adobjects.targetingsearch import TargetingSearch
@@ -213,6 +246,7 @@ def create_adset(account_id, campaign_id, targeting, name):
     })
     return as_
 
+
 def create_adimage(account_id, imagepath):
     from facebookads.adobjects.adimage import AdImage
 
@@ -223,10 +257,12 @@ def create_adimage(account_id, imagepath):
     return image[AdImage.Field.hash]
 
 
-def create_creative(account_id, name, caption, message, link, imagehash, page_id):
-    AdCreative=objects.AdCreative
+def create_creative(account_id, name, caption, message,
+                    link, imagehash, page_id):
+    AdCreative = objects.AdCreative
     from facebookads.adobjects.adcreativelinkdata import AdCreativeLinkData
-    from facebookads.adobjects.adcreativeobjectstoryspec import AdCreativeObjectStorySpec
+    from facebookads.adobjects.adcreativeobjectstoryspec \
+        import AdCreativeObjectStorySpec
 
     link_data = AdCreativeLinkData()
     link_data[AdCreativeLinkData.Field.message] = message
@@ -246,6 +282,7 @@ def create_creative(account_id, name, caption, message, link, imagehash, page_id
     print(creative)
     return creative
 
+
 def create_ad(account_id, adset_id, creative_id, name):
     from facebookads.adobjects.ad import Ad
 
@@ -260,7 +297,8 @@ def create_ad(account_id, adset_id, creative_id, name):
     })
     return ad
 
-ID_TO_NAME={
+
+ID_TO_NAME = {
     "like": "Likes",
     "link_click": "Link clicks",
     "post_like": "Post Likes",
@@ -275,32 +313,38 @@ ID_TO_NAME={
 
 }
 
+
 @serverboards.rpc_method
 def campaign_insights(campaign_id=None):
     if not campaign_id:
         accounts = get_accounts()
-        campaigns=get_campaigns(account)
+        campaigns = get_campaigns(accounts)
         campaign_id = campaigns[0]["value"]
-    cdata=get_campaign_insights(campaign_id)
-    data={}
+    cdata = get_campaign_insights(campaign_id)
+    data = {}
     for dt in cdata["data"][0]["actions"]:
         name = dt["action_type"]
         name = ID_TO_NAME.get(name, name)
-        data[name]=dt["value"]
+        data[name] = dt["value"]
     return data
+
 
 @serverboards.rpc_method
 def check_rules(*_args, **_kwargs):
-    rules = serverboards.rpc.call("rules.list", trigger="serverboards.facebookads/trigger", is_active=True)
+    rules = serverboards.rpc.call(
+        "rules.list",
+        trigger="serverboards.facebookads/trigger",
+        is_active=True
+    )
     for r in rules:
         params = r["trigger"]["params"]
         service_id = params["service"]["config"]
         insight = params["insight"]
         field = params["field"]
         end = datetime.datetime.now().strftime("%Y-%m-%d")
-        state = False
-        limit = float(params["value"])
-        cond = params["condition"] or ">"
+        # state = False
+        # limit = float(params["value"])
+        # cond = params["condition"] or ">"
         data = get_insights(
             insight_id=insight,
             timerange={"since": end, "until": end},
@@ -312,14 +356,15 @@ def check_rules(*_args, **_kwargs):
 
 
 def test():
-    for i in  get_possible_insights():
+    for i in get_possible_insights():
         print(i)
         print(get_insights(i["value"]))
-        #print()
+        # print()
         continue
 
-if __name__=='__main__':
-    if len(sys.argv)>1 and sys.argv[1]=="test":
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
         test()
     else:
         serverboards.loop()
