@@ -18,13 +18,13 @@ const Model = React.createClass({
     console.log(this.props)
     // This is the initial size, but it will make last row unfilled, butcutted, same last column
     let size = Math.floor( Math.sqrt(
-      (this.props.layout.width*this.props.layout.height*280*120) / this.state.services.length
+      (this.props.layout.width*this.props.layout.height) / this.state.services.length
     ) )
     let ok = false
     let per_row, row_count, max_row_count
     while( !ok ){
-      per_row = Math.floor( this.props.layout.width * 280 / size )
-      max_row_count = Math.floor( this.props.layout.height * 120 / size )
+      per_row = Math.floor( this.props.layout.width / size )
+      max_row_count = Math.floor( this.props.layout.height / size )
       row_count = Math.ceil( this.state.services.length /  per_row )
       ok = (row_count <= max_row_count )
       if (!ok)
