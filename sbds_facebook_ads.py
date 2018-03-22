@@ -5,16 +5,30 @@
 # https://developers.facebook.com/docs/marketing-api/insights-api
 # https://developers.facebook.com/docs/marketing-api/insights/action-breakdowns/v2.7
 # https://developers.facebook.com/tools/explorer
+# https://developers.facebook.com/docs/marketing-api/reference/sdks/python/ad-account/v2.12
+
+
+# Users at:
+# https://developers.facebook.com/apps/1214866105300970/roles/test-users/
+
+# acc_XXX is Marketing api account id
 
 # To test, create a sandbox application, and create manually the ads (follow
 # buying API docs) but it is still (2017-02-01) quite limited; no ads and no
 # insights
 
-import serverboards
+import serverboards_aio as serverboards
 import sys
 import datetime
 from facebookads.api import FacebookAdsApi
-from facebookads import objects
+from facebookads.adobjects.adaccount import AdAccount
+# from facebookads.adobjects.aduser import AdUser
+from facebookads.adobjects.campaign import Campaign
+from facebookads.adobjects.adsinsights import AdsInsights
+from facebookads.adobjects.adset import AdSet
+from facebookads.adobjects.ad import Ad
+from facebookads.adobjects.adcreative import AdCreative
+from serverboards_aio import print
 
 try:
     import settings
@@ -25,15 +39,15 @@ except Exception:
     pass
 
 
-@serverboards.rpc_method
-def get_accounts():
-    def decorate(x):
-        return {
-            "value": x["id"],
-            "name": x["name"]
-        }
-    me = objects.AdUser(settings.AD_USER)
-    return [decorate(x) for x in me.get_ad_accounts(["id", "name"])]
+# @serverboards.rpc_method
+# def get_accounts():
+#     def decorate(x):
+#         return {
+#             "value": x["id"],
+#             "name": x["name"]
+#         }
+#     me = AdUser(settings.AD_USER)
+#     return [decorate(x) for x in me.get_ad_accounts(["id", "name"])]
 
 
 @serverboards.rpc_method
@@ -46,7 +60,7 @@ def get_campaigns(account_id):
             "name": x["name"]
         }
 
-    account = objects.AdAccount(account_id)
+    account = AdAccount(account_id)
     return [decorate(x) for x in account.get_campaigns(fields)]
 
 
@@ -60,7 +74,7 @@ def get_adsets(campaign_id):
             "name": x.get("name", "Adset #%s" % n)
         }
 
-    account = objects.Campaign(campaign_id)
+    account = Campaign(campaign_id)
     return [decorate(n, x) for n, x in enumerate(account.get_ad_sets(fields))]
 
 
@@ -74,7 +88,7 @@ def get_ads(adset_id):
             "name": x.get("name", "Ad #%s" % n)
         }
 
-    adset = objects.AdSet(adset_id)
+    adset = AdSet(adset_id)
     return [decorate(n, x) for n, x in enumerate(adset.get_ads(fields))]
 
 
@@ -170,32 +184,32 @@ def get_insights(insight_id=None, timerange=None, fields=None,
 
 
 def get_account_insights(id, fields, params):
-    account = objects.AdAccount(id)
+    account = AdAccount(id)
     return list(account.get_insights(params=params, fields=fields))
 
 
 def get_campaign_insights(id, fields, params):
-    campaign = objects.Campaign(id)
+    campaign = Campaign(id)
     return list(campaign.get_insights(params=params, fields=fields))
 
 
 def get_adset_insights(id, fields, params):
-    adset = objects.AdSet(id)
+    adset = AdSet(id)
     return list(adset.get_insights(params=params, fields=fields))
 
 
 def get_ad_insights(id, fields, params):
-    ad = objects.Ad(id)
+    ad = Ad(id)
     return list(ad.get_insights(params=params, fields=fields))
 
 
 def create_campaign(account_id, name, objective, status):
-    account = objects.AdAccount(account_id)
+    account = AdAccount(account_id)
 
-    campaign = objects.Campaign(parent_id=account.get_id_assured())
-    campaign[objects.Campaign.Field.name] = name
-    campaign[objects.Campaign.Field.objective] = objective
-    campaign[objects.Campaign.Field.configured_status] = status
+    campaign = Campaign(parent_id=account.get_id_assured())
+    campaign[Campaign.Field.name] = name
+    campaign[Campaign.Field.objective] = objective
+    campaign[Campaign.Field.configured_status] = status
 
     print(campaign.remote_create())
 
@@ -259,7 +273,6 @@ def create_adimage(account_id, imagepath):
 
 def create_creative(account_id, name, caption, message,
                     link, imagehash, page_id):
-    AdCreative = objects.AdCreative
     from facebookads.adobjects.adcreativelinkdata import AdCreativeLinkData
     from facebookads.adobjects.adcreativeobjectstoryspec \
         import AdCreativeObjectStorySpec
@@ -355,7 +368,107 @@ def check_rules(*_args, **_kwargs):
         serverboards.rpc.event("rules.trigger", id=r["uuid"], value=value)
 
 
+def get_fields(type, blacklist=[]):
+    blacklist = set(blacklist)
+    return [
+        x for x in dir(type.Field)
+        if (not x.startswith("__")) and (x not in blacklist)
+    ]
+
+
+TABLES = {
+    "campaigns": get_fields(Campaign, []),
+    "adsets": get_fields(AdSet, ["daily_imps"]),
+    "ads": get_fields(Ad, []),
+    "insights": get_fields(AdsInsights, []),
+}
+
+
+@serverboards.rpc_method
+def schema(_config, table=None):
+    if not table:
+        return list(TABLES.keys())
+    if table in TABLES:
+        return {"columns": TABLES[table]}
+    raise Exception("Unknown table")
+
+
+async def get_account(config):
+    service = await serverboards.service.get(config["service"])
+    print(service)
+    config = service["config"]
+    return AdAccount(config["ad_user"])
+
+
+@serverboards.rpc_method
+async def extractor(config, table, quals, columns):
+    account = await get_account(config)
+    if table == "adsets":
+        adsets = account.get_ad_sets(
+            fields=[getattr(AdSet.Field, x) for x in columns]
+        )
+        return to_table(columns, adsets)
+    if table == "ads":
+        adsets = account.get_ads(
+            fields=[getattr(Ad.Field, x) for x in columns]
+        )
+        return to_table(columns, adsets)
+    if table == "campaigns":
+        adsets = account.get_campaigns(
+            fields=[getattr(Campaign.Field, x) for x in columns]
+        )
+        return to_table(columns, adsets)
+    if table == "insights":
+        adsets = account.get_insights(
+            fields=[getattr(AdsInsights.Field, x) for x in columns]
+        )
+        return to_table(columns, adsets)
+    raise Exception("Unknown table")
+
+
+def simplify_data(d):
+    td = type(d)
+    if td == str or td == int or td == float:
+        return d
+    if td == list:
+        return [simplify_data(x) for x in d]
+    if hasattr(d, "items"):
+        r = {}
+        for k, v in d.items():
+            r[k] = simplify_data(v)
+        return r
+    return d
+
+
+def to_table(columns, data):
+    rows = []
+    for datum in data:
+        row = []
+        for c in columns:
+            d = datum.get(c, None)
+            row.append(simplify_data(d))
+        rows.append(row)
+
+    return {
+        "columns": columns,
+        "rows": rows
+    }
+
+
 def test():
+    account = AdAccount(settings.AD_USER)
+    adsets = account.get_ad_sets(fields=[
+        AdSet.Field.name,
+        AdSet.Field.bid_info,
+        AdSet.Field.configured_status,
+        AdSet.Field.daily_budget,
+        AdSet.Field.targeting,
+    ])
+    print(adsets)
+
+    users = account.get_ad_users()
+    print(users)
+    return
     for i in get_possible_insights():
         print(i)
         print(get_insights(i["value"]))
@@ -367,4 +480,5 @@ if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         test()
     else:
+        serverboards.set_debug()
         serverboards.loop()

@@ -22,6 +22,11 @@ components:
       - name: app_id
         label: App ID
         type: text
+      - name: ad_user
+        label: Ad User Account ID
+        description: |
+          Ad user account id in the form of `act_110988902751030`
+        type: text
       - name: app_secret
         label: App Secret
         type: password
@@ -30,32 +35,6 @@ components:
         description: The access token can be obtained at the Marketing API at the [app dashboard](https://developers.facebook.com/apps/).
         placeholder: " "
         type: text
-
-  - id: widget
-    type: widget
-    name: Facebook Insights
-    icon: facebook
-    description: |
-      Show an snapshot of the facebook insights for the selected period.
-    params:
-      - name: service
-        label: Facebook Service
-        type: service
-        traits: facebookads
-      - name: insight
-        label: Insight
-        type: select call
-        options:
-          command: serverboards.facebookads/command
-          call: get_possible_insights
-      - name: type
-        label: Type of graph
-        type: select
-        options:
-          - name: Sum of data
-            value: sum
-          - name: Evolution of data
-            value: evolution
 
   - id: command
     type: cmd
@@ -66,6 +45,7 @@ components:
     perms:
       - rules.view
       - rules.trigger
+      - service.get
 
   - id: trigger
     type: trigger
@@ -118,3 +98,12 @@ components:
     call:
       method: check_rules
     traits: facebookads hidden
+
+  - id: extractor
+    name: Facebook Insights
+    type: extractor
+    service: serverboards.facebookads/service
+    icon: red google
+    command: serverboards.facebookads/command
+    extractor: extractor
+    schema: schema
