@@ -26,7 +26,7 @@ const Model = React.createClass({
     // This is the initial size, but it will make last row unfilled, butcutted, same last column
     const layout = props.layout
     let size = Math.floor( Math.sqrt(
-      ((layout.width - 10)*(layout.height - 50)) / this.state.services.length
+      ((layout.width - 10)*(layout.height - 55)) / this.state.services.length
     ) )
     let ok = false
     let per_row, row_count, max_row_count
@@ -117,7 +117,7 @@ function View(props){
     fontSize: Math.max(props.size/5, 12)
   }
   return (
-    <div className="ui heatmap" style={{justifyContent:"center"}}>
+    <div className="ui heatmap" style={{justifyContent:"flex-start", alignContent: "flex-start"}}>
       {props.services.map( (s) => (
         <Cell key={s.uuid} service={s} cell_style={cell_style}/>
       ) ) }
