@@ -4,7 +4,7 @@ import Day from './day'
 
 function View(props){
   return (
-    <div className="google drive">
+    <div className="ui google drive">
       {props.days.map( d => (
         <Day key={d.date} {...d}/>
       ))}
@@ -14,7 +14,7 @@ function View(props){
 
 let drive
 
-const Model = React.createClass({
+const DriveWidget = React.createClass({
   getInitialState(){
     return {lines:[], loading: true, link: false}
   },
@@ -38,6 +38,7 @@ const Model = React.createClass({
     })
   },
   componentDidMount(){
+    this.props.setClass("ui white card with scroll")
     plugin.start("serverboards.google.drive/daemon")
       .then( function(_drive){
         drive=_drive
@@ -54,14 +55,4 @@ const Model = React.createClass({
   }
 })
 
-function main(el, config, extra){
-  extra.setTitle("Google Drive activity")
-  $(el).css("overflow", "auto")
-  Serverboards.ReactDOM.render(<Model config={config} setError={extra.setError}/>, el)
-
-  return function(){
-    Serverboards.ReactDOM.unmountComponentAtNode(el)
-  }
-}
-
-Serverboards.add_widget(`${plugin_id}/widget`, main)
+Serverboards.add_widget(`${plugin_id}/widget`, DriveWidget, {react: true})
