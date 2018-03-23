@@ -36,8 +36,7 @@ def get_file_info(drive_service, fileid, fields=None):
         return {}
 
 
-@serverboards.rpc_method
-def get_changes(service_id, folder_filter=None):
+def get_changes_raw(service_id):
     drive_service = get_drive(service_id)
 
     def decorate(file):
@@ -63,20 +62,19 @@ def get_changes(service_id, folder_filter=None):
             ])
         else:
             folder_info = {}
-        return {
-            "author":
-                more_info.get("lastModifyingUser", {}).get("displayName"),
-            "what": what,
-            "type": more_info.get("mimeType"),
-            "file": more_info.get("name"),
-            "to": folder_info.get("name"),
-            "to_link": folder_info.get("webViewLink"),
-            "time": datetime[11:16],
-            "date": datetime[:10],
-            "downloadLink": more_info.get("webContentLink"),
-            "viewLink": more_info.get("webViewLink"),
-            "removed": file.get("removed")
-        }
+        return [
+            more_info.get("lastModifyingUser", {}).get("displayName"),
+            what,
+            more_info.get("mimeType"),
+            more_info.get("name"),
+            folder_info.get("name"),
+            folder_info.get("webViewLink"),
+            datetime[11:16],
+            datetime[:10],
+            more_info.get("webContentLink"),
+            more_info.get("webViewLink"),
+            file.get("removed")
+        ]
 
     page_token = drive_service.changes().getStartPageToken().execute().get(
         'startPageToken')
@@ -95,23 +93,44 @@ def get_changes(service_id, folder_filter=None):
         if len(changes) > 100:
             page_token = None
 
+    return [decorate(x) for x in changes]
+
+
+@serverboards.rpc_method
+def get_changes(service_id, folder_filter=None):
     grouped = []
     lastd = None
     lastv = None
-    for x in [decorate(x) for x in changes]:
+
+    for x in get_changes_raw(service_id):
+        row = {
+            "author": x[0],
+            "what": x[1],
+            "type": x[2],
+            "file": x[3],
+            "to": x[4],
+            "to_link": x[5],
+            "time": x[6],
+            "date": x[7],
+            "downloadLink": x[8],
+            "viewLink": x[9],
+            "removed": x[10]
+        }
+
         # in some cases may be empty, because it was not a file update
-        if not x:
+        if not row:
             continue
         # skip if not at filtered folders
-        if folder_filter and x.get("to") not in folder_filter:
+        if folder_filter and row.get("to") not in folder_filter:
             # serverboards.debug("Skip %s as not in %s"%(x, folder_filter))
             continue
-        if lastd != x["date"]:
-            lastd = x["date"]
+        if lastd != row["date"]:
+            lastd = row["date"]
             lastv = {"entries": [x], "date": x["date"]}
             grouped.append(lastv)
         else:
             lastv["entries"].append(x)
+
     grouped.reverse()
     return grouped
 
@@ -228,26 +247,39 @@ def drive_is_up(service):
         return "unauthorized"
 
 
+SCHEMA = {
+    "changes": [
+        "author", "what", "type", "file", "to", "to_link", "time", "date",
+        "downloadLink", "viewLink", "removed"
+    ]
+}
+
+
 @serverboards.rpc_method
 def schema(config, table=None):
     if table is None:
-        return ["files"]
-    if table == "files":
-        return ["id", "name", "parent_folder", "view_url", "download_url"]
+        return ["changes"]
+    if table == "changes":
+        return {"columns": SCHEMA["changes"]}
 
 
 @serverboards.rpc_method
 def extractor(config, table, quals, columns):
-    drive = get_drive(config["service_id"])
-    if table == 'files':
-        return extractors_files(drive, quals, columns)
+    if table == 'changes':
+        return extractors_files(config["service"], quals, columns)
     raise Exception("unknown table")
 
 
-def extractors_files(drive, quals, columns):
+def decorate_file_row(file, more_info, folder_info, datetime, what):
+    return
+
+
+def extractors_files(service_id, quals, columns):
+    rows = get_changes_raw(service_id)
+
     return {
-        "columns": ["id", "name", "parent_folder", "view_url", "download_url"],
-        "rows": []
+        "columns": SCHEMA["changes"],
+        "rows": rows
     }
 
 
