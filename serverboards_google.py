@@ -1,83 +1,100 @@
 #!env/bin/python
 
-import serverboards, requests, json
+import serverboards
+import requests
+import json
 from serverboards import rpc
 from urllib.parse import urlencode, urljoin
 from oauth2client import client
-import httplib2, threading
+import threading
 import datetime
 from googleapiclient import discovery
 
-OAUTH_AUTH_URL="https://accounts.google.com/o/oauth2/auth"
-OAUTH_AUTH_TOKEN_URL="https://accounts.google.com/o/oauth2/token"
-OAUTH_AUTH_REVOKE_URL="https://accounts.google.com/o/oauth2/token"
+
+OAUTH_AUTH_URL = "https://accounts.google.com/o/oauth2/auth"
+OAUTH_AUTH_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
+OAUTH_AUTH_REVOKE_URL = "https://accounts.google.com/o/oauth2/token"
 SCOPES = []
 settings = {}
-PLUGIN_ID=None
+PLUGIN_ID = None
+
 
 def setup(plugin_id=None, **kwargs):
     if plugin_id:
         global PLUGIN_ID
-        PLUGIN_ID=plugin_id
-    if kwargs.get("settings")!=None:
+        PLUGIN_ID = plugin_id
+    if kwargs.get("settings") is not None:
         global settings
         settings.update(kwargs.get("settings"))
     if kwargs.get("scopes"):
         global SCOPES
         SCOPES = kwargs.get("scopes")
 
+
 def ensure_settings():
     if "client_id" not in settings:
-        data = serverboards.rpc.call("settings.get", PLUGIN_ID+"/settings")
+        data = serverboards.rpc.call("settings.get", PLUGIN_ID + "/settings")
         if not data:
-            raise Exception("Google API Integration not configured. Check system settings.")
+            raise Exception(
+                "Google API Integration not configured. Check system settings."
+            )
         settings.update(data)
 
-        base = serverboards.rpc.call("settings.get", "serverboards.core.settings/base", {"base_url":"http://localhost:8080"})
+        base = serverboards.rpc.call(
+            "settings.get",
+            "serverboards.core.settings/base",
+            {"base_url": "http://localhost:8080"}
+        )
         settings.update(base)
+
 
 class ServerboardsStorage(client.Storage):
     def __init__(self, id=None):
         assert id
-        self.id=id
+        self.id = id
         super(ServerboardsStorage, self).__init__(lock=threading.Lock())
+
     def locked_get(self):
         content = rpc.call("service.get", self.id).get("config", {})
         if not content:
             return None
         try:
-            content=json.dumps(content)
+            content = json.dumps(content)
             credentials = client.OAuth2Credentials.from_json(content)
             credentials.set_store(self)
             return credentials
-        except:
+        except Exception:
             pass
         return None
 
     def locked_put(self, credentials):
-        data = {"config":json.loads(credentials.to_json())}
+        data = {"config": json.loads(credentials.to_json())}
         rpc.call("service.update", self.id, data)
+
     def locked_delete(self):
-        rpc.call("service.update", self.id, {"config":{}})
+        rpc.call("service.update", self.id, {"config": {}})
+
 
 @serverboards.rpc_method
 def authorize_url(service=None, **kwargs):
     if not service:
         return ""
-    service_id=service["uuid"]
+    service_id = service["uuid"]
     ensure_settings()
 
-    params={
-        "response_type" : "code",
-        "client_id" : settings["client_id"].strip(),
-        "redirect_uri" : urljoin(settings["base_url"], "/static/%s/auth.html"%PLUGIN_ID),
+    params = {
+        "response_type": "code",
+        "client_id": settings["client_id"].strip(),
+        "redirect_uri":
+            urljoin(settings["base_url"], "/static/%s/auth.html" % PLUGIN_ID),
         "scope": SCOPES[0],
         "state": service_id,
         "access_type": "offline",
         "approval_prompt": "force"
     }
-    url = OAUTH_AUTH_URL+"?"+urlencode(params)
+    url = OAUTH_AUTH_URL + "?" + urlencode(params)
     return url
+
 
 @serverboards.rpc_method
 def store_code(service_id, code):
@@ -86,11 +103,12 @@ def store_code(service_id, code):
     """
     Stores the code and get a refresh token and a access token
     """
-    params={
+    params = {
         "code": code,
         "client_id": settings["client_id"].strip(),
         "client_secret": settings["client_secret"].strip(),
-        "redirect_uri": urljoin(settings["base_url"], "/static/%s/auth.html"%PLUGIN_ID),
+        "redirect_uri":
+            urljoin(settings["base_url"], "/static/%s/auth.html" % PLUGIN_ID),
         "grant_type": "authorization_code",
     }
     response = requests.post(OAUTH_AUTH_TOKEN_URL, params)
@@ -103,7 +121,8 @@ def store_code(service_id, code):
         client_id=settings["client_id"].strip(),
         client_secret=settings["client_secret"].strip(),
         refresh_token=js.get("refresh_token"),
-        token_expiry=datetime.datetime.utcnow() + datetime.timedelta(seconds=int(js["expires_in"])),
+        token_expiry=(datetime.datetime.utcnow() +
+                      datetime.timedelta(seconds=int(js["expires_in"]))),
         token_uri=OAUTH_AUTH_TOKEN_URL,
         user_agent=None,
         revoke_uri=OAUTH_AUTH_REVOKE_URL,
@@ -114,6 +133,8 @@ def store_code(service_id, code):
     credentials.set_store(storage)
     storage.put(credentials)
 
-    serverboards.info("Client authorized Google Drive. OAuth2 credentials saved.", service_id = service_id)
+    serverboards.info(
+        "Client authorized Google Drive. OAuth2 credentials saved.",
+        service_id=service_id)
 
     return "ok"
