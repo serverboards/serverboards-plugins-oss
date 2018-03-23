@@ -69,8 +69,7 @@ def get_changes_raw(service_id):
             more_info.get("name"),
             folder_info.get("name"),
             folder_info.get("webViewLink"),
-            datetime[11:16],
-            datetime[:10],
+            datetime,
             more_info.get("webContentLink"),
             more_info.get("webViewLink"),
             file.get("removed")
@@ -110,11 +109,11 @@ def get_changes(service_id, folder_filter=None):
             "file": x[3],
             "to": x[4],
             "to_link": x[5],
-            "time": x[6],
-            "date": x[7],
-            "downloadLink": x[8],
-            "viewLink": x[9],
-            "removed": x[10]
+            "time": x[6][11:16],
+            "date": x[6][:10],
+            "downloadLink": x[7],
+            "viewLink": x[8],
+            "removed": x[9]
         }
 
         # in some cases may be empty, because it was not a file update
@@ -126,10 +125,10 @@ def get_changes(service_id, folder_filter=None):
             continue
         if lastd != row["date"]:
             lastd = row["date"]
-            lastv = {"entries": [x], "date": x["date"]}
+            lastv = {"entries": [row], "date": row["date"]}
             grouped.append(lastv)
         else:
-            lastv["entries"].append(x)
+            lastv["entries"].append(row)
 
     grouped.reverse()
     return grouped
@@ -249,7 +248,7 @@ def drive_is_up(service):
 
 SCHEMA = {
     "changes": [
-        "author", "what", "type", "file", "to", "to_link", "time", "date",
+        "author", "what", "type", "file", "to", "to_link", "datetime",
         "downloadLink", "viewLink", "removed"
     ]
 }
