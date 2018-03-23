@@ -310,6 +310,41 @@ def list_expirations(project=None):
         return expirations
 
 
+SCHEMA = {
+    "expirations": [
+        "datetime", "name", "check",
+        "service_uuid", "service_name", "service_type",
+        "projects",
+    ]
+}
+
+
+@serverboards.rpc_method
+def schema(config, table=None):
+    if not table:
+        return list(SCHEMA.keys())
+    return {"columns": SCHEMA[table]}
+
+
+@serverboards.rpc_method
+def extractor(config, table, quals, columns):
+    if table == "expirations":
+        expirations = rpc.call("plugin.data.get", "expirations")
+        rows = []
+        for exp in expirations:
+            service = exp["service"]
+            rows.append([
+                exp["date"], exp["name"], exp["check"],
+                service["uuid"], service["name"], service["type"],
+                exp["projects"]
+            ])
+        return {
+            "columns": SCHEMA["expirations"],
+            "rows": rows
+        }
+    raise Exception("unknown table")
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         exps = []

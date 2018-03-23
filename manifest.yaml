@@ -86,3 +86,11 @@ components:
         name: Name of the expiration
         date: Final date of the expiration
         id: Unique id for the expiration (to avoid duplicates)
+
+  - id: extractor
+    name: Expirations
+    type: extractor
+    icon: hourglass outline
+    command: serverboards.expiration/command
+    extractor: extractor
+    schema: schema
