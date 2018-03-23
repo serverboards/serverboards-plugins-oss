@@ -1,6 +1,6 @@
 #!env/bin/python
 
-from serverboards_google import setup, file_info_cache, ServerboardsStorage
+from serverboards_google import setup, ServerboardsStorage
 from serverboards_google import discovery
 from serverboards import rpc
 import serverboards
@@ -23,21 +23,17 @@ def get_drive(service_id, version='v3'):
     return drive.get(ank)
 
 
-@serverboards.ttl_cache(300)
+@serverboards.cache_ttl(300)
 def get_file_info(drive_service, fileid, fields=None):
     fieldsl = None
     if fields:
         fieldsl = ','.join(fields)
-    data = file_info_cache.get((drive_service, fileid, fieldsl))
-    if not data:
-        try:
-            data = drive_service.files().get(
-                fileId=fileid, fields=fieldsl).execute()
-            file_info_cache[(drive_service, fileid, fieldsl)] = data
-        except Exception as e:
-            serverboards.log_traceback()
-            return {}
-    return data
+    try:
+        return drive_service.files().get(
+            fileId=fileid, fields=fieldsl).execute()
+    except Exception as e:
+        serverboards.log_traceback()
+        return {}
 
 
 @serverboards.rpc_method
@@ -230,6 +226,29 @@ def drive_is_up(service):
             return "nok"
     except Exception:
         return "unauthorized"
+
+
+@serverboards.rpc_method
+def schema(config, table=None):
+    if table is None:
+        return ["files"]
+    if table == "files":
+        return ["id", "name", "parent_folder", "view_url", "download_url"]
+
+
+@serverboards.rpc_method
+def extractor(config, table, quals, columns):
+    drive = get_drive(config["service_id"])
+    if table == 'files':
+        return extractors_files(drive, quals, columns)
+    raise Exception("unknown table")
+
+
+def extractors_files(drive, quals, columns):
+    return {
+        "columns": ["id", "name", "parent_folder", "view_url", "download_url"],
+        "rows": []
+    }
 
 
 if __name__ == '__main__':

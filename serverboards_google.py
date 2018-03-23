@@ -50,7 +50,9 @@ def ensure_settings():
 
 class ServerboardsStorage(client.Storage):
     def __init__(self, id=None):
-        assert id
+        if not id:
+            raise Exception("Invalid Google Drive Service. " +
+                            "Ensure access has been granted.")
         self.id = id
         super(ServerboardsStorage, self).__init__(lock=threading.Lock())
 

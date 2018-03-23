@@ -23,7 +23,7 @@ const Model = React.createClass({
       .split(',')
       .map( s => s.trim() )
       .filter( s => s!="" );
-    drive.call("get_changes", [this.props.config.service.uuid, folder_filter]).then( (changes) => {
+    drive.call("get_changes", [this.props.config.service, folder_filter]).then( (changes) => {
       this.setState({lines: changes, loading: false})
     }).catch( (e) => {
       if (e=="invalid_grant"){

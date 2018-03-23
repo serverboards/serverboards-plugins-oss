@@ -12,7 +12,7 @@ components:
     type: cmd
     command: serverboards-google-drive.py
     strategy: singleton
-    timeout: 10m
+    timeout: 1m
     perms:
       - settings.view[serverboards.google.drive/settings]
       - settings.view[serverboards.core.settings/base]
@@ -128,3 +128,12 @@ components:
       datetime: Datetime of change
       elapsed: Seconds since change
     stop: watch_stop
+
+  - id: extractor
+    name: Google Drive
+    type: extractor
+    service: serverboards.google.drive/service
+    icon: red google
+    command: serverboards.google.drive/daemon
+    extractor: extractor
+    schema: schema
