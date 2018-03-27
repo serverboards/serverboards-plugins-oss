@@ -1,14 +1,16 @@
-#!/usr/bin/python3
+#!env/bin/python3
 
-import serverboards
+import serverboards_aio as serverboards
 import sys
-import requests
+import asks
 import time
 import json
 import urllib
-from serverboards import print
-sys.stderr = serverboards.error
+import curio
+from serverboards_aio import print
+from pcolor import printc
 
+asks.init('curio')
 IGNORE_METRIC_NAMES = set(['instance', 'job'])
 
 td_to_s_multiplier = [
@@ -52,27 +54,27 @@ ssh = serverboards.Plugin("serverboards.core.ssh/daemon")
 
 
 @serverboards.cache_ttl(3000)
-def port_tunnel(via, hostname, port):
-    newport = ssh.open_port(service=via, hostname=hostname, port=port)
-    serverboards.debug("Opened new port: %s" % newport)
+async def port_tunnel(via, hostname, port):
+    newport = await ssh.open_port(service=via, hostname=hostname, port=port)
+    await serverboards.debug("Opened new port: %s" % newport)
     return newport
 
 
 @serverboards.cache_ttl(300)
-def service_get(service_id):
-    return serverboards.service.get(service_id)
+async def service_get(service_id):
+    return await serverboards.service.get(service_id)
 
 
 @serverboards.rpc_method
-def get(expression, service=None, start=None, end=None, step=None):
+async def get(expression, service=None, start=None, end=None, step=None):
     if not expression:
         raise Exception("An expression is required")
-    service = service_get(service)
+    service = await service_get(service)
     url = service.get("config", {}).get("url", "http://localhost:9090")
     via = service.get("config", {}).get("via")
     if via:
         url = urllib.parse.urlparse(url)
-        port = port_tunnel(via, url.hostname, url.port)
+        port = await port_tunnel(via, url.hostname, url.port)
         url = "http://localhost:%d" % port
 
     now = int(time.time())
@@ -104,7 +106,7 @@ def get(expression, service=None, start=None, end=None, step=None):
         }
         # serverboards.debug("Get data from %s, %s: %s"%(url,repr(via), expr))
         try:
-            res = requests.get(url + "/api/v1/query_range", params=params)
+            res = await asks.get(url + "/api/v1/query_range", params=params)
         except Exception:
             raise Exception(
                 "Coult not connect to the Prometheus server. Is it running?")
@@ -119,12 +121,12 @@ def get(expression, service=None, start=None, end=None, step=None):
     return ret
 
 
-def get_points(via=None, url=None, expression=None):
+async def get_points(via=None, url=None, expression=None):
     if not url:
         url = "http://localhost:9090"
     if via:
         url = urllib.parse.urlparse(url)
-        port = port_tunnel(via, url.hostname, url.port)
+        port = await port_tunnel(via, url.hostname, url.port)
         url = "http://localhost:%d" % port
     now = int(time.time())
     params = {
@@ -132,59 +134,65 @@ def get_points(via=None, url=None, expression=None):
         "time": now,
         "_": now
     }
-    res = requests.get(url + "/api/v1/query", params=params)
+    printc(url + "/api/v1/query", params)
+    res = await asks.get(url + "/api/v1/query", params=params)
     return res.json()["data"]["result"]
 
 
+watch_tasks = {}
+
+
 @serverboards.rpc_method
-def watch_start(id=None, period=None, service=None, expression=None, **kwargs):
+async def watch_start(id=None, period=None, service=None, expression=None, **kwargs):
     state = None
     via = service.get("config", {}).get("via")
     url = service.get("config", {}).get("url")
     period_s = time_description_to_seconds(period or "5m")
     nstate = None
 
-    def check_ok():
-        serverboards.debug("Checking expression: %s" % (expression))
-        p = get_points(via=via, url=url, expression=expression)
-        if state != nstate:
-            serverboards.rpc.event("trigger", {"id": id, "value": p})
-        return True
+    async def check_ok():
+        while True:
+            await serverboards.debug("Checking expression: %s" % (expression))
+            p = await get_points(via=via, url=url, expression=expression)
+            if state != nstate:
+                await serverboards.rpc.event("trigger", {"id": id, "value": p})
+            await curio.sleep(period_s)
 
-    check_ok()
-    timer_id = serverboards.rpc.add_timer(period_s, check_ok)
-    serverboards.info("Start Prometheus watch %s" % timer_id)
-    return timer_id
+    await serverboards.info("Start Prometheus watch %s" % timer_id)
+    watch_tasks[id] = curio.spawn(check_ok)
+    return id
 
 
 @serverboards.rpc_method
-def watch_stop(id):
-    serverboards.info("Stop Prometheus watch %s" % (id))
-    serverboards.rpc.remove_timer(id)
+async def watch_stop(id):
+    await serverboards.info("Stop Prometheus watch %s" % (id))
+    await watch_tasks[id].cancel()
+    watch_tasks[id].join()
+    del watch_tasks[id]
     return "ok"
 
 
 @serverboards.cache_ttl(30)
-def get_values(via=None, url=None):
+async def get_values(via=None, url=None):
     if not url:
         url = "http://localhost:9090"
     if via:
         url = urllib.parse.urlparse(url)
-        port = port_tunnel(via, url.hostname, url.port)
+        port = await port_tunnel(via, url.hostname, url.port)
         url = "http://localhost:%d" % port
-    res = requests.get(url + "/api/v1/label/__name__/values")
+    res = await asks.get(url + "/api/v1/label/__name__/values")
     return res.json()["data"]
 
 
 @serverboards.cache_ttl(30)
-def get_tags(via=None, url=None, value="", tag=None):
+async def get_tags(via=None, url=None, value="", tag=None):
     if not url:
         url = "http://localhost:9090"
     if via:
         url = urllib.parse.urlparse(url)
-        port = port_tunnel(via, url.hostname, url.port)
+        port = await port_tunnel(via, url.hostname, url.port)
         url = "http://localhost:%d" % port
-    res = requests.get(url + "/api/v1/series?match[]=%s" % value)
+    res = await asks.get(url + "/api/v1/series?match[]=%s" % value)
     data = res.json()["data"]
     print("value", value, data)
     if not tag:
@@ -204,7 +212,7 @@ BUILTINS = ["sum(", "min(", "max(", "avg(", "stddev(", "stdvar(",
 
 
 @serverboards.rpc_method
-def autocomplete_values(current="", via=None, url=None, **kwargs):
+async def autocomplete_values(current="", via=None, url=None, **kwargs):
     if not current:
         return []
     if '=' in current:
@@ -213,36 +221,36 @@ def autocomplete_values(current="", via=None, url=None, **kwargs):
         if suffix.startswith('"'):
             suffix = suffix[1:]
         options = ['%s{%s="%s"}' % (prefix, tag, x)
-                   for x in get_tags(via, url, prefix, tag)
+                   for x in (await get_tags(via, url, prefix, tag))
                    if x.startswith(suffix)
                    ]
     elif '{' in current:
         prefix, suffix = current.split('{')
         options = ['%s{%s="' % (prefix, x)
-                   for x in get_tags(via, url, prefix)
+                   for x in (await get_tags(via, url, prefix))
                    if x.startswith(suffix)
                    ]
     else:
-        options = get_values(via, url) + BUILTINS
+        options = (await get_values(via, url)) + BUILTINS
     for cpart in \
             current.lower().replace('{', '_').replace('=', '_').split('_'):
         options = [x for x in options if cpart in x.lower()]
     return sorted(options)
 
 
-def connect_url_via_status(url, via):
-    print("Check ", url, via)
+async def connect_url_via_status(url, via):
+    # print("Check ", url, via)
     if via:
         url = urllib.parse.urlparse(url)
         print("Tunel to", url.hostname, url.port)
         try:
-            port = port_tunnel(via, url.hostname, url.port)
+            port = await port_tunnel(via, url.hostname, url.port)
         except Exception:
             return "ssh-proxy-error"
         url = "http://localhost:%d" % port
-    print("Check url", url)
+    # print("Check url", url)
     try:
-        res = requests.get(url)
+        res = await asks.get(url)
     except Exception as e:
         return "down"
     if res.status_code == 200:
@@ -252,38 +260,70 @@ def connect_url_via_status(url, via):
 
 
 @serverboards.rpc_method
-def prometheus_is_up(service):
-    return connect_url_via_status(
+async def prometheus_is_up(service):
+    return await connect_url_via_status(
         url=service["config"].get("url") or "http://localhost:9090",
         via=service["config"]["via"])
 
 
 @serverboards.rpc_method
-def agent_is_up(service):
-    return connect_url_via_status(
+async def agent_is_up(service):
+    return await connect_url_via_status(
         url=service["config"].get("url") or "http://localhost:9090",
         via=service["config"]["via"])
 
 
 @serverboards.rpc_method
-def node_exporter_is_up(service):
-    return connect_url_via_status(
+async def node_exporter_is_up(service):
+    return await connect_url_via_status(
         url=service["config"].get("url") or "http://localhost:9100",
         via=service["config"]["server"])
 
 
-def test():
+async def test():
     # res=get(expression="prometheus_rule_evaluation_failures_total")
     # print(json.dumps(res, indent=2))
+    printc("START")
+    try:
+        res = await autocomplete_values("up")
+        printc(json.dumps(res, indent=2))
 
-    res = get_points(expression="up == 1")
-    print(json.dumps(res, indent=2))
+        res = await get_points(expression="up == 1")
+        assert res
 
-    print("Success")
+        res = await get(service="XXX", expression="up")
+        assert res
+
+        res = await node_exporter_is_up({
+            "config": {
+                "url": None,
+                "server": None,
+            }
+        })
+        printc(res)
+        assert res == "ok"
+
+        res = await node_exporter_is_up({
+            "config": {
+                "url": "https://127.255.255.255:1000/",
+                "server": None,
+            }
+        })
+        printc(res)
+        assert res == "down"
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    printc("Success")
 
 
 if __name__ == '__main__':
     if len(sys.argv) == 2 and sys.argv[1] == 'test':
-        test()
+        import yaml
+        serverboards.test_mode(test, yaml.load(open("mock.yaml")))
+        print("Failed!")
+        sys.exit(1)
     else:
         serverboards.loop()

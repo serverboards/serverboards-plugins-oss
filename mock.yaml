@@ -1,0 +1,8 @@
+service.get:
+  - args: ["XXX"]
+    kwargs: {}
+    response:
+      uuid: XXX
+      config:
+        url: http://localhost:9090/
+        server: null

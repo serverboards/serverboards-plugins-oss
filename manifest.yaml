@@ -154,12 +154,12 @@ components:
 
 data:
   prometheus:
-    url: https://github.com/prometheus/prometheus/releases/download/v1.6.3/prometheus-1.6.3.linux-amd64.tar.gz
+    url: https://github.com/prometheus/prometheus/releases/download/v2.2.1/prometheus-2.2.1.linux-amd64.tar.gz
     files:
       - prometheus
       - prometheus.yml
       - promtool
   node_exporter:
-    url: https://github.com/prometheus/node_exporter/releases/download/v0.14.0/node_exporter-0.14.0.linux-amd64.tar.gz
+    url: https://github.com/prometheus/node_exporter/releases/download/v0.16.0-rc.0/node_exporter-0.16.0-rc.0.linux-amd64.tar.gz
     files:
       - node_exporter
