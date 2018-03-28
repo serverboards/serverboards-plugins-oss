@@ -343,13 +343,13 @@ def campaign_insights(campaign_id=None):
 
 
 @serverboards.rpc_method
-def check_rules(*_args, **_kwargs):
-    rules = serverboards.rpc.call(
+async def check_rules(*_args, **_kwargs):
+    rules = await serverboards.rpc.call(
         "rules.list",
         trigger="serverboards.facebookads/trigger",
         is_active=True
     )
-    for r in rules:
+    async for r in rules:
         params = r["trigger"]["params"]
         service_id = params["service"]["config"]
         insight = params["insight"]
@@ -358,14 +358,14 @@ def check_rules(*_args, **_kwargs):
         # state = False
         # limit = float(params["value"])
         # cond = params["condition"] or ">"
-        data = get_insights(
+        data = await get_insights(
             insight_id=insight,
             timerange={"since": end, "until": end},
             fields=[field],
             service=service_id)
         value = float(data[0]["values"][0][1])
 
-        serverboards.rpc.event("rules.trigger", id=r["uuid"], value=value)
+        await serverboards.rpc.event("rules.trigger", id=r["uuid"], value=value)
 
 
 def get_fields(type, blacklist=[]):
