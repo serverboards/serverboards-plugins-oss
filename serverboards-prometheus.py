@@ -62,6 +62,8 @@ async def port_tunnel(via, hostname, port):
 
 @serverboards.cache_ttl(300)
 async def service_get(service_id):
+    if not service_id:
+        return {"config": {}}
     return await serverboards.service.get(service_id)
 
 
