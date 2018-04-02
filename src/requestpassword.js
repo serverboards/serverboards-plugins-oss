@@ -7,7 +7,7 @@ function RequestPassword(props){
   }
 
   return (
-    <div className="ui container">
+    <div className="ui container with padding">
       <div className="ui form">
         <div className="field">
           <label>Password</label>

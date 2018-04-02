@@ -28,15 +28,30 @@ const View = React.createClass({
       if (this.state.secret_id){
         this.handleSecretSelect(this.state.secret_id)
       }
+      this.props.setSectionMenuProps({secrets})
     })
     if (this.props.setSectionMenu){
-      this.props.setSectionMenu(this.render_header)
+      const header_props={
+        secrets: [],
+        title: this.state.title,
+        secret: this.state.secret_id,
+        onSecretSelect: this.handleSecretSelect.bind(this),
+        onSecretAdd: this.handleAddSecretDialog.bind(this),
+      }
+
+      this.props.setSectionMenu(Header, header_props)
     }
   },
   handleSecretSelect(secret){
     console.log("secret %o", secret )
     rpc.call("plugin.data.get", [plugin_id, secret]).then( (data) => {
-      this.setState({secret: data, title: this.state.secrets[secret], secret_id: secret, add: false, visible: false})
+      const title = this.state.secrets[secret]
+      this.setState({secret: data, title, secret_id: secret, add: false, visible: false})
+      this.props.setSectionMenuProps({
+        title,
+        secret,
+        onDelete: this.state.visible && this.handleDeleteSecret.bind(this)
+      })
     })
   },
   handleAddSecretDialog(){
@@ -49,6 +64,7 @@ const View = React.createClass({
       console.log("Saved encrypted data: %o: %o", title, res)
       const secrets = utils.merge(this.state.secrets, { [secret_id]: title})
       self.setState({add: false, secret, title, secrets, secret_id})
+      self.props.setSectionMenuProps({title, secrets, title, onDelete: false})
     }).catch(function(e){
       console.error(e)
       Flash.error("Could not save encrypted secret")
@@ -64,6 +80,7 @@ const View = React.createClass({
           secrets[k]=this.state.secrets[k]
       })
       this.setState({secret_id: undefined, secrets, secret: undefined, title: undefined, visible: false})
+      this.props.setSectionMenuProps({secrets, title: undefined, onDelete: undefined})
     })
   },
   handleTitleChange(oldtitleid, newtitleid, newtitle){
@@ -78,6 +95,7 @@ const View = React.createClass({
   },
   handleSecretVisible(visible=true){
     this.setState({visible})
+    this.props.setSectionMenuProps({onDelete: this.handleDeleteSecret.bind(this)})
   },
   handleSave(title, secret){
     rpc.call("plugin.data.update", [plugin_id, `${this.props.project}.${title}`, secret])
@@ -96,26 +114,11 @@ const View = React.createClass({
     this.setState({secret_id})
     this.componentDidMount()
   },
-  render_header(show_title){
-    const state=this.state
-    return (
-      <Header
-        secrets={state.secrets}
-        title={state.title}
-        secret={state.secret_id}
-        onSecretSelect={this.handleSecretSelect}
-        onSecretAdd={this.handleAddSecretDialog}
-        onDelete={state.visible && this.handleDeleteSecret}
-        show_title={show_title}
-        />
-      )
-  },
   render(){
     const props=this.props
     const state=this.state
     return (
       <div id="secrets">
-        {!props.setSectionMenu ? this.render_header(true) : null}
         {state.add ? (
           <EditSecret
             onSave={this.handleAddSecret}
@@ -137,13 +140,14 @@ const View = React.createClass({
   }
 })
 
-function main(el, config, extra){
-  console.log("secrets config:",config, extra)
-  Serverboards.ReactDOM.render(<View project={config.project.shortname} setSectionMenu={extra.setSectionMenu}/>, el)
-
-  return function(){
-    Serverboards.ReactDOM.unmountComponentAtNode(el)
-  }
+function Secrets({project, setSectionMenu, setSectionMenuProps}){
+  return (
+    <View
+      project={project.shortname}
+      setSectionMenu={setSectionMenu}
+      setSectionMenuProps={setSectionMenuProps}
+    />
+  )
 }
 
-Serverboards.add_screen(`${plugin_id}/screen`, main)
+Serverboards.add_screen(`${plugin_id}/screen`, Secrets, {react: true})

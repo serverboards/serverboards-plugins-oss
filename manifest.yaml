@@ -12,3 +12,6 @@ components:
   - id: screen
     type: screen
     name: Secrets
+    hints:
+      nocss: true
+      nohtml: true

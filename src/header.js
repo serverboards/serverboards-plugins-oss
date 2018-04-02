@@ -1,4 +1,4 @@
-const {React} = Serverboards
+const {React, i18n} = Serverboards
 const {HoldButton} = Serverboards.Components
 
 // mutates the array, does not matter on this use.
@@ -29,12 +29,14 @@ const Header = React.createClass({
   },
   render(){
     const props=this.props
+
+    console.log("Secrets: ", props.secrets, props.onDelete)
     return (
       <div className="ui top secondary menu">
         <div className="right menu">
-          { props.onDelete ? (
-            <HoldButton className="ui outline button red" onHoldClick={props.onDelete}>Hold to remove</HoldButton>
-          ) : null }
+          <HoldButton className={`ui outline button red ${props.onDelete ? "" : "disabled"}`} onHoldClick={props.onDelete}>
+            {i18n("Hold to remove")}
+          </HoldButton>
           <select className="ui dropdown search small" name="secret" ref="secret_select" onChange={this.handleSecretSelect} value={props.secret}>
             <option value="">Select a secret</option>
             {sorted(Object.keys(props.secrets)).map( (k) => (
