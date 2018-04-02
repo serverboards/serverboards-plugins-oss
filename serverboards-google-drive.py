@@ -269,10 +269,6 @@ def extractor(config, table, quals, columns):
     raise Exception("unknown table")
 
 
-def decorate_file_row(file, more_info, folder_info, datetime, what):
-    return
-
-
 def extractors_files(service_id, quals, columns):
     rows = get_changes_raw(service_id)
 
