@@ -31,9 +31,6 @@ const Header = React.createClass({
     const props=this.props
     return (
       <div className="ui top secondary menu">
-        {props.show_title ? (
-          <h3 className="ui header">{props.title || "Select Secret"}</h3>
-        ) : null }
         <div className="right menu">
           { props.onDelete ? (
             <HoldButton className="ui outline button red" onHoldClick={props.onDelete}>Hold to remove</HoldButton>
