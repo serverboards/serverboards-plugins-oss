@@ -95,7 +95,8 @@ def get_changes_raw(service_id):
     return [decorate(x) for x in changes]
 
 
-@serverboards.rpc_method
+@serverboards.rpc_method("get_changes")
+@serverboards.cache_ttl(300)
 def get_changes(service_id, folder_filter=None):
     grouped = []
     lastd = None
