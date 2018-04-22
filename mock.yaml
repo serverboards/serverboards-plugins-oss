@@ -1,0 +1,25 @@
+config:
+  service: XXX
+service.get:
+  - args: ["XXX"]
+    kwargs: {}
+    response:
+      config:
+        _class: OAuth2Credentials
+        _module: oauth2client.client
+        access_token: ya29.GlulBcQaB6R8nKwOcOYqv6ESSHjdCM69oueiV4DH-2GzGopbCC7UVB2CMnb_9GxtkC8p2SAWwT1vUdEEkANU5HN8b_R2fEORvnQDeVvYiDzRAyshHNjYR9Nurqlr
+        client_id: 600143774821-jklvp31mlptouknbh3r7cg0d5hd1ivcc.apps.googleusercontent.com
+        client_secret: hr7YHf_TXXwLncM0fBEGcE3C
+        id_token: null
+        id_token_jwt: null
+        invalid: false
+        refresh_token: 1/DrnPFe8J17h4j-r1elyNJB-FZ8-cOIby-cL08btC4Zc
+        revoke_uri: https://accounts.google.com/o/oauth2/token
+        scopes: ['https://www.googleapis.com/auth/drive.metadata.readonly', 'https://www.googleapis.com/auth/spreadsheets']
+        token_expiry: '2018-04-22T14:34:07Z'
+        token_info_uri: https://www.googleapis.com/oauth2/v3/tokeninfo
+        token_response: {access_token: ya29.GlulBcQaB6R8nKwOcOYqv6ESSHjdCM69oueiV4DH-2GzGopbCC7UVB2CMnb_9GxtkC8p2SAWwT1vUdEEkANU5HN8b_R2fEORvnQDeVvYiDzRAyshHNjYR9Nurqlr,
+          expires_in: 3600, refresh_token: 1/DrnPFe8J17h4j-r1elyNJB-FZ8-cOIby-cL08btC4Zc,
+          token_type: Bearer}
+        token_uri: https://accounts.google.com/o/oauth2/token
+        user_agent: null

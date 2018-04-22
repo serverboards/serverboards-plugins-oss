@@ -1,13 +1,14 @@
 #!env/bin/python
 
-import serverboards
+import serverboards_aio as serverboards
 import requests
 import json
-from serverboards import rpc
+from serverboards_aio import rpc
 from urllib.parse import urlencode, urljoin
 from oauth2client import client
 import threading
 import datetime
+from pcolor import printc
 from googleapiclient import discovery
 
 
@@ -48,33 +49,45 @@ def ensure_settings():
         settings.update(base)
 
 
+@serverboards.cache_ttl(30)
+async def get_config(uuid):
+    service = await serverboards.rpc.call("service.get", uuid)
+    return service.get("config", {})
+
+
 class ServerboardsStorage(client.Storage):
     def __init__(self, id=None):
-        if not id:
-            raise Exception("Invalid Google Drive Service. " +
-                            "Ensure access has been granted.")
+        assert id
         self.id = id
-        super(ServerboardsStorage, self).__init__(lock=threading.Lock())
+        super(ServerboardsStorage, self).__init__()
 
     def locked_get(self):
-        content = rpc.call("service.get", self.id).get("config", {})
-        if not content:
-            return None
         try:
+            content = serverboards.async(get_config, self.id)
+            if not content:
+                return None
+
             content = json.dumps(content)
+            # printc("Auth code:", content)
             credentials = client.OAuth2Credentials.from_json(content)
             credentials.set_store(self)
             return credentials
         except Exception:
+            import traceback
+            traceback.print_exc()
+            # printc("Invalid credentials", file=sys.stderr)
             pass
         return None
 
     def locked_put(self, credentials):
+        get_config.invalidate_cache()
+        # printc("Update refresh token:", credentials.to_json())
         data = {"config": json.loads(credentials.to_json())}
-        rpc.call("service.update", self.id, data)
+        serverboards.async(rpc.call, "service.update", self.id, data)
 
     def locked_delete(self):
-        rpc.call("service.update", self.id, {"config": {}})
+        get_config.invalidate_cache()
+        serverboards.async(rpc.call, "service.update", self.id, {"config": {}})
 
 
 @serverboards.rpc_method

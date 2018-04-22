@@ -2,8 +2,14 @@
 
 from serverboards_google import setup, ServerboardsStorage
 from serverboards_google import discovery
-from serverboards import rpc
-import serverboards
+from serverboards_aio import rpc, curio
+from pcolor import printc
+import serverboards_aio as serverboards
+import sys
+import yaml
+from cache import Cache
+
+cache = Cache("~/google-drive.db")
 
 setup(
     "serverboards.google.drive",
@@ -12,80 +18,88 @@ setup(
         "https://www.googleapis.com/auth/spreadsheets"
     ]
 )
-drive = {}
 
-
-def get_drive(service_id, version='v3'):
-    ank = (service_id, version)
-    if not drive.get(ank):
+@serverboards.cache_ttl(300)
+async def get_drive(service_id, version='v3'):
+    def threaded():
         storage = ServerboardsStorage(service_id)
         credentials = storage.get()
         if not credentials:
             raise Exception("invalid_grant")
-        drive[ank] = discovery.build('drive', version, credentials=credentials)
-    return drive.get(ank)
+        return discovery.build('drive', version, credentials=credentials)
+
+    analytics = await serverboards.sync(threaded)
+    return analytics
+
+async def get_file_info(drive_service, fileid, fields=None):
+    def threaded():
+        fieldsl = None
+        if fields:
+            fieldsl = ','.join(fields)
+        try:
+            printc("Get info from file ", fileid)
+            return drive_service.files().get(
+                fileId=fileid, fields=fieldsl).execute()
+        except Exception as e:
+            serverboards.log_traceback()
+            return {}
+    return (await serverboards.sync(threaded))
+
+@cache.a(ttl=30000)
+async def get_file_data(service_id, file):
+    drive_service = await get_drive(service_id)
+    datetime = file["time"]
+    kind = file["kind"]
+    if file["removed"]:
+        what = "removed"
+    elif kind == "drive#change":
+        what = "updated"
+    elif kind == "drive#file":
+        what = "added"
+    else:
+        what = kind
+
+    more_info = await get_file_info(drive_service, file.get("fileId"), [
+        "mimeType", "name", "lastModifyingUser", "modifiedTime",
+        "webViewLink", "webContentLink", "parents"])
+    parents = more_info.get("parents", [])
+    if parents:
+        folder_info = await get_file_info(drive_service, parents[0], [
+            "name",
+            "webViewLink"
+        ])
+    else:
+        folder_info = {}
+    return [
+        more_info.get("lastModifyingUser", {}).get("displayName"),
+        what,
+        more_info.get("mimeType"),
+        more_info.get("name"),
+        folder_info.get("name"),
+        folder_info.get("webViewLink"),
+        datetime,
+        more_info.get("webContentLink"),
+        more_info.get("webViewLink"),
+        file.get("removed")
+    ]
 
 
 @serverboards.cache_ttl(300)
-def get_file_info(drive_service, fileid, fields=None):
-    fieldsl = None
-    if fields:
-        fieldsl = ','.join(fields)
-    try:
-        return drive_service.files().get(
-            fileId=fileid, fields=fieldsl).execute()
-    except Exception as e:
-        serverboards.log_traceback()
-        return {}
+async def get_changes_raw(service_id):
+    drive_service = await get_drive(service_id)
 
-
-def get_changes_raw(service_id):
-    drive_service = get_drive(service_id)
-
-    def decorate(file):
-        datetime = file["time"]
-        kind = file["kind"]
-        if file["removed"]:
-            what = "removed"
-        elif kind == "drive#change":
-            what = "updated"
-        elif kind == "drive#file":
-            what = "added"
-        else:
-            what = kind
-
-        more_info = get_file_info(drive_service, file.get("fileId"), [
-            "mimeType", "name", "lastModifyingUser", "modifiedTime",
-            "webViewLink", "webContentLink", "parents"])
-        parents = more_info.get("parents", [])
-        if parents:
-            folder_info = get_file_info(drive_service, parents[0], [
-                "name",
-                "webViewLink"
-            ])
-        else:
-            folder_info = {}
-        return [
-            more_info.get("lastModifyingUser", {}).get("displayName"),
-            what,
-            more_info.get("mimeType"),
-            more_info.get("name"),
-            folder_info.get("name"),
-            folder_info.get("webViewLink"),
-            datetime,
-            more_info.get("webContentLink"),
-            more_info.get("webViewLink"),
-            file.get("removed")
-        ]
-
-    page_token = drive_service.changes().getStartPageToken().execute().get(
-        'startPageToken')
+    page_token = await serverboards.sync(lambda:
+        drive_service.changes().getStartPageToken().
+            execute().get('startPageToken')
+    )
     # hack, show something
     page_token = int(page_token) - 1000
     changes = []
     while page_token is not None:
-        response = drive_service.changes().list(pageToken=page_token,
-                                                spaces='drive').execute()
+        response = await serverboards.sync(lambda:
+            drive_service.changes().list(pageToken=page_token,
+                                        spaces='drive').execute()
+        )
         for change in response.get('changes'):
             # Process change
             changes.append(change)
@@ -95,17 +109,20 @@ def get_changes_raw(service_id):
         if len(changes) > 100:
             page_token = None
 
-    return [decorate(x) for x in changes]
+    ret = []
+    for x in changes:
+        ret.append(await get_file_data(service_id, x))
+    return ret
 
 
-@serverboards.rpc_method("get_changes")
-@serverboards.cache_ttl(300)
-def get_changes(service_id, folder_filter=None):
+@serverboards.rpc_method
+async def get_changes(service_id, folder_filter=None):
     grouped = []
     lastd = None
     lastv = None
 
-    for x in get_changes_raw(service_id):
+    changes = await get_changes_raw(service_id)
+    for x in changes:
         row = {
             "author": x[0],
             "what": x[1],
@@ -180,7 +197,7 @@ class DriveWatcher:
 
     def match(self, service_id, change, expr):
         # maybe at parent?
-        drive = get_drive(service_id)
+        drive = await get_drive(service_id)
         more_info = get_file_info(drive, change.get("fileId"), [
             "parents",
             "lastModifyingUser"
@@ -242,7 +259,7 @@ def watch_stop(id):
 @serverboards.rpc_method
 def drive_is_up(service):
     try:
-        if get_drive(service["uuid"]):
+        if (await get_drive(service["uuid"])):
             return "ok"
         else:
             return "nok"
@@ -267,20 +284,42 @@ def schema(config, table=None):
 
 
 @serverboards.rpc_method
-def extractor(config, table, quals, columns):
+async def extractor(config, table, quals, columns):
     if table == 'changes':
-        return extractors_files(config["service"], quals, columns)
+        return await extractor_files(config["service"], quals, columns)
     raise Exception("unknown table")
 
 
-def extractors_files(service_id, quals, columns):
-    rows = get_changes_raw(service_id)
+def decorate_file_row(file, more_info, folder_info, datetime, what):
+    return
+
+
+async def extractor_files(service_id, quals, columns):
+    rows = await get_changes_raw(service_id)
 
     return {
         "columns": SCHEMA["changes"],
         "rows": rows
     }
 
+async def test():
+    mock_data = yaml.load(open("mock.yaml"))
+    config = mock_data["config"]
+    print("All schema", schema(config))
+    sch = schema(config, "changes")
+    print("Config schema", sch)
+    res = await extractor(config, "changes", [], sch["columns"])
+    print("Changes", res)
+
+    printc("ALL OK", color="green")
+    sys.exit(0)
 
 if __name__ == '__main__':
+    argv = sys.argv[1:]
+    if argv and argv[0] == "test":
+        mock_data = yaml.load(open("mock.yaml"))
+        serverboards.test_mode(test, mock_data)
+        printc("Failure", color="red")
+        sys.exit(1)
+
     serverboards.loop()
