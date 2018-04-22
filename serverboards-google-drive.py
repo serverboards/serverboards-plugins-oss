@@ -7,7 +7,10 @@ import serverboards
 
 setup(
     "serverboards.google.drive",
-    scopes=["https://www.googleapis.com/auth/drive.metadata.readonly"]
+    scopes=[
+        "https://www.googleapis.com/auth/drive.metadata.readonly",
+        "https://www.googleapis.com/auth/spreadsheets"
+    ]
 )
 drive = {}
 
