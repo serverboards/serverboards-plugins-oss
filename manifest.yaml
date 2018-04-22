@@ -137,3 +137,18 @@ components:
     command: serverboards.google.drive/daemon
     extractor: extractor
     schema: schema
+
+  - id: extractor.sheets
+    name: Google Sheets
+    type: extractor
+    service: serverboards.google.drive/service
+    icon: green table
+    command: serverboards.google.drive/daemon
+    extractor: extractor_sheets
+    schema: schema_sheets
+    params:
+      - name: spreadsheet
+        label: Spreadsheet URL
+        description: |
+          Copy here the URL of the spreadsheet document at google
+          drive, or the spreadsheet id.

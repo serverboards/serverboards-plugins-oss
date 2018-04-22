@@ -1,13 +1,15 @@
 #!env/bin/python
 
-from serverboards_google import setup, ServerboardsStorage
-from serverboards_google import discovery
+from serverboards_google import setup, get_drive
+from serverboards_google import discovery, async_execute
 from serverboards_aio import rpc, curio
 from pcolor import printc
 import serverboards_aio as serverboards
 import sys
 import yaml
+import time
 from cache import Cache
+from sheets import extractor_sheets, schema_sheets
 
 cache = Cache("~/google-drive.db")
 
@@ -19,17 +21,6 @@ setup(
     ]
 )
 
-@serverboards.cache_ttl(300)
-async def get_drive(service_id, version='v3'):
-    def threaded():
-        storage = ServerboardsStorage(service_id)
-        credentials = storage.get()
-        if not credentials:
-            raise Exception("invalid_grant")
-        return discovery.build('drive', version, credentials=credentials)
-
-    analytics = await serverboards.sync(threaded)
-    return analytics
 
 async def get_file_info(drive_service, fileid, fields=None):
     def threaded():
@@ -88,17 +79,16 @@ async def get_file_data(service_id, file):
 async def get_changes_raw(service_id):
     drive_service = await get_drive(service_id)
 
-    page_token = await serverboards.sync(lambda:
-        drive_service.changes().getStartPageToken().
-            execute().get('startPageToken')
-    )
+    page_token = (await async_execute(
+        drive_service.changes().getStartPageToken()
+    )).get('startPageToken')
     # hack, show something
     page_token = int(page_token) - 1000
     changes = []
     while page_token is not None:
-        response = await serverboards.sync(lambda:
+        response = await async_execute(
             drive_service.changes().list(pageToken=page_token,
-                                        spaces='drive').execute()
+                                        spaces='drive')
         )
         for change in response.get('changes'):
             # Process change
@@ -163,27 +153,32 @@ class DriveWatcher:
         self.watcher_id = None
         self.page_tokens = {}
         self.watchs = {}
-
-        self.watch_check()
-        self.timer_id = rpc.add_timer(10, self.watch_check, rearm=True)
+        self.running = False
 
     def __del__(self):
-        rpc.remove_timer(self.timer_id)
+        self.running = False
 
-    def watch_check(self):
+    async def loop(self):
+        self.running = True
+        while self.running:
+            await self.watch_check()
+            await curio.sleep(300)
+            await serverboards.rpc.call("ping", True)
+
+    async def watch_check(self):
         # to prevent death of server at 5m timeout
-        serverboards.rpc.call("ping", True)
-        for service_id, c in self.get_all_changes():
+        changes = await self.get_all_changes()
+        for service_id, c in changes:
             for k, sv in self.watchs.items():
                 s, v = sv
                 if s != service_id:
                     continue  # this watch was not for this service
-                extra_info = self.match(service_id, c, v)
+                extra_info = await self.match(service_id, c, v)
                 if extra_info:
-                    serverboards.info("Trigger changes at rule %s" %
+                    await serverboards.info("Trigger changes at rule %s" %
                                       (k), service_id=service_id, rule_id=k)
                     user = extra_info.get("lastModifyingUser") or {}
-                    serverboards.rpc.event("trigger", {
+                    await serverboards.rpc.event("trigger", {
                         "type": "drive_change",
                         "id": k,
                         "author": {
@@ -195,10 +190,10 @@ class DriveWatcher:
                         "filename": c.get("file", {}).get("name", "")
                     })
 
-    def match(self, service_id, change, expr):
+    async def match(self, service_id, change, expr):
         # maybe at parent?
         drive = await get_drive(service_id)
-        more_info = get_file_info(drive, change.get("fileId"), [
+        more_info = await get_file_info(drive, change.get("fileId"), [
             "parents",
             "lastModifyingUser"
         ])
@@ -207,49 +202,58 @@ class DriveWatcher:
             return more_info
 
         for parent in more_info.get("parents", []):
-            folder_info = get_file_info(drive, parent, ["name"])
+            folder_info = await get_file_info(drive, parent, ["name"])
 
             if expr in folder_info.get("name"):
                 return more_info
 
         return False
 
-    def add_trigger(self, ruleid, service_id, expression):
+    async def add_trigger(self, ruleid, service_id, expression):
         self.watchs[ruleid] = (service_id, expression)
         if service_id not in self.page_tokens:
-            self.add_start_page_token(service_id)
+            await self.add_start_page_token(service_id)
 
-    def add_start_page_token(self, service_id):
-        drive_service = get_drive(service_id)
-        pt = drive_service.changes().getStartPageToken().execute().get(
-            'startPageToken')
+    async def add_start_page_token(self, service_id):
+        drive_service = await get_drive(service_id)
+        pt = await async_execute(
+            drive_service.changes().getStartPageToken()
+        ).get('startPageToken')
         self.page_tokens[service_id] = pt
 
     def remove_trigger(self, ruleid):
         del self.watchs[ruleid]
 
-    def get_all_changes(self):
+    async def get_all_changes(self):
         for service_id, page_token in self.page_tokens.items():
-            drive_service = get_drive(service_id)
-            response = drive_service.changes().list(pageToken=page_token,
-                                                    spaces='drive').execute()
+            drive_service = await get_drive(service_id)
+            response = await async_execute(
+                drive_service.changes().list(pageToken=page_token,
+                                             spaces='drive')
+            )
+            changes = []
             for change in response.get('changes'):
-                yield (service_id, change)
+                changes.append((service_id, change))
 
             if 'newStartPageToken' in response:
                 # Last page, save this token for the next polling interval
                 self.page_tokens[service_id] = response.get(
                     'newStartPageToken')
+            return changes
+        return []
 
+
+async def start_watcher():
+    global watcher
+    watcher = DriveWatcher()
+    watcher.loop_task = await curio.spawn(watcher.loop)
 
 @serverboards.rpc_method
-def watch_start(id, service_id, expression, *args, **kwargs):
-    global watcher
+async def watch_start(id, service_id, expression, *args, **kwargs):
     if not watcher:
-        watcher = DriveWatcher()
-    watcher.add_trigger(id, service_id, expression)
+        await start_watcher()
+    await watcher.add_trigger(id, service_id, expression)
     return id
-
 
 @serverboards.rpc_method
 def watch_stop(id):
@@ -257,7 +261,7 @@ def watch_stop(id):
 
 
 @serverboards.rpc_method
-def drive_is_up(service):
+async def drive_is_up(service):
     try:
         if (await get_drive(service["uuid"])):
             return "ok"
@@ -285,6 +289,7 @@ def schema(config, table=None):
 
 @serverboards.rpc_method
 async def extractor(config, table, quals, columns):
+    config = config.get("config", config)
     if table == 'changes':
         return await extractor_files(config["service"], quals, columns)
     raise Exception("unknown table")
@@ -302,14 +307,20 @@ async def extractor_files(service_id, quals, columns):
         "rows": rows
     }
 
+
 async def test():
     mock_data = yaml.load(open("mock.yaml"))
     config = mock_data["config"]
-    print("All schema", schema(config))
+    printc("All schema", schema(config))
     sch = schema(config, "changes")
-    print("Config schema", sch)
+    printc("Config schema", sch)
     res = await extractor(config, "changes", [], sch["columns"])
-    print("Changes", res)
+    printc("Changes", res["columns"])
+    assert res["rows"] != []
+    res = await watch_start(1, "XXX", "serverboards")
+    printc("Watcher id", res)
+    time.sleep(3)
+    watch_stop(res)
 
     printc("ALL OK", color="green")
     sys.exit(0)

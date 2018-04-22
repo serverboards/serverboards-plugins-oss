@@ -14,6 +14,7 @@
   function main(_el){
     el=_el
     setStatus("Checking code", "Please wait")
+    console.log("Check code")
     try{
       var code = Serverboards.store.getState().routing.locationBeforeTransitions.query.code
       var service_id = Serverboards.store.getState().routing.locationBeforeTransitions.query.state
