@@ -24,15 +24,19 @@ async def schema_sheets(config, table=None):
     printc("Real id is ", spreadsheetid)
     if not table:
         data = await async_execute(sheets.spreadsheets().get(spreadsheetId=spreadsheetid))
-        print("Got tables")
         tables = [x["properties"]["title"].replace(" ", "_") for x in data.get("sheets", [])]
         return tables
     data = await async_execute(sheets.spreadsheets().values().get(spreadsheetId=spreadsheetid, range=("%s!A1:Z1" % table)))
+    printc(data)
+    if not 'values' in data: # bad formed
+        return {
+            "columns": []
+        }
     return {
         "columns": data["values"][0]
     }
 
-
+@serverboards.cache_ttl(30)
 @serverboards.rpc_method
 async def extractor_sheets(config, table, quals, columns):
     config = config.get("config", config)

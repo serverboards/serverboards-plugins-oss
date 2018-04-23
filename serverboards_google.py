@@ -188,5 +188,5 @@ execute_lock = curio.Lock()
 
 async def async_execute(cmd):
     async with execute_lock:
-        res = await serverboards.sync(lambda: cmd.execute())
+        res = await curio.run_in_thread(lambda: cmd.execute())
         return res
