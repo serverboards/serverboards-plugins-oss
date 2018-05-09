@@ -33,5 +33,5 @@ def printc(*s, color="grey", hl=None, bg=None, file=sys.stderr):
         file.write("\r\033[{hl};{color}m{text}\033[1;m\n".format(
             hl=hl, text=text, color=code))
     else:
-        file.write(text + '\n')
+        file.write('\r' + text + '\n')
     file.flush()

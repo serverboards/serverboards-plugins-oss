@@ -1,6 +1,6 @@
 config:
   config:
-    service: XXX
+    service_id: XXX
     spreadsheet: https://docs.google.com/spreadsheets/d/1tjFk8Rq6ImMvLsIjHcbVOeGrN7cTH86FQCwXSooshb4/edit#gid=0
 service.get:
   - args: ["XXX"]

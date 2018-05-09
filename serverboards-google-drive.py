@@ -9,7 +9,7 @@ import sys
 import yaml
 import time
 from cache import Cache
-from sheets import extractor_sheets, schema_sheets
+from sheets import extractor_sheets, schema_sheets, append_to_sheet
 
 cache = Cache("~/google-drive.db")
 

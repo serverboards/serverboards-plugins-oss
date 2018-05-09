@@ -152,3 +152,33 @@ components:
         description: |
           Copy here the URL of the spreadsheet document at google
           drive, or the spreadsheet id.
+
+  - id: append
+    name: Insert Google Sheets row
+    description: |
+      Adds a row into google sheets
+    type: action
+    command: serverboards.google.drive/daemon
+    call:
+      method: append_to_sheet
+      params:
+        - name: service_id
+          label: Google Drive
+          type: service
+          traits: google.drive
+        - name: spreadsheet
+          label: Spreadsheet Id
+          description: Write here the spreadsheet URL or ID
+          type: text
+        - name: table
+          label: Sheet name
+          description: Sheet name at google sheets.
+          placeholder: "Default: Sheet1"
+          type: text
+        - name: data
+          label: Data YAML
+          type: textarea
+          description: The data to add in YAML format
+          placeholder: |
+            "name: {{A.data.name}}"
+            "email: {{A.data.email}}"
