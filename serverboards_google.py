@@ -86,12 +86,13 @@ class ServerboardsStorage(client.Storage):
 
             content = json.dumps(content)
             # printc("Auth code:", content)
+            if 'access_token' not in content:
+                return None
             credentials = client.OAuth2Credentials.from_json(content)
             credentials.set_store(self)
             return credentials
-        except Exception:
-            import traceback
-            traceback.print_exc()
+        except Exception as e:
+            serverboards.log_traceback(e)
             # printc("Invalid credentials", file=sys.stderr)
             pass
         return None
