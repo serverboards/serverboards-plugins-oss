@@ -6,11 +6,11 @@ const TimelineLine = React.createClass({
     $(this.refs.el).popup()
   },
   render(){
-    const {expiration, onClick, hasDivider, showCalendar} = this.props
+    const {expiration, onClick, hasDivider, showCalendar, height} = this.props
     const service = expiration.service
     const date = moment(expiration.date)
     const expired = date.isBefore(moment())
-    let style = {paddingLeft: 5, paddingBottom: "1rem", cursor: "pointer"}
+    let style = {paddingLeft: 5, paddingBottom: "1rem", cursor: "pointer", maxHeight: height}
     if (hasDivider){
       style.borderTop="1px solid #eee"
       style.paddingTop="1rem"
@@ -65,12 +65,14 @@ const Timeline = React.createClass({
     this.setState({year, month})
   },
   render(){
-    const {expirations, onShowService, maxHeight} = this.props
+    const {expirations, onShowService, height} = this.props
     const state = this.state
     return (
-      <div>
-        <Calendar marks={state.marks} navigation={true} onClick={this.gotoDate} month={this.state.month} year={this.state.year}/>
-        <div ref="list" className="ui vertically divided list" style={{overflow:"auto", maxHeight: maxHeight}}>
+      <div style={{maxHeight: height}}>
+        <div style={{minHeight: 200, display: "flex", margin: "auto"}}>
+          <Calendar marks={state.marks} navigation={true} onClick={this.gotoDate} month={this.state.month} year={this.state.year}/>
+        </div>
+        <div ref="list" className="ui vertically divided list" style={{overflow:"auto", maxHeight: height}}>
           {expirations.map( (e, n) => (
             <TimelineLine
               key={`${e.service.uuid}/${e.check}`}

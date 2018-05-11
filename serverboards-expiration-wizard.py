@@ -104,7 +104,7 @@ def dns_expiration(service):
     def decorate(line, d):
         line = line.strip()
         try:
-            print(line)
+            # print(line)
             e = line.split(':')
             if not e[1]:
                 return None
@@ -169,7 +169,7 @@ def slimmed_service(s):
 
 
 def matching_rules(exp, status, rules):
-    print("Matching rules", exp, status, rules)
+    # print("Matching rules", exp, status, rules)
     # serverboards.debug(', '.join( repr(x) for x in [exp, status, rules]))
     for r in rules:
         # serverboards.debug("%s %s"%(repr(r), repr(exp)))
@@ -286,7 +286,7 @@ def update_expirations(action_id=None, **kwfilter):
     for uuid, v in rule_updates.items():
         _service_uuid, rule_uuid = uuid
         state, expiration = v
-        print("Trigger expiration: %s %s %s" % (rule_uuid, state, expiration))
+        # print("Trigger expiration: %s %s %s" % (rule_uuid, state, expiration))
         serverboards.rpc.call(
             "rules_v2.trigger_wait", uuid=rule_uuid,
             state=state, expiration=expiration)
@@ -303,8 +303,8 @@ def list_expirations(project=None):
         return {"updating": id}
 
     if project:  # filter by project
-        print("project:", project)
-        print(expirations)
+        # print("project:", project)
+        # print(expirations)
         return [e for e in expirations if project in e["projects"]]
     else:
         return expirations

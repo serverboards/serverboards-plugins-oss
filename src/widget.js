@@ -57,6 +57,15 @@ const Model = React.createClass({
       .catch( (e) => Flash.error(e) )
   },
   render(){
+    let olayout = this.props.layout
+    let layout
+    if (olayout.w==1 && olayout.h==2)
+      layout="small"
+    else if (olayout.w > olayout.h)
+      layout="horizontal"
+    else
+      layout="vertical"
+
     if (this.state.updating)
       return (
         <Loading>
@@ -71,35 +80,19 @@ const Model = React.createClass({
         <Loading>{i18n("Expirations")}</Loading>
       )
     return (
-      <div className={`ui expirations ${this.props.layout}`}>
+      <div className={`ui expirations ${layout}`} style={{maxHeight: olayout.height}}>
         <Timeline
           expirations={this.state.expirations}
           onShowService={this.handleShowService}
+          height={olayout.height}
           />
         <button className="ui button yellow with icon" onClick={this.handleReload}>
           <i className="ui refresh icon"/>
         </button>
-
       </div>
     )
   }
 })
 
 
-function main(el, config, extra){
-  let layout
-  if (extra.layout.width==1 && extra.layout.height==2)
-    layout="small"
-  else if (extra.layout.width > extra.layout.height)
-    layout="horizontal"
-  else
-    layout="vertical"
-
-  Serverboards.ReactDOM.render(<Model {...config} layout={layout}/>, el)
-
-  return function(){
-    Serverboards.ReactDOM.unmountComponentAtNode(el)
-  }
-}
-
-Serverboards.add_widget(`${plugin_id}/widget`, main)
+Serverboards.add_widget(`${plugin_id}/widget`, Model, {react: true})
