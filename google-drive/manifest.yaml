@@ -1,0 +1,184 @@
+id: serverboards.google.drive
+name: Google Drive
+author: David Moreno <dmoreno@serverboards.io>
+url: https://github.com/serverboards/serverboards-plugin-google-drive
+description: Watches for changes at Google Drive
+version: "18.01"
+postinst: postinst.sh
+
+components:
+  - id: daemon
+    name: Google Drive Proxy
+    type: cmd
+    command: serverboards-google-drive.py
+    strategy: singleton
+    timeout: 10m
+    perms:
+      - settings.view[serverboards.google.drive/settings]
+      - settings.view[serverboards.core.settings/base]
+      - service.update
+      - service.get
+
+  - id: service
+    type: service
+    name: Google Drive
+    icon: green google
+    description: |
+      Connection to Google Drive.
+    traits: google.drive cloud
+    fields:
+      - name: access_description
+        type: description
+        description: |
+          {{#authorization_url}}
+          Please click on the following URL to start the authorization process.
+
+          [Authorize Serverboards to access Drive Data]({{authorization_url}})
+
+          If already authorized, clicking on the URL will renew/refresh the
+          authorization, discarding the old one.
+          {{/authorization_url}}
+          {{^authorization_url}}
+
+          Please save the service to start the authorization process.
+
+          {{/authorization_url}}
+
+        vars:
+          - id: authorization_url
+            command: serverboards.google.drive/daemon
+            call: authorize_url
+    status:
+      command: serverboards.google.drive/daemon
+      call: drive_is_up
+      frequency: 6h
+
+  - id: auth
+    type: screen
+    traits: hidden
+    name: Authorized
+    description: Screen to show at Oauth2 authorization phase.
+
+  - id: settings
+    type: settings
+    perms: settings
+    name: Google Drive Integration
+    description: |
+      To be able to use Google integration, you require an authorization Token.
+
+      Serverboards can not provide one in the Community Edition as there are
+      quotas involved.
+
+      Get the API token credentials at [Google API Console](https://console.developers.google.com/)
+      at *Credentials / Create / Oauth API / Client Id / Web*
+
+      The redirect URI must be the servername including protocol
+      `https://example.com/static/serverboards.google.drive/auth.html`
+
+    fields:
+      - name: client_id
+        label: Client Id
+      - name: client_secret
+        label: Client Secret
+
+  - id: widget
+    type: widget
+    name: Google Drive
+    traits: google.drive
+    params:
+      - name: service
+        type: service
+        traits: google.drive
+        label: Related Google Drive Service
+      - name: folder_filter
+        label: Folder Filter
+        type: text
+        description: Comma separated folder names to filter results. Empty for all.
+        placeholder: "My Folder, Documents, ..."
+
+
+  - id: change_watch
+    type: trigger
+    traits: google.drive cloud
+    name: Google Drive Watch
+    description: |
+      Triggers when a watched file expression suffers some change, for example
+      somebody updated, added or removed a file in a specific folder.
+    command: daemon
+    start:
+      method: watch_start
+      params:
+        - name: service_id
+          type: service
+          traits: google.drive
+          label: Google Drive Service
+        - name: expression
+          label: File or folder name to watch
+          type: text
+          card: true
+          description: |
+            Text that the file name must contain, for example a folder name or
+            file name.
+    result:
+      filename: Filename of changed file
+      author:
+        name: Display name for the change author
+        email: Email for the change author
+        avatar: Link to a image of the change author
+      datetime: Datetime of change
+      elapsed: Seconds since change
+    stop: watch_stop
+
+  - id: extractor
+    name: Google Drive
+    type: extractor
+    service: serverboards.google.drive/service
+    icon: red google
+    command: serverboards.google.drive/daemon
+    extractor: extractor
+    schema: schema
+
+  - id: extractor.sheets
+    name: Google Sheets
+    type: extractor
+    service: serverboards.google.drive/service
+    icon: green table
+    command: serverboards.google.drive/daemon
+    extractor: extractor_sheets
+    schema: schema_sheets
+    params:
+      - name: spreadsheet
+        label: Spreadsheet URL
+        description: |
+          Copy here the URL of the spreadsheet document at google
+          drive, or the spreadsheet id.
+
+  - id: append
+    name: Insert Google Sheets row
+    description: |
+      Adds a row into google sheets
+    type: action
+    command: serverboards.google.drive/daemon
+    call:
+      method: append_to_sheet
+      params:
+        - name: service_id
+          label: Google Drive
+          type: service
+          traits: google.drive
+        - name: spreadsheet
+          label: Spreadsheet Id
+          description: Write here the spreadsheet URL or ID
+          type: text
+        - name: table
+          label: Sheet name
+          description: Sheet name at google sheets.
+          placeholder: "Default: Sheet1"
+          type: text
+        - name: data
+          label: Data YAML
+          type: textarea
+          description: The data to add in YAML format
+          placeholder: |
+            "name: {{A.data.name}}"
+            "email: {{A.data.email}}"
