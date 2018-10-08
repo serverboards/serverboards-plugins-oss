@@ -1,0 +1,158 @@
+id: serverboards.google.analytics
+name: Google Analytics
+description: |
+  Connection to Google Analytics
+version: "18.09"
+author: David Moreno <dmoreno@serverboards.io>
+postinst: postinst.sh
+
+components:
+  - id: daemon
+    name: Google Analytics Proxy
+    type: cmd
+    command: serverboards-google-analytics.py
+    strategy: singleton
+    # timeout: 5m
+    timeout: 5s
+
+    perms:
+      - settings.view[serverboards.google.analytics/settings]
+      - settings.view[serverboards.core.settings/base]
+      - rules.view
+      - rules.trigger
+      - service.update
+      - service.get
+      - event.emit
+
+  - id: service
+    type: service
+    name: Google Analytics
+    icon: red google
+    description: |
+      Connection to Google Analytics.
+    traits: google.analytics cloud
+    fields:
+      - name: gdpr_authorization
+        type: checkbox
+        label: Google Analytics access authorization
+        description: I hereby authorize Serverboards to access my data at Google Analytics for analysis pourposes as requested by the GDPR.
+      - name: access_description
+        label: Google Analytics access
+        type: description
+        dynamic: true
+        show_if: gdpr_authorization
+        description: |
+          {{#access_token}}
+          **Service authorized**
+
+          You can use this service, or if you want you can
+          [reauthorize it]({{authorization_url}}).
+          {{/access_token}}
+          {{^access_token}}
+          **Service not authorized yet**
+
+          Please click on the following URL to start the authorization process.
+
+          [Authorize Serverboards to access Analytics Data]({{authorization_url}})
+          {{/access_token}}
+        vars:
+          - id: authorization_url
+            command: serverboards.google.analytics/daemon
+            call: authorize_url
+      - name: access_token
+        label: access_token
+        type: hidden
+        required: true
+        subscribe: serverboards.google.analytics/token
+    status:
+      command: serverboards.google.analytics/daemon
+      call: analytics_is_up
+      frequency: 6h
+
+  - id: auth
+    type: screen
+    traits: hidden
+    name: Authorized
+    description: Screen to show at Oauth2 authorization phase.
+
+  - id: settings
+    type: settings
+    perms: settings
+    name: Google Analytics Integration
+    description: |
+      To be able to use Google integration, you require an authorization Token.
+
+      Serverboards can not provide one in the Community Edition as there are
+      quotas involved.
+
+      Get the API token credentials at [Google API Console](https://console.developers.google.com/)
+      at *Credentials / Create / Oauth API / Client Id / Web*
+
+      The redirect URI must be the servername including protocol
+      `https://example.com/static/serverboards.google.analytics/auth.html`
+
+
+    fields:
+      - name: client_id
+        label: Client Id
+      - name: client_secret
+        label: Client Secret
+
+  - id: trigger
+    type: trigger
+    name: Google Analytics
+    description: Watches on some Google Analytics view today statistics every 30m.
+    icon: google red
+    traits: google.analytics cloud
+    start:
+      params:
+        - name: service_id
+          label: Service
+          type: service
+          traits: google.analytics
+        - name: viewid
+          label: Property
+          type: select call
+          dynamic: true
+          card: true
+          options:
+            command: serverboards.google.analytics/daemon
+            call: get_views
+            params:
+              - name: service_id
+    result:
+      value: Latest value of the metric
+
+  - id: rules_cron
+    name: Trigger Cron
+    description: Checks every 30m for the Google Analytics rules.
+    cron: 00,30 * * * *
+    action: serverboards.google.analytics/check_rules
+    params: {}
+
+  - id: check_rules
+    type: action
+    name: Check Google Analytics Rules
+    command: daemon
+    call:
+      method: check_rules
+    traits: google.analytics hidden
+
+  - id: extractor_basic
+    name: Google Analytics
+    type: extractor
+    service: serverboards.google.analytics/service
+    icon: red google
+    command: serverboards.google.analytics/daemon
+    extractor: basic_extractor
+    schema: basic_schema
+    params:
+      - name: viewid
+        label: Property
+        description: Left empty to select at the SQL query `profile_id`.
+        type: select call
+        options:
+          command: serverboards.google.analytics/daemon
+          call: get_views
+          params:
+            - name: service_id

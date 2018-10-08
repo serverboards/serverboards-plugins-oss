@@ -1,0 +1,5 @@
+google-api-python-client
+requests
+curio
+PyYAML
+oauth2client
