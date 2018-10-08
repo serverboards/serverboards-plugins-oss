@@ -1,0 +1,80 @@
+<style>
+#screen{
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+  flex-flow: column;
+}
+#screen div#spice{
+  height: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-flow: column;
+}
+#screen iframe{
+  flex-grow: 1;
+}
+#spice p{
+  display: block;
+  color: white;
+  font-size: 20px;
+  font-family: sans-serif;
+  padding: 4px;
+}
+#spice{
+  width: 100%;
+  height: 100%;
+}
+#fullscreenable{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+#fullscreenable .menu.hover{
+  top: 0px;
+  position: absolute;
+  z-index: 10;
+  margin: auto;
+  left: calc( 50% - 10em );
+  background: white;
+  border-radius: 0 0 20px 20px;
+  display: none;
+}
+#fullscreenable.fullscreen .menu.hover{
+  display: inline-block;
+  padding-left: 5px;
+}
+#fullscreenable .menu.hover{
+  margin-top: -50px;
+}
+#fullscreenable .menu.hover:hover{
+  margin-top: 0;
+}
+</style>
+
+<div id="screen" class="ui background dark grey">
+  <div id="header" class="ui secondary top menu">
+    <h3 class="ui header">Spice connection</h3>
+    <div class="right menu">
+      <a id="spice-fullscreen" class="item">
+        <i class="ui maximize icon"/>
+      </a>
+      <a id="spice-link-tab" class="item" target="_blank">
+        <i class="ui clone icon"/>
+      </a>
+      <a id="spice-link" class="item">
+        <i class="ui external icon"/>
+      </a>
+    </div>
+  </div>
+  <div id="fullscreenable">
+    <div id="header" class="ui secondary top menu hover">
+      <a id="nofullscreen" class="item">
+        <i class="ui maximize icon"/>
+      </a>
+    </div>
+    <div id="spice"><p>Loading...</p></div>
+  </div>
+</div>
