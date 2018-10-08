@@ -1,0 +1,40 @@
+id: serverboards.cron
+name: Cron type daemon
+description: Can create cron type rules, and an easy editor for them
+author: David Moreno Montero <dmoreno@serverboards.io>
+version: "18.01"
+
+components:
+  - id: cron
+    type: cmd
+    command: serverboards-cron.py
+    strategy: singleton
+    timeout: 7d
+  - id: trigger
+    name: Cron trigger
+    type: trigger
+    states: tick
+    command: cron
+    start:
+      method: add_cron
+      params:
+        - name: timespec
+          label: Time trigger description
+          description: |
+            Cron format:
+              `YEAR MONTH DAY WEEK DAY_OF_WEEK HOUR MINUTE`
+
+            Or some shortcuts:
+              `3am workdays`, `16:00 weekends`, `everyday 3pm`
+
+            It understands:
+              `[time]am`, `[time]pm`, `[24h:60s]`, `workdays`, `weekends`,
+              `everyday`
+          placeholder: "* * * * * * *"
+          card: true
+      result:
+        datetime: Triggered datetime
+        date: Triggered date
+        time: Triggered time
+
+    stop: del_cron
