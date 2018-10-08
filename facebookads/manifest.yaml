@@ -1,0 +1,109 @@
+id: serverboards.facebookads
+name: Facebook Ads Integration
+description: |
+  Provides access to metrics from facebook ads.
+author: David Moreno <dmoreno@serverboards.io>
+version: "18.01"
+
+
+components:
+  - id: service
+    type: service
+    name: Facebook Ads
+    icon: facebook
+    traits: facebookads cloud
+    description: |
+      Access to facebook ads data via the Facebook API. Needs to configure your
+      own access tokens and provide them here.
+
+      To be able to get all this data you need to subscribe as a Facebook
+      developer and create an app.
+    fields:
+      - name: app_id
+        label: App ID
+        type: text
+      - name: ad_user
+        label: Ad User Account ID
+        description: |
+          Ad user account id in the form of `act_110988902751030`
+        type: text
+      - name: app_secret
+        label: App Secret
+        type: password
+      - name: access_token
+        label: Access Token
+        description: The access token can be obtained at the Marketing API at the [app dashboard](https://developers.facebook.com/apps/).
+        placeholder: " "
+        type: text
+
+  - id: command
+    type: cmd
+    command: ./sbds_facebook_ads.py
+    strategy: singleton
+    timeout: 10s
+    name: Facebook Ads API Connector
+    perms:
+      - rules.view
+      - rules.trigger
+      - service.get
+
+  - id: trigger
+    type: trigger
+    name: Facebook Ads
+    description: Watches for some conditions on the Facebook Ads data.
+    traits: facebookads cloud
+    start:
+      params:
+        - name: service
+          label: Facebook Service
+          type: service
+          traits: facebookads
+        - name: insight
+          label: Insight
+          type: select call
+          options:
+            command: serverboards.facebookads/command
+            call: get_possible_insights
+        - name: field
+          label: Field
+          type: select
+          options:
+            - value: call_to_action_clicks
+              name: Call to action Clicks
+            - value: impressions
+              name: Impressions
+            - value: website_clicks
+              name: Website Clicks
+            - value: social_clicks
+              name: Social Clicks
+            - value: ctr
+              name: CTR
+            - value: canvas_avg_view_percent
+              name: Canvas Averag View Percent
+    result:
+      value: Value of the insight
+
+  - id: rules_cron
+    type: cron
+    name: Trigger Cron
+    description: Checks every morning for the Facebook Ads rules.
+    cron: 00 8 * * *
+    action: serverboards.facebookads/check_rules
+    params: {}
+
+  - id: check_rules
+    type: action
+    name: Check Facebook Ads Rules
+    command: command
+    call:
+      method: check_rules
+    traits: facebookads hidden
+
+  - id: extractor
+    name: Facebook Insights
+    type: extractor
+    service: serverboards.facebookads/service
+    icon: red google
+    command: serverboards.facebookads/command
+    extractor: extractor
+    schema: schema
