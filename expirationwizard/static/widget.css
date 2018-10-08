@@ -1,0 +1,31 @@
+.ui.card .ui.expirations.horizontal > div {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start; }
+  .ui.card .ui.expirations.horizontal > div .ui.list {
+    flex-grow: 1;
+    overflow: auto; }
+.ui.card .ui.expirations.vertical > div {
+  display: flex;
+  flex-direction: column; }
+
+.ui.calendar {
+  padding: 10px;
+  width: 280px; }
+
+.ui.card [data-width="1"][data-height="1"] .ui.calendar {
+  padding-bottom: 0px; }
+.ui.card [data-width="1"][data-height="1"] .ui.list {
+  max-height: 35px;
+  margin-top: 0; }
+
+.ui.card [data-height="1"] .ui.list {
+  max-height: 245px; }
+
+.ui.card [data-height="2"] .ui.list {
+  max-height: 307px; }
+
+.ui.card [data-height="3"][data-height="2"] .ui.list {
+  max-height: 552px; }
+
+/*# sourceMappingURL=widget.css.map */

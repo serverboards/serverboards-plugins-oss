@@ -1,0 +1,96 @@
+id: serverboards.expiration
+name: Expirations
+author: David Moreno <dmoreno@serverboards.io>
+description: |
+  Shows the future expirations in a timeline.
+
+  Expirations are defined by components by plugins and may contain things as
+  SSL expirations, contract expirations, Domain Name expirations and so on.
+
+  It also contains simple rules to create issues when the expirations are
+  getting close to the due data.
+
+  This is not a calendar service in a classical sense as all the items it
+  contains are get from the real world and are not user updatable unless some
+  action is taken to extend the expiration.
+url: https://github.com/serverboards/serverboards-plugin-expirationwizard.git
+postinst: postinst.sh
+version: "18.01"
+i18n: true
+
+components:
+  - id: command
+    type: cmd
+    command: ./serverboards-expiration-wizard.py
+    name: Expiration Checker
+    perms: service.get plugin action.update rules.view rules.trigger action.trigger
+    timeout: 1h
+    strategy: one_for_one
+
+  - id: checker
+    type: cron
+    name: Update expirations at 2:11am UTC
+    cron: 11 2 * * *
+    action: serverboards.expiration/update
+
+  - id: update
+    type: action
+    name: Update expirations
+    traits: cloud hidden
+    command: serverboards.expiration/command
+    call:
+      method: update_expirations
+      params:
+        - name: action_id
+
+  - id: sslchecker
+    name: SSL Expiration Checker
+    type: serverboards.expiration
+    command: serverboards.expiration/command
+    call: ssl_expiration
+    traits: url
+
+  - id: dnschecker
+    name: Domain Name Checker
+    type: serverboards.expiration
+    command: serverboards.expiration/command
+    call: dns_expiration
+    traits: url
+
+  - id: widget
+    type: widget
+    name: Expirations
+
+  - id: trigger
+    name: Expiration
+    description: |
+      Updates on the expiration dates of the services.
+
+      Default expiration checkers are DNS and SSL, but more can be installed via plugins.
+    type: trigger
+    states: ok warning expired
+    start:
+      params:
+        - name: service
+          type: service
+          description: What service to watch. Leave empty for all.
+    result:
+      state: ok (<14 days) | warning (>14 days) | expired .
+      expiration:
+        service:
+          uuid: Service UUID
+          name: Service name
+          type: Service type
+        check: Id of the check
+        projects: List of projects this service belongs
+        name: Name of the expiration
+        date: Final date of the expiration
+        id: Unique id for the expiration (to avoid duplicates)
+
+  - id: extractor
+    name: Expirations
+    type: extractor
+    icon: hourglass outline
+    command: serverboards.expiration/command
+    extractor: extractor
+    schema: schema

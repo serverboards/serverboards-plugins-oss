@@ -1,0 +1,13 @@
+{
+  "Domain Name Checker": "Comprobador de Nombres de Dominio",
+  "Expiration": "Caducidad",
+  "Expiration Checker": "Comprobador de caducidades",
+  "Expirations": "Caducidades",
+  "SSL Expiration Checker": "Comprobador caducidades SSL",
+  "Shows the fuure expirations in a timeline.\n\nExpirations are defined by components by plugins and may contain things as\nSSL expirations, contract expirations, Domain Name expirations and so on.\n\nIt also contains simple rules to create issues when the expirations are\ngetting close to the due data.\n\nThis is not a calendar service in a classical sense as all the items it\ncontains are get from the real world and are not user updatable unless some\naction is taken to extend the expiration.\n": "Muestra las futuras caducidades en una linea de tiempo.\n\nLas caducidades estan definidas en plugins y pueden contener cosas como\ncaducidades SSL, finalizaci\u00f3n de contratos, caducidades de Nombres de \nDominio (DNS) y similares.\n\nTambi\u00e9n contiene reglas sencillas para crear incidecias cuando las expiraciones \nse aproximan en el tiempo.\n\nEsto no es un servicio de calendario en el sentido cl\u00e1sico ya que todos \nlos elementos que contiene se toman del mundo real y no son actualizables por \nel usuario final a menos que este tome alguna acci\u00f3n para extender el periodo\nde caducidad. \n",
+  "This will take long time": "Esto llevar\u00e1 mucho tiempo",
+  "Update expirations": "Actualizar las caducidades",
+  "Update expirations at 2:11am UTC": "Actualiza las caducidades a las 2:11am UTC",
+  "Updating expirations. This will take long time.": "Actualizando caducidades. Esto llevar\u00e1 mucho tiempo.",
+  "What service to watch. Leave empty for all.": "Que servicio oberserver. Dejalo vac\u00edo para todos."
+}
