@@ -1,0 +1,185 @@
+id: serverboards.remotesql
+name: Remote SQL
+description: |
+  Access and perform basic queries at a remote SQL server accesible via a SSH
+  tunel.
+author: David Moreno <dmoreno@serverboards.io>
+version: "18.01"
+
+components:
+  - id: service
+    type: service
+    name: SQL Database Server
+    icon: database
+    traits: sql server
+    description: |
+      Remote database
+    fields:
+      - name: via
+        type: service
+        traits: ssh
+        label: At service
+        placeholder: Connect directly
+        card: true
+      - name: type
+        label: Database type
+        type: select
+        options:
+          - label: PostgreSQL
+            value: postgres
+          - label: MySQL / MariaDB
+            value: mysql
+        card: true
+      - name: hostname
+        label: Hostname
+        placeholder: Leave empty to connect to the remote service's `localhost`
+      - name: port
+        type: text
+        label: Database port
+        placeholder: Leave empty for defaults
+      - name: username
+        label: User
+        description: User to access the database
+        placeholder: Leave empty if no need for authentication
+      - name: password_pw
+        label: Password
+        type: password
+        description: User to access the database
+        placeholder: Leave empty if no need for authentication
+
+  - id: console
+    type: screen
+    name: SQL Console
+    description: Perform basic SQL queries directly to a remote database
+    traits: sql
+    icon: terminal
+
+  - id: daemon
+    type: cmd
+    timeout: 10m
+    command: ./serverboards-sql.py
+    name: Remote run SQL commands
+    perms: plugin service.get
+
+  - id: daemon_singleton
+    type: cmd
+    timeout: 30s
+    strategy: singleton
+    command: ./serverboards-sql.py
+    name: Remote run SQL commands
+    perms: plugin service.get
+
+
+
+  - id: trigger
+    name: SQL Query
+    description: Rule trigger for remote SQL Query
+    icon: database
+    type: trigger
+    traits: sql server
+    command: daemon
+    start:
+      method: watch_start
+      params:
+        - name: service_id
+          label: SQL Service
+          type: service
+          traits: sql
+        - name: period
+          label: Check period
+          description: |
+            Check every given time for the expression.
+            Time can use time modifiers as 1m, 30s, 1h...
+          placeholder: 5m
+          default: 5m
+          card: true
+          type: text
+        - name: database
+          label: Database Name
+          type: text
+          placeholder: template1
+        - name: query
+          card: true
+          label: SQL Query
+          placeholder: "SELECT count(*) FROM logs WHERE timestamp > (current_date -1)"
+          description: |
+            Which query to watch. The trigger will stay in the `ok` status
+            as long as the query result is truish (true, != 0 or not empty).
+            If no data or false, it changes to the `nok` state.
+
+            Only first column is checked, other columns may be used for logging
+            pourposes.
+          type: text
+    result:
+      value: Response of the query
+    stop: watch_stop
+
+
+  - id: insert_row
+    name: Insert row at database
+    description: Inserts a row of data into a database table
+    type: action
+    traits: sql server
+    icon: database
+    command: serverboards.remotesql/daemon
+    call:
+      method: insert_row
+      params:
+        - name: server
+          label: SQL Database Server
+          type: service
+          traits: sql server
+        - name: database
+          label: Database name
+          type: select call
+          options:
+            command: serverboards.remotesql/daemon_singleton
+            call: databases_select
+            params:
+              - name: server
+        - name: table
+          label: SQL Table
+          type: select call
+          dynamic: true
+          options:
+            command: serverboards.remotesql/daemon_singleton
+            call: table_select
+            params:
+              - name: server
+              - name: database
+        - name: data
+          type: textarea
+          label: Data to insert
+          description: |
+            List of fields to insert with the data (YAML format):
+
+            ```yaml
+            name: {{A.data.name|json}}
+            source: rule
+            ```
+
+            **Extra care is needed to avoid SQL injections or bad data
+            insertions! Use {{varname|json}} to avoid problems**
+
+            Missing elements will be inserted as NULL, so they can use default
+            values as auto incrementing indexes.
+
+  - id: extractor
+    name: SQL Database
+    type: extractor
+    description: Extract data from SQL databases
+    service: serverboards.remotesql/service
+    traits: sql server
+    icon: sql
+    command: serverboards.remotesql/daemon_singleton
+    extractor: extractor
+    schema: schema
+    params:
+      - name: database
+        label: Database name
+        type: select call
+        options:
+          command: serverboards.remotesql/daemon_singleton
+          call: databases_select
+          params:
+            - name: service_id
