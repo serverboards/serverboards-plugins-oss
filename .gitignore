@@ -4,3 +4,5 @@
 !.gitignore
 __*
 node_modules
+*.txz
+package-lock.json
