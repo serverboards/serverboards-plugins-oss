@@ -5,6 +5,8 @@ description: |
   tunel.
 author: David Moreno <dmoreno@serverboards.io>
 version: "18.01"
+icon: olive database
+
 
 components:
   - id: service

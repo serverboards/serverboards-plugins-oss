@@ -1,6 +1,6 @@
 all: build
 
-directories = auth-htpasswd auth-pam backupmanager backups cloud cron docker expirationwizard facebookads google-analytics google-drive logmap prometheus quickactions secrets serviceheatmap spice sqlconsole ssh telegram
+directories = auth-htpasswd auth-pam backup-monitor backups cloud cron docker expirationwizard facebookads google-analytics google-drive logmap prometheus quickactions secrets serviceheatmap spice sqlconsole ssh telegram
 basedir = $(shell pwd)
 
 build:

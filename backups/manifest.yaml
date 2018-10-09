@@ -3,6 +3,7 @@ name: Backups
 author: David Moreno <dmoreno@serverboards.io>
 url: https://serverboards.io
 description: Manage backups
+version: "18.10"
 
 components:
   - id: screen

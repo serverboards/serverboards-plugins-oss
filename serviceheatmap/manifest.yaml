@@ -4,6 +4,7 @@ author: David Moreno <dmoreno@serverboards.io>
 url: https://github.com/serverboards/serverboards-plugin-serviceheatmap
 description: Shows heatmap of services in current Serverboard
 version: "18.01"
+icon: green grid
 
 components:
   - id: widget

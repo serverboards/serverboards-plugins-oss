@@ -5,6 +5,7 @@ description: |
 version: "18.09"
 author: David Moreno <dmoreno@serverboards.io>
 postinst: postinst.sh
+icon: google-analytics.svg
 
 components:
   - id: daemon

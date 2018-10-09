@@ -4,6 +4,7 @@ author: David Moreno <dmoreno@serverboards.io>
 version: 17.04
 description: >
   Definition an basic ussage of cloud services.
+icon: blue cloud
 
 components:
   - id: daemon

@@ -11,6 +11,7 @@ description: >
 author: David Moreno <dmoreno@serverboards.io>
 id: serverboards.auth.htpasswd
 version: 17.04
+icon: key
 
 components:
   - name: htpasswd

@@ -4,6 +4,7 @@ author: David Moreno <dmoreno@serverboards.io>
 version: 18.01
 description: |
   Manage and monitor backups.
+icon: database
 
 components:
   - name: Remote file exists

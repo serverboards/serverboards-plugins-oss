@@ -5,6 +5,7 @@ url: https://github.com/serverboards/serverboards-plugin-google-drive
 description: Watches for changes at Google Drive
 version: "18.01"
 postinst: postinst.sh
+icon: google-drive.svg
 
 components:
   - id: daemon

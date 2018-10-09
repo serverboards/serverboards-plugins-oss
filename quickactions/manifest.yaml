@@ -6,6 +6,7 @@ description: |
 
   This is useful for fast access to common actions
 version: 17.04
+icon: shiping fast
 
 components:
   - id: editor

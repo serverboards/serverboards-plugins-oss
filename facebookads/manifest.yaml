@@ -4,6 +4,7 @@ description: |
   Provides access to metrics from facebook ads.
 author: David Moreno <dmoreno@serverboards.io>
 version: "18.01"
+icon: facebookads.svg
 
 
 components:

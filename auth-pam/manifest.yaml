@@ -17,6 +17,7 @@ description: |
   `admin`.
 version: 17.04
 author: David Moreno <dmoreno@serverboards.io>
+icon: key
 
 components:
   - id: cmd
