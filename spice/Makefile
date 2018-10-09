@@ -1,11 +1,10 @@
-all: static/terminal.css
-
-static/terminal.css: static/terminal.sass
-	sassc $< $@
-
-
-FILES = $(wildcard manifest.yaml *.py *.txt *.sh static/ *.md)
+FILES = $(wildcard manifest.yaml *.py *.txt *.sh static/ *.md static/spice-html5/)
 PACKAGE_ID = $(shell awk '/^id:/ {print $$2}' manifest.yaml)
+
+.PHONY: static/spice-html5
+static/spice-html5:
+	git submodule init
+	git submodule update
 
 .PHONY: txz
 txz: $(PACKAGE_ID).txz

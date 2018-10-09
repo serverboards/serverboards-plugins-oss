@@ -17,6 +17,7 @@ static/widget.js: src/widget.js
 
 clean:
 	rm static/widget.js
+	rm $(PACKAGE_ID).txz
 
 watch:
 	make -j3 watch-widget watch-sass
@@ -26,3 +27,13 @@ watch-widget:
 
 watch-sass:
 	sass --watch src/widget.sass:static/widget.css
+
+FILES = $(wildcard manifest.yaml *.py *.txt *.sh static/ *.md)
+PACKAGE_ID = $(shell awk '/^id:/ {print $$2}' manifest.yaml)
+
+.PHONY: txz
+txz: $(PACKAGE_ID).txz
+
+$(PACKAGE_ID).txz: $(FILES)
+	@echo $(PACKAGE_ID).txz: $(FILES)
+	@tar --transform 's#^#'$(PACKAGE_ID)'/#' -cJf $(PACKAGE_ID).txz ${FILES}

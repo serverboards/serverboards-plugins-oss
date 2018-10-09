@@ -1,17 +1,13 @@
 all: build
 
+directories = auth-htpasswd auth-pam backupmanager backups cloud cron docker expirationwizard facebookads google-analytics google-drive logmap prometheus quickactions secrets serviceheatmap spice sqlconsole ssh telegram
+basedir = $(shell pwd)
+
 build:
-	cd optional-cloud && make
-	cd optional-auth-pam && make
-	cd optional-quickactions && make
-	cd optional-backups && make
-	cd core-widgets && make
-	cd bindings/python/ && make
+	$(foreach dir,$(directories),cd $(basedir)/$(dir) && make && ) true
 
 clean:
-	cd optional-cloud && make clean
-	cd optional-auth-pam && make clean
-	cd optional-quickactions && make clean
-	cd optional-backups && make clean
-	cd core-widgets && make clean
-	cd bindings/python/ && make clean
+	$(foreach dir,$(directories),cd $(basedir)/$(dir) && make clean && ) true
+
+txz:
+	$(foreach dir,$(directories),cd $(basedir)/$(dir) && make txz && ) true

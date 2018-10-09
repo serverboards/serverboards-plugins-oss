@@ -1,0 +1,3 @@
+[submodule "spice/static/spice-html5"]
+	path = spice/static/spice-html5
+	url = https://github.com/freedesktop/spice-html5
