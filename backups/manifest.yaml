@@ -4,6 +4,8 @@ author: David Moreno <dmoreno@serverboards.io>
 url: https://serverboards.io
 description: Manage backups
 version: "18.10"
+requires:
+  - serverboards.core.ssh
 
 components:
   - id: screen
