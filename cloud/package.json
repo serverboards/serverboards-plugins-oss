@@ -1,5 +1,5 @@
 {
-  "name": "serverboards.optional.cloud.viewer",
+  "name": "serverboards.cloud.viewer",
   "version": "1.0.0",
   "description": "[description]",
   "main": "src/index.js",
