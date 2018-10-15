@@ -2,7 +2,14 @@ id: serverboards.google.drive
 name: Google Drive
 author: David Moreno <dmoreno@serverboards.io>
 url: https://github.com/serverboards/serverboards-plugin-google-drive
-description: Watches for changes at Google Drive
+description: |
+  Watches for changes at Google Drive
+
+  This plugin allows to access Google Drive accounts and watches for changes on
+  files.
+
+  It also provides an extractor that is able to read Google Sheet files in
+  real time and show that data into any USQ widget.
 version: "18.01"
 postinst: postinst.sh
 icon: google-drive.svg

@@ -154,4 +154,3 @@ var DriveWidget=React.createClass({displayName:"DriveWidget",getInitialState:fun
 Serverboards.add_widget(plugin_id+"/widget",DriveWidget,{react:!0});
 
 })));
-//# sourceMappingURL=widget.js.map
