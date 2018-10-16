@@ -11,12 +11,20 @@ This repository is an assortment of the Open Source packages for
 
 Serverboards is an Enterprise Service Bus that allows to interconnect all your
 services and make them talk each other. The main element are Dashboards and
-extractors, but it allows more:
+extractors. Some examples from this repository:
 
-* Dashboards & widgets
+* Dashboards
 
 <p align="center">
   <img src="assets/dashboard.png" width="600"/>
+</p>
+
+* Widgets
+
+<p align="center">
+  <a href="expirations/">
+    <img src="assets/expirations.png" width="200"/>
+  </a>
 </p>
 
 * Custom screens
@@ -27,7 +35,7 @@ extractors, but it allows more:
   </a>
 </p>
 
-* Plugins can be uploaded to the marketplace
+* These plugins are already at the [Serverboards marketplace](https://serverboards.app/packages/)
 
 <p align="center">
   <img src="assets/marketplace.png" width="600"/>
@@ -44,19 +52,37 @@ extractors, but it allows more:
 
 * Services
 
-  <img src="docker/static/docker-plain.svg" width="64"/>
-  <img src="google-drive/static/google-drive.svg" width="64"/>
-  <img src="google-analytics/static/google-analytics.svg"   width="64"/>
-  <img src="facebookads/static/facebookads.svg" width="64"/>
-  <img src="prometheus/static/prometheus.svg" width="64"/>
+  <a href="docker/">
+    <img src="docker/static/docker-plain.svg" width="64"/>
+  </a>
+  <a href="google-drive/">
+    <img src="google-drive/static/google-drive.svg" width="64"/>
+  </a>
+  <a href="google-analytics/">
+    <img src="google-analytics/static/google-analytics.svg" width="64"/>
+ </a>
+  <a href="facebookads/">
+    <img src="facebookads/static/facebookads.svg" width="64"/>
+  </a>
+  <a href="prometheus/">
+    <img src="prometheus/static/prometheus.svg" width="64"/>
+  </a>
+
+
 
   and more.
 
 * Extractors
 
-  <img src="facebookads/static/facebookads.svg" width="64"/>
-  <img src="google-analytics/static/google-analytics.svg"   width="64"/>
-  <img src="google-drive/static/google-drive.svg" width="64"/>
+  <a href="facebookads/">
+    <img src="facebookads/static/facebookads.svg" width="64"/>
+  </a>
+  <a href="google-analytics/">
+    <img src="google-analytics/static/google-analytics.svg"   width="64"/>
+  </a>
+  <a href="google-drive/">
+    <img src="google-drive/static/google-drive.svg" width="64"/>
+  </a>
 
   and more.
 
