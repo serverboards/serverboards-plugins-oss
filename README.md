@@ -1,16 +1,27 @@
 # Serverboards Plugins
 
 <p align="center">
-  <img src="assets/001-horizontal-small-logo.png" width="600"/>
+  <a href="https://serverboards.io">
+    <img src="assets/001-horizontal-small-logo.png" width="600"/>
+  </a>
 </p>
 
 This repository is an assortment of the Open Source packages for
-[Serverboards](https://serverboards.io).
-
-<img src="assets/024-illustration-addaddons.svg" width="200" align="right"/>
+[Serverboards](https://github.com/serverboards/serverboards).
 
 Serverboards is an Enterprise Service Bus that allows to interconnect all your
-services and make them talk each other.
+services and make them talk each other. The main element are Dashboards and
+extractors, but it allows more:
+
+* Dashboards
+* Widgets
+* Extractors
+* Custom screens
+* Plugins can use other plugins to expand their functionalities
+
+<p align="center">
+  <img src="assets/dashboard.png" width="600"/>
+</p>
 
 Packages can be easily installed at Serverboards itself (settings / marketplace)
 or using the `s10s` command line command.
