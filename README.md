@@ -13,22 +13,59 @@ Serverboards is an Enterprise Service Bus that allows to interconnect all your
 services and make them talk each other. The main element are Dashboards and
 extractors, but it allows more:
 
-* Dashboards
-* Widgets
-* Extractors
-* Custom screens
-* Plugins can use other plugins to expand their functionalities
+* Dashboards & widgets
 
 <p align="center">
   <img src="assets/dashboard.png" width="600"/>
 </p>
+
+* Custom screens
+
+<p align="center">
+  <a href="ssh/">
+    <img src="assets/ssh-terminal.png" width="600" title="SSH Plugin"/>
+  </a>
+</p>
+
+* Plugins can be uploaded to the marketplace
+
+<p align="center">
+  <img src="assets/marketplace.png" width="600"/>
+</p>
+
+* Plugins can use other plugins to expand their functionalities
+
+<p align="center">
+  <a href="cloud/">
+    <img src="assets/cloud.png" width="600" title="Cloud management"/>
+  </a>
+</p>
+
+
+* Services
+
+  <img src="docker/static/docker-plain.svg" width="64"/>
+  <img src="google-drive/static/google-drive.svg" width="64"/>
+  <img src="google-analytics/static/google-analytics.svg"   width="64"/>
+  <img src="facebookads/static/facebookads.svg" width="64"/>
+  <img src="prometheus/static/prometheus.svg" width="64"/>
+
+  and more.
+
+* Extractors
+
+  <img src="facebookads/static/facebookads.svg" width="64"/>
+  <img src="google-analytics/static/google-analytics.svg"   width="64"/>
+  <img src="google-drive/static/google-drive.svg" width="64"/>
+
+  and more.
 
 Packages can be easily installed at Serverboards itself (settings / marketplace)
 or using the `s10s` command line command.
 
 If you are interested in developing new plugins, be them free of for-pay, please
 check the documentation at
-[Serverboards.io](https://serverboards.io/developers/).
+[Serverboards.io/developers](https://serverboards.io/developers/). It is very easy.
 
 # Contributions
 
