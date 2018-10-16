@@ -60,7 +60,7 @@ extractors. Some examples from this repository:
   </a>
   <a href="google-analytics/">
     <img src="google-analytics/static/google-analytics.svg" width="64"/>
- </a>
+  </a>
   <a href="facebookads/">
     <img src="facebookads/static/facebookads.svg" width="64"/>
   </a>
