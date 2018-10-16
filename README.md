@@ -1,13 +1,13 @@
 # Serverboards Plugins
 
-<div style="text-align: center;">
-  <img src="assets/001-horizontal-small-logo.png"/>
-</div>
+<p align="center">
+  <img src="assets/001-horizontal-small-logo.png" width="600"/>
+</p>
 
 This repository is an assortment of the Open Source packages for
 [Serverboards](https://serverboards.io).
 
-<img src="assets/024-illustration-addaddons.svg" style="max-width: 300px; float: left;"/>
+<img src="assets/024-illustration-addaddons.svg" width="200" align="right"/>
 
 Serverboards is an Enterprise Service Bus that allows to interconnect all your
 services and make them talk each other.
