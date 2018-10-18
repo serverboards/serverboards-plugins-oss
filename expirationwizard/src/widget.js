@@ -86,11 +86,6 @@ const Model = React.createClass({
           onShowService={this.handleShowService}
           height={olayout.height}
           />
-        <div className="ui expand bottom right">
-          <button className="ui button yellow with icon" onClick={this.handleReload}>
-            <i className="ui refresh icon"/>
-          </button>
-        </div>
       </div>
     )
   }

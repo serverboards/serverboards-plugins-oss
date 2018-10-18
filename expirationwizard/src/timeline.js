@@ -47,7 +47,7 @@ const Timeline = React.createClass({
     marks[now.format("YYYY-MM-DD")]="bold text teal"
 
     for (let exp of this.props.expirations){
-      marks[moment(exp.date).format("YYYY-MM-DD")]="background light grey"
+      marks[moment(exp.date).format("YYYY-MM-DD")]="background light yellow"
     }
 
     return {
@@ -69,19 +69,30 @@ const Timeline = React.createClass({
     const state = this.state
     return (
       <div style={{maxHeight: height}}>
-        <div style={{minHeight: 200, display: "flex", margin: "auto"}}>
-          <Calendar marks={state.marks} navigation={true} onClick={this.gotoDate} month={this.state.month} year={this.state.year}/>
-        </div>
-        <div ref="list" className="ui vertically divided list" style={{overflow:"auto", maxHeight: height}}>
-          {expirations.map( (e, n) => (
-            <TimelineLine
-              key={`${e.service.uuid}/${e.check}`}
-              expiration={e}
-              onClick={() => onShowService(e.service.uuid)}
-              hasDivider={n!=0}
-              showCalendar={this.showCalendar}
-              />
-          ))}
+        <Calendar
+          marks={state.marks}
+          navigation={true}
+          onClick={this.gotoDate}
+          month={this.state.month}
+          year={this.state.year}
+          />
+        <div ref="list" className="ui vertically divided list" style={{overflow:"auto", maxHeight: height, height: "100%"}}>
+          <React.Fragment>
+            {expirations.map( (e, n) => (
+              <TimelineLine
+                key={`${e.service.uuid}/${e.check}`}
+                expiration={e}
+                onClick={() => onShowService(e.service.uuid)}
+                hasDivider={n!=0}
+                showCalendar={this.showCalendar}
+                />
+            ))}
+            <div className="ui expand bottom right">
+              <button className="ui button yellow with icon" onClick={this.handleReload}>
+                <i className="ui refresh icon"/>
+              </button>
+            </div>
+          </React.Fragment>
         </div>
       </div>
     )
