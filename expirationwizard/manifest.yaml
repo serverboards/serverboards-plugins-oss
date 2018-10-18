@@ -13,11 +13,11 @@ description: |
   This is not a calendar service in a classical sense as all the items it
   contains are get from the real world and are not user updatable unless some
   action is taken to extend the expiration.
-url: https://github.com/serverboards/serverboards-plugin-expirationwizard.git
+url: https://github.com/serverboards/serverboards-plugins-oss/
 postinst: postinst.sh
 version: "18.01"
 i18n: true
-icon: globe
+icon: hourglass half
 
 components:
   - id: command
