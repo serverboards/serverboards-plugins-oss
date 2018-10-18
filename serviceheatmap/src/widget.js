@@ -30,13 +30,14 @@ const Model = React.createClass({
     ) )
     let ok = false
     let per_row, row_count, max_row_count
+    let i = 0;
     while( !ok ){
-      per_row = Math.floor( layout.width / size )
-      max_row_count = Math.floor( layout.height / size )
+      per_row = Math.floor( layout.width / (size+2) )
+      max_row_count = Math.floor( layout.height / (size+2) )
       row_count = Math.ceil( this.state.services.length /  per_row )
       ok = (row_count <= max_row_count )
       if (!ok)
-        size-=1
+        size-=5
       if (size<20){
         break;
       }
@@ -45,6 +46,10 @@ const Model = React.createClass({
         size = 30 // A default size
         break
       }
+
+      i+=1
+      if (i>50)
+        ok = true
     }
     this.setState({size: size - 2})
   },
@@ -104,6 +109,7 @@ const Cell = React.createClass({
 })
 
 function View(props){
+  const fontSize =  Math.max(props.size/5, 12)
   const cell_style = {
     width: props.size,
     minWidth: props.size,
@@ -114,10 +120,11 @@ function View(props){
     alignItems: "flex-start",
     color: "white",
     padding: "5px 10px",
-    fontSize: Math.max(props.size/5, 12)
+    fontSize,
+    lineHeight: fontSize + "px"
   }
   return (
-    <div className="ui heatmap" style={{justifyContent:"flex-start", alignContent: "flex-start"}}>
+    <div className="ui heatmap" style={{justifyContent:"flex-start", alignContent: "flex-start", paddingLeft: 1, paddingTop: 2}}>
       {props.services.map( (s) => (
         <Cell key={s.uuid} service={s} cell_style={cell_style}/>
       ) ) }
