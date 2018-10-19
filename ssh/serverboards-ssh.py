@@ -581,7 +581,7 @@ async def __get_service_url(uuid):
 async def __get_service(uuid):
     if isinstance(uuid, dict):  # may get the full service instead of the uuid
         return uuid
-    data = await serverboards.rpc.call("service.get", uuid)
+    data = await serverboards.rpc.call("service.get", uuid=uuid)
     # serverboards.info("data: %s -> %s"%(uuid, data))
     return data
 
