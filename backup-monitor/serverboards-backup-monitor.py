@@ -93,13 +93,14 @@ class RemoteCheck:
         print("SSH stat result: %s" % res)
         maxdt = (datetime.datetime.now() - datetime.timedelta(days=1)).isoformat()
 
-        exists = res.get('exit', -1) == 0
+        exists = res["success"]
         if exists != self.prev_exists:
             if exists:
                 res = res['stdout'].split('|')
                 mydatetime = res[0].split()
                 mydatetime = "%sT%s" % (mydatetime[0], ''.join(mydatetime[1:]))
-                state = "ok" if mydatetime < maxdt else "old"
+                state = "ok" if mydatetime > maxdt else "old"
+                print(mydatetime, maxdt)
                 if res[1] == '0':
                     state = 'empty'
                 data = {
@@ -113,10 +114,11 @@ class RemoteCheck:
                 sha = hashlib.sha256(
                     (self.file_expression + "-" + self.service).encode('utf8')
                 ).hexdigest()
-
+                await serverboards.debug("File %s:%s exists, state %s" % (self.service, res[2], state))
                 await rpc.event("trigger", id=self.id, **data)
                 await rpc.call("plugin.data.update", plugin_id, 'test-'+sha, data)
             else:
+                await serverboards.debug("File %s:%s does not exist" % (self.service, filename))
                 await rpc.event("trigger", {"id": self.id, "state": "not-exists"})
             self.prev_exists = exists
 
@@ -148,10 +150,10 @@ async def file_exists(id, service, file_expression, when):
 
 
 @serverboards.rpc_method
-def stop_file_exists(id):
+async def stop_file_exists(id):
     job = RemoteCheck.file_exist_timers.get(id)
     if job:
-        curio.cancel(job)
+        await job.cancel()
         del RemoteCheck.file_exist_timers[id]
 
 
