@@ -13,7 +13,6 @@ plugin_id = "serverboards.backup.monitor"
 
 
 def convert_timespec_to_seconds(when):
-    print("When %s" % repr(when))
     if when == '12pm':
         return 12 * 60 * 60
     if when == '12am':
@@ -129,7 +128,7 @@ class RemoteCheck:
 
             next_when = get_next_when(self.when)
             await serverboards.debug(
-                "Wait until %s: %02d:%02d:%02d (%d)" %
+                "Wait until %s: %02dh%02dm%02ds (%ds)" %
                 (self.when, next_when/(60*60), (next_when/60) % 60, next_when % 60, next_when))
             await curio.sleep(next_when)
 

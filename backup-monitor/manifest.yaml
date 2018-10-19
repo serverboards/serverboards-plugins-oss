@@ -22,7 +22,7 @@ components:
     states: exists not-exists
     traits: ssh server
     command: daemon
-    call:
+    start:
       method: file_exists
       params:
         - name: service
@@ -97,6 +97,12 @@ components:
           condition: "A.ok"
           then:
             - type: action
+              action: serverboards.core.actions/close-issue
+              params:
+                issue: "rule/{{uuid}}"
+                comment: "Backup is back to normal."
+          else:
+            - type: action
               action: serverboards.core.actions/open-issue
               params:
                 issue: "rule/{{uuid}}"
@@ -108,12 +114,6 @@ components:
                   * Filename: {{A.filename}}
                   * Size: {{A.size}}
                   * Datetime: {{A.datetime}}
-          else:
-            - type: action
-              action: serverboards.core.actions/close-issue
-              params:
-                issue: "rule/{{uuid}}"
-                comment: "Backup is back to normal."
 
   - name: Daemon
     id: daemon
