@@ -84,11 +84,12 @@ class RemoteCheck:
     async def check(self):
         filename = filename_template(self.file_expression)
 
-        print("Checking state")
+        # need to be into a list to force allow ; chain
+        command = ["stat -c '%%y|%%s|%%n|' %s; stat -f -c '%%f|%%s' %s" % (filename, filename)]
         res = await rpc.call(
             "action.trigger_wait",
             "serverboards.core.ssh/exec",
-            dict(service=self.service, command="stat -c '%%y|%%s|%%n|' %s; stat -f -c '%%f|%%s' %s" % (filename, filename)))
+            dict(service=self.service, command=command))
         print("SSH stat result: %s" % res)
         maxdt = (datetime.datetime.now() - datetime.timedelta(days=1)).isoformat()
 
