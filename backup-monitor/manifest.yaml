@@ -117,8 +117,8 @@ components:
 
   - name: Daemon
     id: daemon
-    timeout: 48h
     type: cmd
+    strategy: init
     command: serverboards-backup-monitor.py
     perms:
       - service.info

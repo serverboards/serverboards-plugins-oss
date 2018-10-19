@@ -29,6 +29,8 @@ def convert_timespec_to_seconds(when):
     if ':' in when:
         ts = when.split(':')
         return ((int(ts[0])*60)+int(ts[1]))*60
+    ts = int(when)
+    return int(ts) * 60 * 60
 
 
 def time_in_seconds():
@@ -120,7 +122,11 @@ class RemoteCheck:
 
     async def loop(self):
         while True:
-            await self.check()
+            try:
+                await self.check()
+            except Exception as e:
+                serverboards.log_traceback(e)
+
             next_when = get_next_when(self.when)
             await serverboards.debug(
                 "Wait until %s: %02d:%02d:%02d (%d)" %
@@ -134,6 +140,7 @@ class RemoteCheck:
 
 @serverboards.rpc_method
 async def file_exists(id, service, file_expression, when):
+    await serverboards.debug("Set up backup watcher ready for %s" % (file_expression))
     rc = RemoteCheck(id, service, file_expression, when)
     await rc.start()
     await serverboards.debug("Backup watcher ready for %s" % (file_expression))
