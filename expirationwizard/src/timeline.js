@@ -57,6 +57,8 @@ const Timeline = React.createClass({
   gotoDate(date){
     date=date.format("YYYY-MM-DD")
     const vel = $(this.refs.list).find(`[data-date="${date}"]:first`)
+    if (!vel)
+      return
     const parent=vel.parent()
     const offset=vel.offset().top - parent.offset().top + parent.scrollTop()
     parent.scrollTop( offset )
