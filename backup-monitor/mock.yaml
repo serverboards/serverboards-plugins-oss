@@ -1,0 +1,15 @@
+action.trigger_wait:
+  - args: ["serverboards.core.ssh/exec", {"service": "XXX", "command": "stat -c '%y|%s|%n|' /etc/passwd; stat -f -c '%f|%s' /etc/passwd"}]
+    kwargs: {}
+    response:
+      exit: 0
+      stdout: 2018-10-08 21:06:08.887989467 +0200|300|passwd|21427142|4096
+  - args: ["serverboards.core.ssh/exec", {"service": "YYY", "command": "stat -c '%y|%s|%n|' /etc/passwd; stat -f -c '%f|%s' /etc/passwd"}]
+    kwargs: {}
+    response:
+      exit: 1
+      stdout: ""
+plugin.data.update:
+  - args: ["serverboards.backup.monitor", "test-d2bf3955944468903ce406e4c62df2a9e182fad5f8f456c656883821a206d9fd", {"state": "ok", "ok": true, "filename": "passwd", "size": 0.000286102294921875, "datetime": "2018-10-08T21:06:08.887989467+0200", "disk_free": 83699.7734375}]
+    kwargs: {}
+    response: ok

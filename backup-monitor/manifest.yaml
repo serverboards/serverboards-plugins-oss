@@ -1,23 +1,33 @@
 id: serverboards.backup.monitor
-name: Backup Manager
+name: Backup Monitor
 author: David Moreno <dmoreno@serverboards.io>
-version: 18.01
+version: 18.10
 description: |
-  Manage and monitor backups.
+  Monitor backups at SSH accessible servers.
+
+  It access using SSH into a remote server and checks if a given file is recent
+  enought (1 day old maximum). The file can be an expression with the current
+  or yesterdays day, or a glob.
+
+  This package does not perform backups. There is a `Backup Manager` package
+  for that.
 icon: database
+requires:
+  - serverboards.core.ssh
 
 components:
   - name: Remote file exists
     id: file_exists
     type: trigger
     states: exists not-exists
-    traits: url
+    traits: ssh server
     command: daemon
-    start:
+    call:
       method: file_exists
       params:
         - name: service
           type: service
+          traits: ssh server
         - name: file_expression
           type: text
           label: File Expression
@@ -34,17 +44,76 @@ components:
           placeholder: 9pm, 18:00
           description: |
             Time at when to check for file exists.
+      result:
+        state: "`ok`, `empty`, `old` or `not-exists`"
+        ok: True if the backup is recent, and with data
+        filename: Checked filename
+        disk_free: How much disk is free on this file partition, in MB (only if exists)
+        size: File size if MB (only if exists)
+        datetime: The datetime (ISO format) of the last modification (only if exists)
+
     stop: stop_file_exists
 
-  - name: Backup watcher
+  - name: Backup Monitor
     description: Watches backup all monitors in this serverboard for fast check if done
-    id: watcher
+    id: monitor
     type: widget
 
-  - name: Backup watcher manager
-    description: Eases the management of the rules for backup watchers
-    id: manager
-    type: --screen
+  - name: Backup monitoring
+    description: |
+      Checks every hour if there is a reent backup on a given SSH accessible
+      location.
+
+      On fail it creates a notification.
+
+      It checks everyday at 10am.
+    id: rule.backup.monitoring
+    type: rule template
+    traits: ssh server
+    icon: database blue
+    fields:
+      - name: service
+        label: SSH server where the files are
+        type: service
+        traits: url
+      - name: filename
+        label: Filename or glob to watch.
+        description: |
+          Full expression to check for file exists. May contain some variables,
+          or globs. Variables are: {today}, {today_}, {today_year},
+          {today_month}, {today_day}, {yesterday}, {yesteday_}... All full
+          dates in ISO format.
+    rule:
+      when:
+        trigger: file_exists
+        id: A
+        params:
+          when: 10am
+          service: "{{service.uuid}}"
+          file_expression: "{{filename}}"
+      actions:
+        - type: condition
+          id: B
+          condition: "A.ok"
+          then:
+            - type: action
+              action: serverboards.core.actions/open-issue
+              params:
+                issue: "rule/{{uuid}}"
+                title: "Backup at {{service.name}}:{{filename}} failed"
+                description: |
+                  Please check ASAP.
+
+                  * Server: {{A.service.name}}
+                  * Filename: {{A.filename}}
+                  * Size: {{A.size}}
+                  * Datetime: {{A.datetime}}
+          else:
+            - type: action
+              action: serverboards.core.actions/close-issue
+              params:
+                issue: "rule/{{uuid}}"
+                comment: "Backup is back to normal."
 
   - name: Daemon
     id: daemon
