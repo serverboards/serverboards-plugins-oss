@@ -15,7 +15,7 @@ serverboards-auth-helper: serverboards-auth-helper.c
 clean:
 	rm -rf serverboards-auth-helper
 
-FILES = $(wildcard manifest.yaml *.py *.txt *.sh static/ serverboards-auth-helper)
+FILES = $(wildcard manifest.yaml *.py *.txt *.sh static/ serverboards-auth-helper *.sudoers)
 PACKAGE_ID = $(shell awk '/^id:/ {print $$2}' manifest.yaml)
 
 .PHONY: txz
