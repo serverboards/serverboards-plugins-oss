@@ -43,8 +43,6 @@ const TimelineLine = React.createClass({
 const Timeline = React.createClass({
   getInitialState(){
     let marks = {}
-    const now = moment()
-    marks[now.format("YYYY-MM-DD")]="bold text teal"
 
     for (let exp of this.props.expirations){
       marks[moment(exp.date).format("YYYY-MM-DD")]="background light yellow"
