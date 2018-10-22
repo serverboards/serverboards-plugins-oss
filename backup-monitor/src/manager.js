@@ -84,12 +84,4 @@ const Manager=React.createClass({
   }
 })
 
-const main=function(el, config){
-  Serverboards.ReactDOM.render(React.createElement(Manager, {project: config.project}), el)
-
-  return function(){
-    Serverboards.ReactDOM.unmountComponentAtNode(el)
-  }
-}
-
-Serverboards.add_screen(plugin_id+"/manager", main)
+Serverboards.add_screen(plugin_id+"/manager", Manager, {react: true})

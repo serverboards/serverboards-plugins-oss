@@ -83,6 +83,10 @@ class RemoteCheck:
 
     async def check(self):
         filename = filename_template(self.file_expression)
+        assert ';' not in filename, "Filename can not have ;"
+        sha = hashlib.sha256(
+            (self.file_expression + "-" + self.service).encode('utf8')
+        ).hexdigest()
 
         # need to be into a list to force allow ; chain
         command = ["stat -c '%%y|%%s|%%n|' %s; stat -f -c '%%f|%%s' %s" % (filename, filename)]
@@ -111,15 +115,11 @@ class RemoteCheck:
                     "datetime": mydatetime,
                     "disk_free": int(res[3])*int(res[4])/(1024*1024),
                 }
-                sha = hashlib.sha256(
-                    (self.file_expression + "-" + self.service).encode('utf8')
-                ).hexdigest()
                 await serverboards.debug("File %s:%s exists, state %s" % (self.service, res[2], state))
-                await rpc.event("trigger", id=self.id, **data)
-                await rpc.call("plugin.data.update", plugin_id, 'test-'+sha, data)
             else:
-                await serverboards.debug("File %s:%s does not exist" % (self.service, filename))
-                await rpc.event("trigger", {"id": self.id, "state": "not-exists"})
+                data = {"state": "not-exists", "ok": False, "filename": self.file_expression}
+            await rpc.event("trigger", id=self.id, **data)
+            await rpc.call("plugin.data.update", plugin_id, 'test-'+sha, data)
             self.prev_exists = exists
 
     async def loop(self):

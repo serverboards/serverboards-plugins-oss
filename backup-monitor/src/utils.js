@@ -56,16 +56,16 @@ export function get_state({file_expression, service}){
     var key="test-"+hex(sha)
     return rpc.call("plugin.data.get",[plugin_id, key])
   } ).then( (data) => {
-    if (!data.filename){
+    if (!data.filename || !data.datetime){
       return {
         color: "red",
-        state: "Cant get data from any backup. Maybe not performed yet?"
+        state: "File does not exist."
       }
     }
     const is_old = old_backup(data.datetime)
     return {
       filename: data.filename,
-      datetime: data.datetime.slice(0,16).replace('T',' '),
+      datetime: data.datetime && data.datetime.slice(0,16).replace('T',' '),
       color: is_old ? "red" : "green",
       state: is_old ? "Old backup. Check ASAP" : "Ok",
       size: data.size,

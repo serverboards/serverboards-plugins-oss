@@ -12,10 +12,10 @@ node_modules/: package.json
 
 compile: static/watcher.js static/manager.js
 
-static/watcher.js: src/watcher.js
+static/watcher.js: src/*.js
 	node_modules/.bin/rollup -c rollup.watcher.config.js
 
-static/manager.js: src/manager.js
+static/manager.js: src/*.js
 	node_modules/.bin/rollup -c rollup.manager.config.js
 
 clean:
