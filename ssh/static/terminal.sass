@@ -1,22 +1,22 @@
-// Color scheme from http://color.smyck.org/, MIT license
+// Color scheme from https://github.com/Mayccoll/Gogh/blob/master/themes/elic.sh
 
-$color0: #191919
-$color1: #c85646
-$color2: #8eb33b
-$color3: #d0b03c
-$color4: #72b3cc
-$color5: #c8a0d1
-$color6: #218693
-$color7: #b0b0b0
+$color0: #303030
+$color1: #e1321a
+$color2: #6ab017
+$color3: #ffc005
+$color4: #729FCF
+$color5: #ec0048
+$color6: #f2f2f2
+$color7: #2aa7e7
 
 $color8: #5d5d5d
-$color9: #e09690
-$color10: #dcee69
-$color11: #ffe377
-$color12: #9cd9f0
-$color13: #fbb1f9
-$color14: #88dfd8
-$color15: #f7f7f7
+$color9: #ff361e
+$color10: #7bc91f
+$color11: #ffd00a
+$color12: #0071ff
+$color13: #ff1d62
+$color14: #4bb8fd
+$color15: #a020f0
 
 .ui.container > .terminal
   background: $color0
@@ -35,11 +35,12 @@ $color15: #f7f7f7
 
 .ui.tool.terminal div.ui.container pre
   flex-grow: 1
-  box-shadow: 0px 0px 5px rgba(0,0,0,1.0)
+  box-shadow: 0px 0px 5px $color0
   border: 0px
   margin: 2em auto
   width: calc( 100% - 4em)
   overflow: hidden
+  background: $color0
 
 .ui.tool.terminal .ui.header
   color: #ddd
@@ -55,12 +56,12 @@ $color15: #f7f7f7
   visibility: hidden
 
 
-.xterm-theme-serverboards
+.xterm-theme-serverboards.terminal
   .xterm-rows div
     line-height: 16px
     background: $color0
     span
-      padding-top: 4px
+      display: inline-block
 
   .xterm-color-0
     color: $color0
