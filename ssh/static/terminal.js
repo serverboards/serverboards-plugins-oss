@@ -96,9 +96,6 @@ function main(element, config){
     if (term.tabs.length>0){
       open_host(term.tabs[0].host)
     }
-    else{
-      add_new_tab()
-    }
     term.ssh.call("close", [host]).then(function(){
       console.log("Closed tab")
     }).catch(function(e){
@@ -143,7 +140,8 @@ function main(element, config){
     })
   }
   function viewport_resize(){
-    term.term.fit()
+    if (term.term)
+      term.term.fit()
   }
   function setup_host(host){
     term.host=host
@@ -206,12 +204,10 @@ function main(element, config){
         add_tab(config.service.config.url + " " + i, list[i][0])
       }
     }
-    if (new_term){
-      add_new_tab()
-    }
-    else{
+    if (!new_term){
       setup_host(term.tabs[0].host)
     }
+    update_tabs()
   }).catch(function(e){
     Flash.error("Could not start SSH session\n\n"+e)
   })
