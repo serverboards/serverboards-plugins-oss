@@ -7,10 +7,9 @@ class EditActionModel extends React.Component{
   constructor(props){
     super(props)
 
-    console.log(this)
     const services = this.props.services
     const service_id = this.props.action.service
-    const service = services.find( (s) => s.uuid == service_id )
+    const service = services && services.find( (s) => s.uuid == service_id )
 
     this.state = {
       actions: undefined,
@@ -23,6 +22,14 @@ class EditActionModel extends React.Component{
   }
   componentDidMount(){
     const self = this
+    const project = this.props.project
+    cache.services({project}).then( services => {
+      services = services.filter( s => s.projects.indexOf(project)>=0 )
+      const service_id = this.props.action.service
+      const service = services && services.find( (s) => s.uuid == service_id )
+      this.setState({services, service})
+    })
+
     cache.action_catalog().then( actions => {
       const action_id = self.props.action.action
       const action_template=actions.find( ac => ac.id == action_id )

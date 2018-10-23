@@ -25,7 +25,7 @@ class ListModel extends React.Component{
     }
   }
   componentDidMount(){
-    plugin.start_call_stop(`serverboards.optional.quickactions/command`, "list_actions", { serverboard: this.props.serverboard }).then( actions => {
+    plugin.start_call_stop(`serverboards.optional.quickactions/command`, "list_actions", { project: this.props.project }).then( actions => {
       console.log("got actions: %o", actions)
       this.setState({actions})
     })
@@ -74,7 +74,9 @@ class ListModel extends React.Component{
             action={extra.empty_action}
             onAccept={this.handleAcceptAddAction.bind(this)}
             services={this.props.services}
-            onClose={this.handleCloseEditAction.bind(this)}/>
+            onClose={this.handleCloseEditAction.bind(this)}
+            project={this.props.project}
+            />
         )
       else
         return (
@@ -82,7 +84,9 @@ class ListModel extends React.Component{
             action={this.state.edit}
             onAccept={this.handleAcceptEditAction.bind(this)}
             services={this.props.services}
-            onClose={this.handleCloseEditAction.bind(this)}/>
+            onClose={this.handleCloseEditAction.bind(this)}
+            project={this.props.project}
+            />
         )
     }
     return (

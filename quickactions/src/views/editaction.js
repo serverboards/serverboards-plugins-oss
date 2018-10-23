@@ -1,7 +1,8 @@
 const React = Serverboards.React
-const {GenericForm, SectionMenu} = Serverboards.Components
+const { GenericForm, SectionMenu } = Serverboards.Components
+const { i18n } = Serverboards
 
-class EditAction extends React.Component{
+class EditMenu extends React.Component{
   componentDidMount(){
     let self = this
     $(this.refs.star).checkbox({
@@ -9,7 +10,7 @@ class EditAction extends React.Component{
         self.props.onStar(true)
       },
       onUnchecked(){
-        self.props.onUpdateConfirmation(false)
+        self.props.onStar(false)
       }
     })
     $(this.refs.confirmation).checkbox({
@@ -20,6 +21,31 @@ class EditAction extends React.Component{
         self.props.onUpdateConfirmation(false)
       }
     })
+  }
+  render(){
+    const props=this.props
+    const action = props.action
+    return (
+      <React.Fragment>
+        <h2 className="ui header padding" style={{paddingLeft: 10}}>Edit {action.name || "action"}</h2>
+        <span className="ui item stretch"/>
+        <div ref="confirmation" className="field ui toggle checkbox" style={{paddingRight: 10}}>
+          <input type="checkbox" defaultChecked={action.confirmation} onChange={(ev) => props.onUpdateConfirmation(ev.target.value)}/>
+          <label>{i18n("Require confirmation")}</label>
+        </div>
+        <div ref="star" className="field ui toggle checkbox">
+          <input type="checkbox" defaultChecked={action.star} onChange={(ev) => props.onStar(ev.target.value)}/>
+          <label>{i18n("Show at widget")}</label>
+        </div>
+        <span style={{width: 10}}/>
+      </React.Fragment>
+    )
+  }
+}
+
+
+class EditAction extends React.Component{
+  componentDidMount(){
     $(this.refs.form).find('.dropdown').dropdown()
   }
   render(){
@@ -27,21 +53,7 @@ class EditAction extends React.Component{
     const action = props.action
     return (
       <div ref="form" className="ui scroll">
-        <SectionMenu menu={() => (
-          <React.Fragment>
-            <h3 className="ui header">Edit {action.name || "action"}</h3>
-            <div className="right menu" style={{alignItems: "center", paddingRight: 20}}>
-              <div ref="confirmation" className="field ui toggle checkbox" style={{paddingRight: 10}}>
-                <input type="checkbox" defaultChecked={action.confirmation}  onChange={(ev) => props.onUpdateConfirmation(ev.target.value)}/>
-                <label>Require confirmation</label>
-              </div>
-              <div ref="star" className="field ui toggle checkbox">
-                <input type="checkbox" defaultChecked={action.star}  onChange={(ev) => props.onStar(ev.target.value)}/>
-                <label>Show at widget</label>
-              </div>
-            </div>
-          </React.Fragment>
-        )}/>
+        <SectionMenu menu={EditMenu} {...props}/>
 
         <div className="ui scroll">
           <div className="ui text container">
@@ -101,7 +113,7 @@ class EditAction extends React.Component{
             </div>
 
             <div className="ui buttons" style={{marginTop: 30}}>
-              <button onClick={props.onAccept} className="ui yellow button">Update quick action</button>
+              <button onClick={props.onAccept} className="ui teal button">Update quick action</button>
               <button onClick={props.onClose} className="ui grey button">Cancel</button>
             </div>
           </div>
