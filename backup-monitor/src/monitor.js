@@ -55,4 +55,4 @@ class Widget extends React.Component{
 
 
 
-Serverboards.add_widget(plugin_id+"/watcher", Widget, {react: true})
+Serverboards.add_widget(plugin_id+"/monitor", Widget, {react: true})
