@@ -102,7 +102,7 @@ class EditAction extends React.Component{
                   <label>Action</label>
                   <select className="ui dropdown search" defaultValue={action.action} onChange={(ev) => props.onActionChange(ev.target.value)}>
                     <option value=".">No action selected</option>
-                    {props.actions.map( (s) => (
+                    {Object.values(props.actions).map( (s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>

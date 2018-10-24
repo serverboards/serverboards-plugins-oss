@@ -2,24 +2,24 @@
 
 import uuid
 import serverboards
-from serverboards import rpc
+from serverboards import rpc, print
 
-service_serverboards_cache = {}
+service_projects_cache = {}
 
 
-def service_in_project(service, serverboard):
+def service_in_project(service, project):
+    print("service is", service)
     if not service:
         return True
-    serverboards = service_serverboards_cache.get(service)
-    if not serverboards:
+    projects = service_projects_cache.get(service)
+    if not projects:
         try:
-            serverboards = rpc.call("service.get", service)["projects"]
-            service_serverboards_cache[service] = serverboards
-        except Exception:
-            import traceback
-            traceback.print_exc()
-            serverboards = []
-    return serverboard in serverboards
+            projects = rpc.call("service.get", service)["projects"]
+            service_projects_cache[service] = projects
+        except Exception as e:
+            serverboards.log_traceback(e)
+            projects = []
+    return project in projects
 
 
 @serverboards.rpc_method

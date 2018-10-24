@@ -2,6 +2,7 @@ const {React} = Serverboards
 const random_color = Serverboards.utils.random_color
 
 function find_service(service_id, services){
+  console.log("Services are ", services, service_id)
   return services.find(s => s.uuid == service_id) || {name: service_id}
 }
 

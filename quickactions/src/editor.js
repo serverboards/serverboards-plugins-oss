@@ -6,8 +6,6 @@ function View(props){
   return (
     <ActionList
       project={props.project.shortname}
-      services={props.project.services}
-      setSectionMenu={props.setSectionMenu}
       />
   )
 }

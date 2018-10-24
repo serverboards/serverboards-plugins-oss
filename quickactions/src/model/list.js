@@ -1,4 +1,4 @@
-const {React, plugin, Flash} = Serverboards
+const {React, plugin, Flash, cache} = Serverboards
 import View from '../views/list'
 import TopMenu from '../views/topmenu'
 import EditAction from './editaction'
@@ -21,13 +21,19 @@ class ListModel extends React.Component{
 
     this.state = {
       edit: undefined,
-      actions: undefined
+      actions: undefined,
+      services: [],
     }
   }
   componentDidMount(){
     plugin.start_call_stop(`serverboards.optional.quickactions/command`, "list_actions", { project: this.props.project }).then( actions => {
-      console.log("got actions: %o", actions)
+      // console.log("got actions: %o", actions)
       this.setState({actions})
+    })
+    const project = this.props.project
+    cache.services({project}).then( services => {
+      services = services.filter( s => s.projects.indexOf(project)>=0 )
+      this.setState({services})
     })
   }
   handleRunAction(a){
@@ -73,7 +79,7 @@ class ListModel extends React.Component{
           <EditAction
             action={extra.empty_action}
             onAccept={this.handleAcceptAddAction.bind(this)}
-            services={this.props.services}
+            services={this.state.services}
             onClose={this.handleCloseEditAction.bind(this)}
             project={this.props.project}
             />
@@ -83,7 +89,7 @@ class ListModel extends React.Component{
           <EditAction
             action={this.state.edit}
             onAccept={this.handleAcceptEditAction.bind(this)}
-            services={this.props.services}
+            services={this.state.services}
             onClose={this.handleCloseEditAction.bind(this)}
             project={this.props.project}
             />
@@ -94,6 +100,7 @@ class ListModel extends React.Component{
         <SectionMenu menu={TopMenu} onAddQuickAction={this.handleOpenAddAction.bind(this)}/>
         <View {...this.props} {...this.state}
           onRunAction={this.handleRunAction.bind(this)}
+          services={this.state.services}
           onConfigureAction={this.handleConfigureAction.bind(this)}
           onOpenAddAction={this.handleOpenAddAction.bind(this)}
           />

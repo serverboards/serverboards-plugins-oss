@@ -7,13 +7,11 @@ class EditActionModel extends React.Component{
   constructor(props){
     super(props)
 
-    const services = this.props.services
-    const service_id = this.props.action.service
+    const service_id = props.action.service
     const service = services && services.find( (s) => s.uuid == service_id )
 
     this.state = {
       actions: undefined,
-      services,
       action: merge(this.props.action, {}),
       action_template: undefined,
       service,
@@ -21,37 +19,29 @@ class EditActionModel extends React.Component{
     }
   }
   componentDidMount(){
-    const self = this
-    const project = this.props.project
-    cache.services({project}).then( services => {
-      services = services.filter( s => s.projects.indexOf(project)>=0 )
-      const service_id = this.props.action.service
-      const service = services && services.find( (s) => s.uuid == service_id )
-      this.setState({services, service})
-    })
+    const props = this.props
+    const project = props.project
 
     cache.action_catalog().then( actions => {
-      const action_id = self.props.action.action
-      const action_template=actions.find( ac => ac.id == action_id )
-      self.setState({ actions, action_template })
-      return action_template
-    }).then( (action_template) => {
-      self.updateFormFields(action_template, this.state.service)
+      const action_id = props.action.action
+      const action_template=actions[action_id]
+      this.setState({ actions, action_template })
+      this.updateFormFields(action_template)
     })
   }
   handleActionChange(action_id){
     const action_template = this.findActionTemplate(action_id)
     this.setState({action_template, action: merge(this.state.action, {action: action_id})})
-    this.updateFormFields(action_template, this.state.service)
+    this.updateFormFields(action_template)
   }
-  updateFormFields(action_template, service){
+  updateFormFields(action_template){
     if (!action_template)
       this.setState({form_fields: []})
     else{
       let form_fields = action_template.extra.call.params
-
+      const service = this.state.service
       if (service != undefined){
-        const service_params = service.fields.map( (f) => f.name )
+        const service_params = Object.keys(service.config)
         form_fields = form_fields.filter( (p) => service_params.indexOf(p.name)<0 )
       }
       this.setState({form_fields})
@@ -63,7 +53,7 @@ class EditActionModel extends React.Component{
     this.updateFormFields(this.state.action_template, service)
   }
   findActionTemplate(action_id){
-    return this.state.actions.find( ac => ac.id == action_id )
+    return this.state.actions[action_id]
   }
   findService(service_id){
     return this.state.services.find( (s) => s.uuid == service_id )
