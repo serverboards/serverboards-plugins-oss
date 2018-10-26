@@ -11,6 +11,7 @@ node_modules/: package.json
 	yarn
 
 compile: static/node_list.js
+	cp src/*.svg src/list.html src/list.js static/
 
 static/node_list.js: src/index.js
 	node_modules/.bin/rollup -c
