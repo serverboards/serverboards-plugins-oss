@@ -17,13 +17,13 @@ const Console=React.createClass({
       loading_database: true,
       loading_tables: false,
       loading_data: false,
-      service: this.props.data.service.uuid,
+      service: this.props.service.uuid,
     }
   },
   componentDidMount(){
     Promise.all([
       plugin.start("serverboards.remotesql/daemon"),
-      rpc.call("service.get", [this.props.data.service.uuid])
+      rpc.call("service.get", [this.props.service.uuid])
     ]).then( (plugin_service) => {
       let plugin = plugin_service[0]
       let service = plugin_service[1]
