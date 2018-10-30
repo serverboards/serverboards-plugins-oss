@@ -1,8 +1,8 @@
 #!env/bin/python
 
 from serverboards_google import setup, get_drive
-from serverboards_google import discovery, async_execute
-from serverboards_aio import rpc, curio
+from serverboards_google import async_execute
+from serverboards_aio import curio
 from pcolor import printc
 import serverboards_aio as serverboards
 import sys
@@ -10,7 +10,7 @@ import yaml
 import time
 from cache import Cache
 from sheets import extractor_sheets, schema_sheets, append_to_sheet
-
+_ = str
 cache = Cache("~/google-drive.db")
 
 setup(
@@ -32,9 +32,10 @@ async def get_file_info(drive_service, fileid, fields=None):
             return drive_service.files().get(
                 fileId=fileid, fields=fieldsl).execute()
         except Exception as e:
-            serverboards.log_traceback()
+            serverboards.log_traceback(e)
             return {}
     return (await serverboards.sync(threaded))
+
 
 @cache.a(ttl=30000)
 async def get_file_data(service_id, file):
@@ -88,7 +89,7 @@ async def get_changes_raw(service_id):
     while page_token is not None:
         response = await async_execute(
             drive_service.changes().list(pageToken=page_token,
-                                        spaces='drive')
+                                         spaces='drive')
         )
         for change in response.get('changes'):
             # Process change
@@ -248,12 +249,14 @@ async def start_watcher():
     watcher = DriveWatcher()
     watcher.loop_task = await curio.spawn(watcher.loop)
 
+
 @serverboards.rpc_method
 async def watch_start(id, service_id, expression, *args, **kwargs):
     if not watcher:
         await start_watcher()
     await watcher.add_trigger(id, service_id, expression)
     return id
+
 
 @serverboards.rpc_method
 def watch_stop(id):
@@ -266,9 +269,23 @@ async def drive_is_up(service):
         if (await get_drive(service["uuid"])):
             return "ok"
         else:
-            return "nok"
-    except Exception:
-        return "unauthorized"
+            return {
+                "status": "unauthorized",
+                "message": _(
+                    'Could not connect with google drive. '
+                    'You don\'t have the appropiate credentials. '
+                    'Try to re-authorize again.'
+                )
+            }
+    except Exception as e:
+        await serverboards.log_traceback(e, service_id=service["uuid"])
+        return {
+            "status": "error",
+            "code": str(e),
+            "message": _(
+                'There was a plugin error checking Google Drive access. '
+                'Please check the configuration: %s') % str(e)
+        }
 
 
 SCHEMA = {
