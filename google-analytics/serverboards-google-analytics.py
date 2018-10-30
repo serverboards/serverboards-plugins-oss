@@ -22,6 +22,7 @@ OAUTH_AUTH_REVOKE_URL = "https://accounts.google.com/o/oauth2/token"
 
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 settings = {}
+_ = str
 
 
 @serverboards.cache_ttl(30)
@@ -177,7 +178,6 @@ async def store_code(url_form_id, code):
 # @serverboards.cache_ttl(60)
 async def get_analytics(service_id, version='v4'):
     """
-    This method may block as it uses the
     """
     # print("Get analytics", service_id)
 
@@ -345,9 +345,23 @@ async def analytics_is_up(service):
         if await get_analytics(service["uuid"]):
             return "ok"
         else:
-            return "nok"
-    except Exception:
-        return "unauthorized"
+            return {
+                "status": "unauthorized",
+                "message": _(
+                    'Could not connect with google analytics. '
+                    'You don\'t have the appropiate credentials. '
+                    'Try to re-authorize again.'
+                )
+            }
+    except Exception as e:
+        await serverboards.log_traceback(e, service_id=service["uuid"])
+        return {
+            "status": "error",
+            "code": str(e),
+            "message": _(
+                'There was a plugin error checking Google Analytics access. '
+                'Please check the configuration: %s') % str(e)
+        }
 
 
 ACCOUNT_COLUMNS = [
