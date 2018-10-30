@@ -9,19 +9,18 @@ import re
 import random
 import urllib.parse as urlparse
 import base64
-from io import StringIO
 from common import ID_RSA, ensure_ID_RSA, CONFIG_FILE
 from pcolor import printc
 import signal
 import ctypes
-libc = ctypes.CDLL("libc.so.6")
-sys.path.append(os.path.join(os.path.dirname(__file__), '../bindings/python/'))
 import serverboards_aio as serverboards
-from serverboards_aio import print, rpc, cache_ttl
+from serverboards_aio import print, cache_ttl
 from curio import subprocess
 import curio
-
+libc = ctypes.CDLL("libc.so.6")
 sys.stdout = sys.stderr
+_ = str
+
 
 def set_pdeathsig(sig=signal.SIGTERM):
     def callable():
@@ -651,7 +650,7 @@ async def scp(fromservice=None, fromfile=None,
         return True
     except Exception as e:
         import traceback
-        traceback.print_exc()
+        traceback.print_exc(e, service_id=[fromservice, toservice], **context)
         pass
     await serverboards.error(
         "Could not copy from %s:%s to %s:%s" %
@@ -664,27 +663,51 @@ async def ssh_is_up(service):
     try:
         async with curio.timeout_after(10):
             result = await run(service=service, command=["true"])
-            config = service["config"]
             if result["exit"] == 0:
                 return "ok"
             elif "No route to host" in result["stderr"]:
-                await serverboards.error(
-                    "Cant connect host: ",
-                    config["url"], stderr=result["stderr"],
-                    url=config["url"], service_id=service["uuid"])
-                return "error"
+                return {
+                    "status": "error",
+                    "message": _("Could not run the `true` program at the remote host."),
+                    **result
+                }
             elif "unauthorized" in result["stderr"]:
-                await serverboards.error(
-                    "Not authorized. Did you share the public SSH RSA key?",
-                    url=config["url"], service_id=service["uuid"])
-                return "not-authorized"
+                return {
+                    "status": "not-authorized",
+                    "messages": _(
+                        'The server returned an unauthorized message. '
+                        'Please ensure the SSH keys are properly shared.')
+                }
+            elif 'Could not resolve hostname' in result["stderr"]:
+                return {
+                    "status": "error",
+                    "message": _("Could not resolve hostname `%s`") % service["config"].get("url"),
+                }
+            elif 'Host key verification failed' in result["stderr"]:
+                return {
+                    "status": "error",
+                    "message": _("Host key verification failed at `%s`") % service["config"].get("url"),
+                }
             else:
-                return "nok"
+                return {
+                    "status": "nok",
+                    "message":
+                        _('Unknown invalid status:\n\n ```%s```.\n\n Check the service logs.') % result["stderr"],
+                    **result
+                }
     except curio.TaskTimeout:
-        return "timeout"
+        return {
+            "status": "timeout",
+            "message": _(
+                'Connection to the SSH server timedout after 10 seconds.'
+                ' Maybe it is down or a firewall prevents access?')
+        }
     except Exception as e:
-        serverboards.log_traceback(e)
-        return "error"
+        serverboards.log_traceback(e, service_id=service["uuid"])
+        return {
+            "status": "error",
+            "message": "There was an uncontrolled error: %s" % e,
+        }
 
 
 async def test():
