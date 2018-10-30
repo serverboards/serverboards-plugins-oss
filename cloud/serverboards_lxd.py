@@ -3,6 +3,7 @@
 import json
 import serverboards
 from serverboards import rpc, Plugin, print
+_ = str
 
 PRIVATE_IP_MASKS = [
     "192.168.",
@@ -93,8 +94,10 @@ def details_(node, extra=False):
 @serverboards.rpc_method("list")
 def list_(service):
     sudo = maybe_sudo(service)
-    json_data = ssh.run(service=service["config"]["server"], command=[*sudo, "lxc", "list", "--format=json"])["stdout"]
-    data = json.loads(json_data)
+    cmdres = ssh.run(service=service["config"]["server"], command=[*sudo, "lxc", "list", "--format=json"])
+    if cmdres["exit"] != 0:
+        raise Exception(cmdres["stderr"])
+    data = json.loads(cmdres["stdout"])
     ret = []
     for node in data:
         ret.append(details_(node, extra=False))
@@ -115,7 +118,7 @@ def start(service, vmc):
     sudo = maybe_sudo(service)
     try:
         ssh.run(service=service["config"]["server"], command=[*sudo, "lxc", "start", vmc])
-    except:
+    except Exception:
         import traceback
         traceback.print_exc()
         return False
@@ -127,11 +130,23 @@ def stop(service, vmc, force=False):
     sudo = maybe_sudo(service)
     try:
         ssh.run(service=service["config"]["server"], command=[*sudo, "lxc", "stop", vmc])
-    except:
+    except Exception:
         import traceback
         traceback.print_exc()
         return False
     return True
 
+
+@serverboards.rpc_method
+def lxd_is_up(service):
+    try:
+        list_(service)
+        return "ok"
+    except Exception as e:
+        return {
+            "status": "nok",
+            "message": _("Could not communicate with LXD: %s") % str(e).split('\n')[0],
+            "stderr": str(e)
+        }
 
 serverboards.loop()

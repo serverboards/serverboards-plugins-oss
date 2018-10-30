@@ -234,6 +234,11 @@ components:
           and no password.
 
           Check https://forum.serverboards.io for more information.
+    status:
+      command: serverboards.cloud/lxd-daemon
+      call: lxd_is_up
+      frequency: 1h
+
   - id: lxd-daemon
     name: LXD Daemon
     type: cmd
