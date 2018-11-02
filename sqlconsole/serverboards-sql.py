@@ -60,11 +60,12 @@ class Connection:
         self.conn.close()
 
     def connect_port(self, via, hostname, port):
-        rpc.debug("Connection via %s" % via)
-        with serverboards.Plugin("serverboards.core.ssh/daemon") as ssh:
-            self.port = ssh.open_port(
-                service=via, hostname=hostname, port=port)
-        rpc.debug("Use port  %s" % self.port)
+        serverboards.debug("Connection via %s" % via)
+        serverboards.plugin.call(
+            "serverboards.core.ssh/daemon", "open_port",
+            service=via, hostname=hostname, port=port
+        )
+        serverboards.debug("Use port  %s" % self.port)
         hostname = "localhost"
         return (hostname, self.port)
 
