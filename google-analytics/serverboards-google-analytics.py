@@ -386,13 +386,13 @@ RT_COLUMNS = [
 @serverboards.rpc_method
 def basic_schema(config, table=None):
     if not table:
-        return ["account", "data", "rt"]
+        return ["account", "visits", "rt"]
 
     if table == "account":
         return {
             "columns": ACCOUNT_COLUMNS
         }
-    if table == "data":
+    if table == "visits":
         return {
             "columns": DATA_COLUMNS
         }
@@ -408,7 +408,7 @@ async def basic_extractor(config, table, quals, columns):
     # print("At basic extractor", table)
     if table == "account":
         return await basic_extractor_accounts(config, quals, columns)
-    if table == "data":
+    if table == "visits":
         return await basic_extractor_data(config, quals, columns)
     if table == "rt":
         return await rt_extractor(config, quals, columns)
@@ -634,7 +634,7 @@ async def test():
         tables = basic_schema({})
         assert tables != []
 
-        data = basic_schema({}, "data")
+        data = basic_schema({}, "visits")
         assert data != []
         data = basic_schema({}, "rt")
         assert data != []
@@ -650,12 +650,12 @@ async def test():
         print("acc", accounts, color="blue")
 
         data = await basic_extractor(
-            config, "data", [
+            config, "visits", [
                 ("profile_id", "=", "102828992"),
                 ("datetime", ">=", "2017-01-01"),
                 ("datetime", "<=", "2017-01-31")
             ], DATA_COLUMNS)
-        print("data", data, color="blue")
+        print("visits", data, color="blue")
 
         print("Success", color="green")
         sys.exit(0)
