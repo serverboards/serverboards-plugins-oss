@@ -61,11 +61,11 @@ class Connection:
 
     def connect_port(self, via, hostname, port):
         serverboards.debug("Connection via %s" % via)
-        serverboards.plugin.call(
+        self.port = serverboards.plugin.call(
             "serverboards.core.ssh/daemon", "open_port",
             service=via, hostname=hostname, port=port
         )
-        serverboards.debug("Use port  %s" % self.port)
+        serverboards.debug("Use loal port %s" % self.port)
         hostname = "localhost"
         return (hostname, self.port)
 
@@ -113,9 +113,18 @@ class MySQL(Connection):
         super().__init__()
         if via:
             hostname, port = self.connect_port(via, hostname, port)
-        self.conn = MySQLdb.connect(
-            db=database, user=username, passwd=password_pw,
-            host=hostname, port=port)
+            if hostname == 'localhost':
+                hostname = '127.0.0.1'  # to force TCP
+        condata = dict(
+            db=database,
+            host=hostname, port=port
+        )
+        if username:
+            condata["user"] = username
+        if password_pw:
+            condata["passwd"] = password_pw
+        print(condata)
+        self.conn = MySQLdb.connect(**condata)
 
     def databases(self):
         return [
