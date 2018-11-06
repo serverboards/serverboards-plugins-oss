@@ -65,7 +65,7 @@ class Connection:
             "serverboards.core.ssh/daemon", "open_port",
             service=via, hostname=hostname, port=port
         )
-        serverboards.debug("Use loal port %s" % self.port)
+        serverboards.debug("Use local port %s" % self.port)
         hostname = "localhost"
         return (hostname, self.port)
 
@@ -123,7 +123,6 @@ class MySQL(Connection):
             condata["user"] = username
         if password_pw:
             condata["passwd"] = password_pw
-        print(condata)
         self.conn = MySQLdb.connect(**condata)
 
     def databases(self):
@@ -136,6 +135,16 @@ class MySQL(Connection):
         return [
             x[0] for x in
             execute("SHOW TABLES;")["data"]
+        ]
+
+    def columns(self, table):
+        assert ';' not in table
+        assert ' ' not in table
+        assert '"' not in table
+        assert "'" not in table
+        return [
+            x[0] for x in
+            execute("SHOW COLUMNS FROM %s" % (table))["data"]
         ]
 
 
