@@ -14,7 +14,7 @@ description: |
 
   Prometheus configuration is done adding services that will define which
   external services exist, or even installs  data exporter agents as required.
-version: "18.01"
+version: "18.10"
 icon: prometheus.svg
 
 

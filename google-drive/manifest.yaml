@@ -10,7 +10,7 @@ description: |
 
   It also provides an extractor that is able to read Google Sheet files in
   real time and show that data into any USQ widget.
-version: "18.01"
+version: "18.10"
 postinst: postinst.sh
 icon: google-drive.svg
 

@@ -1,7 +1,7 @@
 id: serverboards.backup.monitor
 name: Backup Monitor
 author: David Moreno <dmoreno@serverboards.io>
-version: 18.10
+version: "18.10"
 description: |
   Monitor backups at SSH accessible servers.
 

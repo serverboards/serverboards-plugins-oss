@@ -3,7 +3,7 @@ name: Facebook Ads Integration
 description: |
   Provides access to metrics from facebook ads.
 author: David Moreno <dmoreno@serverboards.io>
-version: "18.01"
+version: "18.10"
 icon: facebookads.svg
 
 

@@ -1,7 +1,7 @@
 id: serverboards.cloud
 name: Optional core cloud services
 author: David Moreno <dmoreno@serverboards.io>
-version: 18.10
+version: "18.10"
 description: >
   Definition an basic usage of cloud services.
 

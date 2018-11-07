@@ -1,7 +1,7 @@
 id: serverboards.docker
 name: Docker integration
 author: David Moreno <dmoreno@serverboards.io>
-version: 18.01
+version: "18.10"
 description: >
   Basic docker integration on any SSH accesible docker server.
 icon: blue docker

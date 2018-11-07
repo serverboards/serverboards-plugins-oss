@@ -15,7 +15,7 @@ description: |
   action is taken to extend the expiration.
 url: https://github.com/serverboards/serverboards-plugins-oss/
 postinst: postinst.sh
-version: "18.01"
+version: "18.10"
 i18n: true
 icon: hourglass half
 
