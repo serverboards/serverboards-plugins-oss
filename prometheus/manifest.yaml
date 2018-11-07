@@ -24,6 +24,7 @@ components:
     name: Prometheus
     description: Access to an existing Prometheus instance.
     traits: prometheus url cloud server
+    icon: prometheus.svg
     fields:
       - name: via
         label: Via service
@@ -84,6 +85,11 @@ components:
   - id: widget
     type: widget
     name: Prometheus graph
+    icon: prometheus.svg
+    description: |
+      Use [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/)
+      to query prometheus state and show graphs.
+      ([More info](https://serverboards.io/blog/2018/04/16/promql))
     params:
       - label: Prometheus service
         name: service
@@ -130,6 +136,7 @@ components:
     type: trigger
     command: daemon
     traits: prometheus cloud server
+    icon: prometheus.svg
     start:
       method: watch_start
       params:

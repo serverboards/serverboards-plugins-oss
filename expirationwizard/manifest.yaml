@@ -60,6 +60,7 @@ components:
 
   - id: widget
     type: widget
+    icon: calendar check outline
     name: Expirations
     hints:
       minW: 2

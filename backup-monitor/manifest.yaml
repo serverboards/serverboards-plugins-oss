@@ -58,7 +58,7 @@ components:
     description: Watches backup all monitors in this serverboard for fast check if done
     id: monitor
     type: widget
-
+    icon: database
   - name: Backup monitoring
     description: |
       Checks every hour if there is a reent backup on a given SSH accessible

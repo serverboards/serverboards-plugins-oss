@@ -265,21 +265,21 @@ async def connect_url_via_status(url, via):
 async def prometheus_is_up(service):
     return await connect_url_via_status(
         url=service["config"].get("url") or "http://localhost:9090",
-        via=service["config"]["via"])
+        via=service["config"].get("via"))
 
 
 @serverboards.rpc_method
 async def agent_is_up(service):
     return await connect_url_via_status(
         url=service["config"].get("url") or "http://localhost:9090",
-        via=service["config"]["via"])
+        via=service["config"].get("via"))
 
 
 @serverboards.rpc_method
 async def node_exporter_is_up(service):
     return await connect_url_via_status(
         url=service["config"].get("url") or "http://localhost:9100",
-        via=service["config"]["server"])
+        via=service["config"].get("server"))
 
 
 async def test():
