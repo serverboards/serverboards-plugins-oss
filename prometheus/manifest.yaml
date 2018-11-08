@@ -37,6 +37,8 @@ description: |
 
 version: "18.10"
 icon: prometheus.svg
+requires:
+  - serverboards.core.ssh
 
 
 components:
@@ -95,6 +97,15 @@ components:
     description: |
       Install a node exporter on the given SSH server. This server will start
       providing metrics to the package provided Prometheus server.
+
+      This services try to copy and install as root the node_exporter into
+      /opt/serverboards/bin . On current Ubuntu and related distributios this
+      fails, as normally it's not possible to ssh directly into root.
+
+      For these systems it is suggested to install the local
+      `prometheus-node-exporter` package, and use the `Prometeus Target`, using
+      the appropiate SSH server as bridge (via) and `localhost:9100` as URL.
+
     traits: prometheus.node server
     icon: prometheus.svg
     fields:
