@@ -146,6 +146,12 @@ components:
           Its possible to set several graphs, one on each line.
 
           Each graph can have a name set as `name:` at the begining of the definition.
+
+          Due to the work Prometheus work, you must indicate the node name in your
+          expressions (`{service=service_name}` or `{instance=uuid}`) and in some
+          cases data can be duplicated.
+
+
         placeholder: "scrape_duration_seconds"
         autocomplete:
           command: serverboards.prometheus/daemon

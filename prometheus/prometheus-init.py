@@ -247,11 +247,9 @@ def update_promservices_yaml():
 
             labels = {
                 "projects": ','.join(s["projects"]),
-                "instance": s["uuid"]
+                "instance": s["uuid"],
+                "name": s["name"]
             }
-            tags = s["tags"]
-            if tags:
-                labels["tags"] = ','.join(tags)
 
             promservices.append({
                 "targets": [target],
