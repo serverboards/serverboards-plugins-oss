@@ -14,6 +14,7 @@ class Widget extends React.Component{
       end,
       error: null,
       loading: true,
+      Lines: undefined,
     }
     this.update = this.update.bind(this)
   }
@@ -21,13 +22,16 @@ class Widget extends React.Component{
     this.update()
     store.on("project.daterange.start", this.update)
     store.on("project.daterange.end", this.update)
+    plugin.load("serverboards.core.widgets/lines.js")
+      .then(() => plugin.do_widget("serverboards.core.widgets/lines"))
+      .then( widget => this.setState({"Lines": widget.component}) )
   }
   componentWillUnmount(){
     store.off("project.daterange.start", this.update)
     store.off("project.daterange.end", this.update)
   }
   update(data={}){
-    console.log("Update", data, this.props)
+    // console.log("Update", data, this.props)
     const config = data.config || this.props.config
     const {start, end} = this.state
 
@@ -39,8 +43,6 @@ class Widget extends React.Component{
       service: config.service,
     }
 
-    console.log("Get %o", params)
-
     plugin.call("serverboards.prometheus/daemon", "get", params)
           .then( (data) => {
       // console.log("Got data", data, params)
@@ -49,21 +51,29 @@ class Widget extends React.Component{
         this.setState({error: i18n("No data received"), loading: false})
       }
       else{
-        this.setState({data, loading: false})
+        const dt = []
+        for (const series of data){
+          const cat = series.name
+          for (const val of series.values){
+            dt.push([cat, moment.unix(val[0]).format("HH:mm:ss"), val[1]])
+          }
+        }
+
+        this.setState({data: {"columns": ["","",""], "rows": dt}, loading: false})
       }
     }).catch( (error) => {
       this.setState({error, loading: false})
     })
   }
   componentWillReceiveProps(newprops){
-    console.log("new props", newprops.config)
     if (!object_is_equal(newprops.config, this.props.config)){
+      console.log("new props", newprops.config)
       this.update({config: newprops})
     }
   }
   render(){
     // console.log("render", this.state)
-    if (this.state.loading){
+    if (this.state.loading || !this.state.Lines){
       return (
         <Loading/>
       )
@@ -73,10 +83,19 @@ class Widget extends React.Component{
         <Error>{this.state.error}</Error>
       )
     }
+    const Lines = this.state.Lines
+
+    const config = {
+      fill: "blue",
+      show_legend: "bottom",
+      summary: null,
+      performance: null,
+      data: this.state.data,
+      spacing: 100,
+    }
+
     return (
-      <pre>
-        {JSON.stringify(this.state.data, undefined, 2)}
-      </pre>
+      <this.state.Lines {...this.props} config={config}/>
     )
   }
 }
