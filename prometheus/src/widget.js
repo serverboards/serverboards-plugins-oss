@@ -1,69 +1,84 @@
-(function(){
-  let widget_id = "serverboards.prometheus/widget"
-  let {rpc, moment, store, i18n, plugin} = Serverboards
-  let {LineGraph} = Serverboards.graphs
+const widget_id = "serverboards.prometheus/widget"
+const {React, moment, store, i18n, plugin} = Serverboards
+const {Error, Loading} = Serverboards.Components
+const {object_is_equal} = Serverboards.utils
 
-  function main(el, config, context){
-    //console.log("Prom config is %o", config)
-    let prometheus = new plugin.PluginCaller("serverboards.prometheus/daemon")
-    let $el=$('<div>')
-    $(el).append($el)
-    const service_id = config.service.uuid || config.service  // from 18.04 services does not provide all data.
+class Widget extends React.Component{
+  constructor(props){
+    super(props)
+    const {start, end} = store.getState().project.daterange
 
-    let graph=new LineGraph($el[0])
-    function update(){
-      const {start, end} = store.getState().project.daterange
-      let title
-      {
-        const has_title=config.expr.indexOf(':') < 20
-        if (has_title){
-          title=config.expr.split(':')[0]
-        }
-        else{
-          title="Prometheus"
-        }
-      }
+    this.state = {
+      data: undefined,
+      start,
+      end,
+      error: null,
+      loading: true,
+    }
+    this.update = this.update.bind(this)
+  }
+  componentDidMount(){
+    this.update()
+    store.on("project.daterange.start", this.update)
+    store.on("project.daterange.end", this.update)
+  }
+  componentWillUnmount(){
+    store.off("project.daterange.start", this.update)
+    store.off("project.daterange.end", this.update)
+  }
+  update(data={}){
+    console.log("Update", data, this.props)
+    const config = data.config || this.props.config
+    const {start, end} = this.state
 
-      const params = {
-        expression: config.expr,
-        start: start.format("X"),
-        end: end.format("X"),
-        step: Math.max(end.diff(start,"seconds") / 256, 14),
-        service: service_id
-      }
-
-      return prometheus.call("get", params).then( (data) => {
-        // console.log("Got data", data, params)
-        if (data.length==0){
-          console.log("No data from %o", params)
-          graph.set_error(i18n("No data received"))
-        }
-        else{
-          graph.set_data(data)
-          context.setTitle(title)
-        }
-      }).catch( (e) => {
-        graph.set_error(e)
-      })
+    const params = {
+      expression: config.expr,
+      start: start.format("X"),
+      end: end.format("X"),
+      step: Math.max(end.diff(start,"seconds") / 256, 14),
+      service: config.service,
     }
 
-    store.on("project.daterange.start", update)
-    store.on("project.daterange.end", update)
-    let calls=[]
+    console.log("Get %o", params)
 
-    if (calls.length>0){
-      Promise.all(calls).then( () =>
-        update()
-      )
-    } else {
-      update()
-    }
-
-    return function(){
-      store.off("project.daterange.start", update)
-      store.off("project.daterange.end", update)
+    plugin.call("serverboards.prometheus/daemon", "get", params)
+          .then( (data) => {
+      // console.log("Got data", data, params)
+      if (data.length==0){
+        console.log("No data from %o", params)
+        this.setState({error: i18n("No data received"), loading: false})
+      }
+      else{
+        this.setState({data, loading: false})
+      }
+    }).catch( (error) => {
+      this.setState({error, loading: false})
+    })
+  }
+  componentWillReceiveProps(newprops){
+    console.log("new props", newprops.config)
+    if (!object_is_equal(newprops.config, this.props.config)){
+      this.update({config: newprops})
     }
   }
+  render(){
+    // console.log("render", this.state)
+    if (this.state.loading){
+      return (
+        <Loading/>
+      )
+    }
+    if (this.state.error){
+      return (
+        <Error>{this.state.error}</Error>
+      )
+    }
+    return (
+      <pre>
+        {JSON.stringify(this.state.data, undefined, 2)}
+      </pre>
+    )
+  }
+}
 
-  Serverboards.add_widget(widget_id, main)
-})()
+Serverboards.add_widget(widget_id, Widget, {react: true})
