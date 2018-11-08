@@ -470,10 +470,10 @@ async def open_port(service=None, hostname=None,
                 #      "Open port %s:%s -> %s?" % (hostname, port, localport))
 
                 if hostname and port:
-                    mopts = opts + ["-nNT", "-L", "%s:%s:%s" %
+                    mopts = opts + ["-nNT", "-L", "localhost:%s:%s:%s" %
                                     (localport, hostname, port)]
                 elif unix:
-                    mopts = opts + ["-nNT", "-L", "%s:%s" % (localport, unix)]
+                    mopts = opts + ["-nNT", "-L", "localhost:%s:%s" % (localport, unix)]
                 else:
                     raise Exception("need hostname:port or unix socket")
                 # await serverboards.debug("Open port with: [ssh '%s']" % "' '".join(
