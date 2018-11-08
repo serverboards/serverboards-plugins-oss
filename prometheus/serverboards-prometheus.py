@@ -106,7 +106,7 @@ async def get(expression, service=None, start=None, end=None, step=None):
             "step": step,
             "_": now
         }
-        # serverboards.debug("Get data from %s, %s: %s"%(url,repr(via), expr))
+        await serverboards.debug("Get data from %s, %s: %s" % (url, repr(via), expr))
         try:
             res = await asks.get(url + "/api/v1/query_range", params=params)
         except Exception:
@@ -160,7 +160,7 @@ async def watch_start(id=None, period=None, service=None, expression=None, **kwa
                 await serverboards.rpc.event("trigger", {"id": id, "value": p})
             await curio.sleep(period_s)
 
-    await serverboards.info("Start Prometheus watch %s" % timer_id)
+    await serverboards.info("Start Prometheus watch %s" % id)
     watch_tasks[id] = curio.spawn(check_ok)
     return id
 
@@ -253,7 +253,7 @@ async def connect_url_via_status(url, via):
     # print("Check url", url)
     try:
         res = await asks.get(url)
-    except Exception as e:
+    except Exception:
         return "down"
     if res.status_code == 200:
         return "ok"
@@ -314,7 +314,7 @@ async def test():
         printc(res)
         assert res == "down"
 
-    except Exception as e:
+    except Exception:
         import traceback
         traceback.print_exc()
         sys.exit(1)

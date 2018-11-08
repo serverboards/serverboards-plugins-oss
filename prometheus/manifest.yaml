@@ -14,6 +14,27 @@ description: |
 
   Prometheus configuration is done adding services that will define which
   external services exist, or even installs  data exporter agents as required.
+
+  ### How this package works
+
+  There are three main component types:
+
+  * `Target` -- An existing target.
+  * `Managed Node Exporter` -- Installs a node exporter on a given SSH server.
+  * `Prometheus Server` -- Existing prometheus server
+
+  Normally you need only the `Managed Node Exporter` if you are not using
+  Prometheus yet, or `Target` if you already have some prometheus targets
+  available. Finally you can add external Prometheus servers if you already have
+  a working Prometheus server.
+
+  At install time, this package downloads and configure a custom prometheus
+  server, so there is no need to use an external one. Then you add the
+  agents, and they are automatically added to the running prometheus server.
+
+  The `Target` and `Managed Node Exporter` are only useful with the provided
+  prometheus server, and not any external prometheus server.
+
 version: "18.10"
 icon: prometheus.svg
 
@@ -21,7 +42,7 @@ icon: prometheus.svg
 components:
   - id: service
     type: service
-    name: Prometheus
+    name: External Prometheus Server
     description: Access to an existing Prometheus instance.
     traits: prometheus url cloud server
     icon: prometheus.svg
@@ -45,8 +66,11 @@ components:
   - id: agent
     type: service
     name: Prometheus Target
-    description: Access to a prometheus agent, as a node_exporter, or any other prometheus data exporter.
+    description: |
+      Access to an existing prometheus target, as a node_exporter, or any other
+      prometheus data exporter.
     traits: prometheus.node cloud
+    icon: prometheus.svg
     fields:
       - name: via
         label: SSH Server
@@ -67,9 +91,12 @@ components:
 
   - id: node_exporter
     type: service
-    name: Managed Prometheus Node Exporter
-    description: Install a node exporter on the given SSH server.
+    name: Prometheus Managed Node Exporter
+    description: |
+      Install a node exporter on the given SSH server. This server will start
+      providing metrics to the package provided Prometheus server.
     traits: prometheus.node server
+    icon: prometheus.svg
     fields:
       - name: server
         label: SSH Server
@@ -91,6 +118,8 @@ components:
       to query prometheus state and show graphs.
       ([More info](https://serverboards.io/blog/2018/04/16/promql))
     params:
+      - label: Title
+        name: title
       - label: Prometheus service
         name: service
         type: service

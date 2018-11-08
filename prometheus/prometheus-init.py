@@ -143,8 +143,7 @@ def prometheus_open_issue():
     action.trigger("serverboards.core.actions/open-issue",
                    issue="prometheus.norun",
                    title="Prometheus failed to start",
-                   description="Trying to start prometheus failed. " +
-                   "Check the logs."
+                   description="Trying to start prometheus failed. Check the logs."
                    )
 
 
@@ -222,22 +221,24 @@ def start_prometheus():
 def update_promservices_yaml():
     context = dict(task="prometheus.update-yaml")
 
-    serverboards.debug("Update the prometheus services yaml file", **context)
     promservices = []
     services = serverboards.rpc.call(
         "service.list", type="serverboards.prometheus/node_exporter")
-    services += serverboards.rpc.call("service.list",
-                                      type="serverboards.prometheus/agent")
+    services += serverboards.rpc.call(
+        "service.list", type="serverboards.prometheus/agent")
+    serverboards.debug("Update the prometheus services yaml file: %s candidate services" % len(services), **context)
 
     for n, s in enumerate(services):
         try:
             config = s["config"]
             if not config:
+                serverboards.debug("Not added prometheus target %s / %s, no config" % (
+                    s["name"], s["uuid"]), service_id=s["uuid"], **context)
                 continue
             server = config.get("server")
             (host, port) = open_node_port(s["uuid"], config, context=context)
             target = "%s:%s" % (host, port)
-            serverboards.debug("Added prometheus target at %s:%s via %s" % (
+            serverboards.debug("Prometheus target added, at %s:%s via %s" % (
                 host, port, server), service_id=s["uuid"], **context)
 
             if not http_open(host, port) and s["type"] == "serverboards.prometheus/node_exporter":
