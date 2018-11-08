@@ -637,21 +637,18 @@ async def scp(fromservice=None, fromfile=None,
     opts.append("-q")
     # serverboards.info("scp %s %s %s"%(' '.join(opts), urla, urlb), **context)
     try:
-        completed_process = await subprocess.run(
-            ["scp", *opts, urla, urlb],
+        cmd = ["scp", *opts, urla, urlb]
+        await serverboards.debug("Copy command: '%s'" % "' '".join(cmd), **context)
+        await subprocess.run(
+            cmd,
             shell=False,
+            check=True,
         )
-        if completed_process.stdout:
-            await serverboards.info(completed_process.stdout, **context)
-        if completed_process.stderr:
-            await serverboards.error(completed_process.stderr, **context)
         await serverboards.info("Copied from %s:%s to %s:%s" % (
             fromservice, fromfile, toservice, tofile), **context)
         return True
     except Exception as e:
-        import traceback
-        traceback.print_exc(e, service_id=[fromservice, toservice], **context)
-        pass
+        serverboards.log_traceback(e, **{**context, "service_id": [fromservice, toservice]})
     await serverboards.error(
         "Could not copy from %s:%s to %s:%s" %
         (fromservice, fromfile, toservice, tofile), **context)
