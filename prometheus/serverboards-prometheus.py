@@ -244,10 +244,11 @@ async def connect_url_via_status(url, via):
     # print("Check ", url, via)
     if via:
         url = urllib.parse.urlparse(url)
-        print("Tunel to", url.hostname, url.port)
         try:
             port = await port_tunnel(via, url.hostname, url.port)
-        except Exception:
+            await serverboards.debug("Opened tunel localhost:%s -> %s:%s", port, url.hostname, url.port, service_id=via)
+        except Exception as e:
+            await serverboards.error("Could not open tunel to %s:%s: %s" % (url.hostname, url.port, e), service_id=via)
             return "ssh-proxy-error"
         url = "http://localhost:%d" % port
     # print("Check url", url)
