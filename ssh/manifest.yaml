@@ -6,6 +6,10 @@ description: >
   Performs core operations needed for SSH connectivity to hosts.
 
   This may be used by other plugins to achieve their own goals.
+
+  It includes a HTML terminal that uses the [Ubuntu Mono Nerd
+  Font](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/UbuntuMono).
+
 icon: terminal
 
 components:

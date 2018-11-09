@@ -18,6 +18,14 @@ $color13: #ff1d62
 $color14: #4bb8fd
 $color15: #a020f0
 
+
+// Font from https://github.com/ryanoasis/nerd-fonts/blob/master/patched-fonts/UbuntuMono/Regular/complete/Ubuntu%20Mono%20Nerd%20Font%20Complete.ttf
+@font-face
+  font-family: UbuntuMonoNerd
+  font-style: normal
+  font-weight: 400
+  src: local('Ubuntu Mono Nerd'),local('Ubuntu-Mono'),url(./Ubuntu-Mono-Nerd-Complete.ttf) format('truetype')
+
 .ui.container > .terminal
   background: $color0
   .terminal
@@ -57,11 +65,13 @@ $color15: #a020f0
 
 
 .xterm-theme-serverboards.terminal
-  .xterm-rows div
-    line-height: 16px
-    background: $color0
-    span
-      display: inline-block
+  .xterm-rows
+    font-family: 'UbuntuMonoNerd'
+    div
+      line-height: 16px
+      background: $color0
+      span
+        display: inline-block
 
   .xterm-color-0
     color: $color0
