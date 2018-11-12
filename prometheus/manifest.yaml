@@ -39,6 +39,7 @@ version: "18.10"
 icon: prometheus.svg
 requires:
   - serverboards.core.ssh
+postinst: ./postinst.sh
 
 
 components:

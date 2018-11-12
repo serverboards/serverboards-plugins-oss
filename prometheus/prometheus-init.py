@@ -119,15 +119,15 @@ class PrometheusOutputParse:
                 continue
             if data.startswith(PrometheusOutputParse.INFO):
                 pid = data[5:9]
-                rpc.info(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
+                serverboards.info(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
             elif data.startswith(PrometheusOutputParse.WARN):
                 pid = data[5:9]
-                rpc.warning(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
+                serverboards.warning(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
             elif data.startswith(PrometheusOutputParse.ERRO):
                 pid = data[5:9]
-                rpc.error(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
+                serverboards.error(data[11:], pid=pid, **PrometheusOutputParse.EXTRA)
             else:
-                rpc.error(repr(data), **PrometheusOutputParse.EXTRA)
+                serverboards.error(repr(data), **PrometheusOutputParse.EXTRA)
 
     def flush(*args, **kwargs):
         pass
