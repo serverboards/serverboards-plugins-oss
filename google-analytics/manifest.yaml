@@ -72,7 +72,7 @@ components:
 
   - id: auth
     type: screen
-    traits: hidden
+    traits: hidden global
     name: Authorized
     description: Screen to show at Oauth2 authorization phase.
 

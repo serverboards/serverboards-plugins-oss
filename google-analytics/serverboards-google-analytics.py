@@ -96,6 +96,7 @@ async def redirect_uri():
     As we create the domains dinamically, we will use a trampoline for the
     answer from the auth service.
     """
+    await ensure_settings()
     print("Get redirect_uri / trampoline", settings)
     maybe_uri = settings.get("redirect_uri")
     if maybe_uri:
