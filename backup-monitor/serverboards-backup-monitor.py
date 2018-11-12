@@ -85,7 +85,7 @@ class RemoteCheck:
         filename = filename_template(self.file_expression)
         assert ';' not in filename, "Filename can not have ;"
         sha = hashlib.sha256(
-            (self.file_expression + "-" + self.service).encode('utf8')
+            ("%s-%s" % (self.file_expression, self.service)).encode('utf8')
         ).hexdigest()
 
         # need to be into a list to force allow ; chain
