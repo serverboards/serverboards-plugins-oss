@@ -376,7 +376,8 @@ DATA_COLUMNS = [
     "datetime",
     "source", "medium", "keyword",  # dimensions
     "sessions", "revenue", "transactions", "page",  # values
-    "duration", "bounces", "campaign"
+    "duration", "bounces", "campaign",
+    "country", "region", "city",
 ]
 
 RT_COLUMNS = [
@@ -472,7 +473,10 @@ columns_to_dimensions = {
     "medium": "ga:medium",
     "keyword": "ga:keyword",
     "page": "ga:pagePath",
-    "campaign": "ga:campaign"
+    "campaign": "ga:campaign",
+    "country": "ga:country",
+    "region": "ga:region",
+    "city": "ga:city"
 }
 columns_to_metrics = {
     "sessions": "ga:sessions",
