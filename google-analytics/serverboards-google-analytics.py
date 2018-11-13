@@ -298,6 +298,7 @@ def get_view_name(service_id, viewid):
 
 @serverboards.rpc_method
 async def get_views(service_id=None, **kwargs):
+    await serverboards.info("Get view %s" % service_id)
     if not service_id:
         return []
     analytics = await get_analytics(service_id, 'v3')
@@ -375,7 +376,7 @@ DATA_COLUMNS = [
     "profile_id",
     "datetime",
     "source", "medium", "keyword",  # dimensions
-    "sessions", "revenue", "transactions", "page",  # values
+    "pageviews", "sessions", "revenue", "transactions", "page",  # values
     "duration", "bounces", "campaign",
     "country", "region", "city",
 ]
@@ -479,6 +480,7 @@ columns_to_dimensions = {
     "city": "ga:city"
 }
 columns_to_metrics = {
+    "pageviews": "ga:pageviews",
     "sessions": "ga:sessions",
     "revenue": "ga:transactionRevenue",
     "transactions": "ga:transactions",
@@ -526,33 +528,47 @@ async def basic_extractor_data_cacheable(start, end, service_id,
             continue
 
     rows = []
-    body = {
-        'reportRequests': [
-            {
-                'viewId': profile_id,
-                'dateRanges': [{
-                    'startDate': start,
-                    'endDate': end
-                }],
-                'metrics': metrics,
-                'dimensions': [{"name": 'ga:date'}] + extra_dimensions
-            }]
-    }
-    data = await serverboards.sync(
-        lambda:
-        analytics.reports().batchGet(
-            body=body
-        ).execute()
-    )
 
-    data_rows = data["reports"][0]["data"].get("rows", [])
-    for dm in data_rows:
-        time_ = dim_to_datetime(*(dm["dimensions"][:datetime_size]))
-        dimensions = dm["dimensions"][datetime_size:]
-        values = dm["metrics"][0]["values"]
-        rows.append([
-            profile_id, time_, *dimensions, *values
-        ])
+    more = True
+    request_extra = {}
+    moren = 0
+    while more:
+        moren += 1
+        body = {
+            'reportRequests': [
+                {
+                    'viewId': profile_id,
+                    'dateRanges': [{
+                        'startDate': start,
+                        'endDate': end
+                    }],
+                    'metrics': metrics,
+                    'dimensions': [{"name": 'ga:date'}] + extra_dimensions,
+                    'pageSize': 10_000,
+                    **request_extra
+                }]
+        }
+        data = await serverboards.sync(
+            lambda:
+            analytics.reports().batchGet(
+                body=body
+            ).execute()
+        )
+
+        # open("/tmp/last-%d.json" % moren, 'w').write(json.dumps(data, indent=2))
+        for report in data["reports"]:
+            data_rows = report["data"].get("rows", [])
+            for dm in data_rows:
+                time_ = dim_to_datetime(*(dm["dimensions"][:datetime_size]))
+                dimensions = dm["dimensions"][datetime_size:]
+                values = dm["metrics"][0]["values"]
+                rows.append([
+                    profile_id, time_, *dimensions, *values
+                ])
+            if report.get('nextPageToken'):
+                request_extra = {"pageToken": report.get('nextPageToken')}
+            else:
+                more = False
 
     return {
         "columns": rcolumns,
