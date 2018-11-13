@@ -1,0 +1,45 @@
+id: serverboards.views
+name: Serverboards Views
+description: |
+  Allows to create SQL views based on other SQL queries.
+
+  This simplifies many tasks, and can speed queries, as results are briefly
+  cached.
+
+  For example if usually it is required to navigate some tables to get the
+  category of a post in a wordpress database, a `postcategory` table
+  can be created that do the necessary navigation and leave a cleaner query.
+
+  For materialized views check the `Databox` package.
+author: David Moreno
+email: dmoreno@serverboards.io
+license: Apache2
+price: 0.00
+icon: database
+
+components:
+  - id: extractor
+    type: extractor
+    name: SQL Views
+    icon: database
+    command: serverboards.views/command
+    params:
+      - name: name
+        label: View Name
+      - name: extractors
+        type: extractorselect
+        label: Extractors
+      - name: columns
+        label: Column names
+        description: Ideally we should auto discover them. Not yet.
+      - name: query
+        type: textarea
+        mode: sql
+        label: Query
+
+  - id: command
+    type: cmd
+    command: ./views.py
+    perms: query.query
+    strategy: singleton
+    timeout: 10s
