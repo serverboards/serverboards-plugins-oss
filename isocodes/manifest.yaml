@@ -1,9 +1,10 @@
 name: ISO Data
-id: serverboards.iso
+id: serverboards.isocodes
 description: |
-  Data from ISO tables, as countries, regions and languages.
+  Non official data from ISO tables, as countries, regions and languages.
 price: 0
 author: David Moreno <dmoreno@serverboards.io>
+version: "18.10"
 
 components:
   - id: extractor
@@ -12,7 +13,11 @@ components:
     icon: www
     description: |
       Data from ISO databases of languages, regions and countries.
-    command: serverboards.iso/command
+
+      The data tables have been modified to better fit the extractor
+      requirements, removing unnecesary columns for most of the time, and
+      changing the column names to easier to manipulate with ExoSQL.
+    command: serverboards.isocodes/command
 
   - id: command
     type: cmd
