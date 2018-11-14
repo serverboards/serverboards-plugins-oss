@@ -14,6 +14,7 @@ description: |
 author: David Moreno
 email: dmoreno@serverboards.io
 license: Apache2
+version: 18.10
 price: 0.00
 icon: database
 
