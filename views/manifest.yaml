@@ -43,4 +43,4 @@ components:
     command: ./views.py
     perms: query.query
     strategy: singleton
-    timeout: 10s
+    timeout: 5m
