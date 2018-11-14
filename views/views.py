@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 import serverboards_aio as serverboards
-from serverboards import print
+# from serverboards import print
+from cache import Cache
+cache = Cache('views.db')
 
 
 @serverboards.rpc_method
@@ -18,10 +20,9 @@ async def extractor(config, table, quals, columns):
     return (await extractor_cached(config, table))
 
 
-@serverboards.cache_ttl(ttl=300)
+@cache.a(ttl=300)
 async def extractor_cached(config, table):
     rconfig = config.get("config")
-    print(rconfig.get("extractors", []))
 
     query = rconfig.get("query")
     context = {e["id"]: e for e in rconfig.get("extractors", []) if 'id' in e}
