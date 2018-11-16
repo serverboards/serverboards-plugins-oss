@@ -8,13 +8,13 @@ import sys
 import time
 import datetime
 import curio
-
+from cache import Cache, default_hash
 from serverboards_aio import rpc, print
 from oauth2client import client
 from urllib.parse import urlencode, urljoin
 from googleapiclient import discovery
 
-
+cache = Cache("~/analytics.db")
 # DISCOVERY_URI = ('https://analyticsreporting.googleapis.com/$discovery/rest')
 OAUTH_AUTH_URL = "https://accounts.google.com/o/oauth2/auth"
 OAUTH_AUTH_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
@@ -531,23 +531,47 @@ async def basic_extractor_data_cacheable(start, end, service_id,
 
     more = True
     request_extra = {}
-    moren = 0
     while more:
-        moren += 1
-        body = {
-            'reportRequests': [
-                {
-                    'viewId': profile_id,
-                    'dateRanges': [{
-                        'startDate': start,
-                        'endDate': end
-                    }],
-                    'metrics': metrics,
-                    'dimensions': [{"name": 'ga:date'}] + extra_dimensions,
-                    'pageSize': 10_000,
-                    **request_extra
-                }]
-        }
+        ret = await extract_one_page(
+            analytics, profile_id,
+            start, end,
+            metrics, extra_dimensions,
+            request_extra,
+            datetime_size)
+        request_extra = ret["request_extra"]
+        rows += ret["rows"]
+        more = ret["more"]
+
+    return {
+        "columns": rcolumns,
+        "rows": rows
+    }
+
+
+def monday_of_date(date):
+    dt = datetime.datetime.strptime(date[:10], "%Y-%m-%d")
+    return (dt - datetime.timedelta(days=dt.weekday())).strftime("%Y-%m-%d")
+
+
+async def extract_one_page(analytics, profile_id, start, end, metrics, extra_dimensions, request_extra, datetime_size):
+    body = {
+        'reportRequests': [
+            {
+                'viewId': profile_id,
+                'dateRanges': [{
+                    'startDate': start,
+                    'endDate': end
+                }],
+                'metrics': metrics,
+                'dimensions': [{"name": 'ga:date'}] + extra_dimensions,
+                'pageSize': 10_000,
+                **request_extra
+            }]
+    }
+
+    hs = default_hash("ga_one", [profile_id, start, end, metrics, extra_dimensions, request_extra, datetime_size], {})
+    res = cache.get(hs)
+    if not res:
         data = await serverboards.sync(
             lambda:
             analytics.reports().batchGet(
@@ -555,6 +579,7 @@ async def basic_extractor_data_cacheable(start, end, service_id,
             ).execute()
         )
 
+        rows = []
         # open("/tmp/last-%d.json" % moren, 'w').write(json.dumps(data, indent=2))
         for report in data["reports"]:
             data_rows = report["data"].get("rows", [])
@@ -565,15 +590,30 @@ async def basic_extractor_data_cacheable(start, end, service_id,
                 rows.append([
                     profile_id, time_, *dimensions, *values
                 ])
-            if report.get('nextPageToken'):
-                request_extra = {"pageToken": report.get('nextPageToken')}
-            else:
-                more = False
+        if report.get('nextPageToken'):
+            request_extra = {"pageToken": report.get('nextPageToken')}
+            more = True
+        else:
+            request_extra = None
+            more = False
 
-    return {
-        "columns": rcolumns,
-        "rows": rows
-    }
+        res = {
+            "more": more,
+            "request_extra": request_extra,
+            "rows": rows
+        }
+
+        # Maybe cache query. But not if the answer is about today
+        maxdate = max(x[1] for x in rows)
+        max_is_today = maxdate.startswith(datetime.date.today().strftime("%Y-%m-%d"))
+        # await serverboards.debug("Max date is ", maxdate, max_is_today)
+
+        if not max_is_today:
+            cache.set(hs, res, ttl=30 * 24*60*60)  # 30 days
+    # else:
+    #     await serverboards.debug("Use cached data")
+
+    return res
 
 
 async def rt_extractor(config, quals, columns):
