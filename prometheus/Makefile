@@ -1,4 +1,4 @@
-FILES = $(wildcard manifest.yaml *.py *.txt *.sh static/ *.md)
+FILES = $(wildcard manifest.yaml *.py *.txt *.sh static/ *.md *.yml)
 PACKAGE_ID = $(shell awk '/^id:/ {print $$2}' manifest.yaml)
 
 all: compile
@@ -15,6 +15,7 @@ static/widget.js: src/widget.js
 clean:
 	rm -rf node_modules
 	rm -rf static
+	rm $(PACKAGE_ID).txz
 
 
 .PHONY: txz
