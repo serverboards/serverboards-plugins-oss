@@ -65,7 +65,7 @@ components:
 
   - id: daemon_singleton
     type: cmd
-    timeout: 30s
+    timeout: 5m
     strategy: singleton
     command: ./serverboards-sql.py
     name: Remote run SQL commands
