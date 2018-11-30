@@ -3,7 +3,7 @@
 import serverboards_aio as serverboards
 # from serverboards import print
 from cache import Cache
-cache = Cache('views.db')
+cache = Cache('~/views.db')
 
 
 @serverboards.rpc_method
