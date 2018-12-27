@@ -80,7 +80,7 @@ class ServerboardsStorage(client.Storage):
 
     def locked_get(self):
         try:
-            content = serverboards.async(get_config, self.id)
+            content = serverboards.run_async(get_config, self.id)
             if not content:
                 return None
 
@@ -101,11 +101,11 @@ class ServerboardsStorage(client.Storage):
         get_config.invalidate_cache()
         # printc("Update refresh token:", credentials.to_json())
         data = {"config": json.loads(credentials.to_json())}
-        serverboards.async(rpc.call, "service.update", self.id, data)
+        serverboards.run_async(rpc.call, "service.update", self.id, data)
 
     def locked_delete(self):
         get_config.invalidate_cache()
-        serverboards.async(rpc.call, "service.update", self.id, {"config": {}})
+        serverboards.run_async(rpc.call, "service.update", self.id, {"config": {}})
 
 
 @serverboards.rpc_method
