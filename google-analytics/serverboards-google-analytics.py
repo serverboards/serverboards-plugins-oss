@@ -515,17 +515,21 @@ async def basic_extractor_data_cacheable(start, end, service_id,
         extra_dimensions.append({"name": 'ga:minute'})
         datetime_size += 1
 
+    rcolumnsd = []
+    rcolumnsm = []
     for c in columns:
         ga = columns_to_dimensions.get(c)
         if ga:
             extra_dimensions.append({"name": ga})
-            rcolumns.append(c)
+            rcolumnsd.append(c)
             continue
         ga = columns_to_metrics.get(c)
         if ga:
             metrics.append({"expression": ga})
-            rcolumns.append(c)
+            rcolumnsm.append(c)
             continue
+
+    rcolumns += rcolumnsd + rcolumnsm
 
     rows = []
 
