@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!env/bin/python3
 import sys
 import datetime
 import serverboards

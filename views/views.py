@@ -20,7 +20,7 @@ async def extractor(config, table, quals, columns):
     return (await extractor_cached(config, table))
 
 
-@cache.a(ttl=300)
+@cache.a(ttl=60)
 async def extractor_cached(config, table):
     rconfig = config.get("config")
 
