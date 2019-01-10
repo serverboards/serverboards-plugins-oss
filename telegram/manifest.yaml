@@ -39,6 +39,7 @@ components:
     call: send_telegram
 
   - id: daemon.writer
+    name: Telegram
     type: cmd
     traits: telegram
     perms:
@@ -48,6 +49,7 @@ components:
     timeout: 60s
 
   - id: daemon.listener
+    name: Telegram Listener
     type: cmd
     traits: telegram
     perms:
