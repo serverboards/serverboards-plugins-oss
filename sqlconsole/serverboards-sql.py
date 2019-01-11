@@ -36,6 +36,7 @@ class Connection:
         return x
 
     def execute(self, query, data=None):
+        # serverboards.debug("SQL: %s %s" % (query,))
         with self.conn.cursor() as cur:
             try:
                 cur.execute(query, data)
@@ -50,6 +51,7 @@ class Connection:
                     "data": [[cur.statusmessage]]
                 }
             except Exception:
+                serverboards.error("Error on SQL query: %s" % query, data)
                 conn.conn.rollback()
                 raise
             finally:
@@ -342,6 +344,13 @@ def extractor(config, table, quals, orig_columns):
         columns = ["COUNT(*)"]
 
     if quals:
+        for q in quals:
+            if q[1] == 'IN' and q[2] == []:
+                return {
+                    "columns": orig_columns,
+                    "rows": []
+                }
+
         where = ["%s %s %%s" % (q[0], q[1]) for q in quals]
         values = [q[2] for q in quals]
         sql = ("SELECT %s FROM %s WHERE %s" %
