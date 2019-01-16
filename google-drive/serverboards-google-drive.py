@@ -37,7 +37,7 @@ async def get_file_info(drive_service, fileid, fields=None):
     return (await serverboards.sync(threaded))
 
 
-@cache.a(ttl=30000)
+@cache.a(ttl=60)
 async def get_file_data(service_id, file):
     drive_service = await get_drive(service_id)
     datetime = file["time"]
@@ -76,7 +76,7 @@ async def get_file_data(service_id, file):
     ]
 
 
-@serverboards.cache_ttl(300)
+@serverboards.cache_ttl(60)
 async def get_changes_raw(service_id):
     drive_service = await get_drive(service_id)
 

@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from pcolor import printc
 import serverboards_aio as serverboards
 
+
 def get_spreadsheet_id(url):
     if url.startswith("https://"):
         id = urlparse(url).path.split('/')[3]
@@ -16,8 +17,8 @@ def get_spreadsheet_id(url):
     return url
 
 
+@serverboards.rpc_method("schema_sheets")
 @serverboards.cache_ttl(60)
-@serverboards.rpc_method
 async def schema_sheets(config, table=None):
     config = config.get("config", config)
     sheets = await get_service(config["service_id"], "sheets", "v4")
@@ -37,8 +38,9 @@ async def schema_sheets(config, table=None):
         "columns": data["values"][0]
     }
 
+
+@serverboards.rpc_method("extractor_sheets")
 @serverboards.cache_ttl(30)
-@serverboards.rpc_method
 async def extractor_sheets(config, table, quals, columns):
     config = config.get("config", config)
     sheets = await get_service(config["service_id"], "sheets", "v4")
@@ -116,6 +118,7 @@ async def append_to_sheet(service_id, spreadsheet, table, data, *args, **kwargs)
     )
     return True
 
+
 async def test():
     mock_data = yaml.load(open("mock.yaml"))
     config = mock_data["config"]
@@ -137,6 +140,7 @@ async def test():
 if __name__ == '__main__':
     argv = sys.argv[1:]
     if argv and argv[0] == "test":
+        import os
         if os.path.exists("extramock.yaml"):
             mock_data = yaml.load(open("extramock.yaml"))
         else:
